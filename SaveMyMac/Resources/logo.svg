@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C5CFF"/>
+      <stop offset="1" stop-color="#22E0FF"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.22" cy="0.18" r="0.85">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <!-- SVG não tem canto contínuo; rx de 22,5 % é a aproximação padrão do
+         squircle da Apple e é o que ferramentas de design usam. -->
+    <clipPath id="squircle">
+      <rect x="100" y="100" width="824" height="824" rx="185.4" ry="185.4"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#squircle)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#body)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#sheen)"/>
+    <circle cx="512" cy="512" r="259.6" fill="none"
+            stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="67.6"/>
+    <circle cx="512" cy="512" r="259.6" fill="none"
+            stroke="#FFFFFF" stroke-width="67.6" stroke-linecap="round"
+            stroke-dasharray="1272.1 1630.9"
+            transform="rotate(-90 512 512)"/>
+    <polygon points="512.0,359.6 557.7,466.3 664.4,512.0 557.7,557.7 512.0,664.4 466.3,557.7 359.6,512.0 466.3,466.3" fill="#FFFFFF"/>
+  </g>
+</svg>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>SaveMyMac</string>
+    <key>CFBundleDisplayName</key>
+    <string>Save My Mac</string>
+    <key>CFBundleExecutable</key>
+    <string>SaveMyMac</string>
+    <key>CFBundleIdentifier</key>
+    <string>br.com.pentagrama.savemymac</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>ATSApplicationFontsPath</key>
+    <string>Fonts</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Uso pessoal</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Necessário para ler sensores de temperatura via powermetrics com privilégios de administrador.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>Para localizar arquivos grandes e duplicados na sua Mesa.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>Para localizar arquivos grandes e duplicados em Documentos.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>Para localizar downloads antigos e arquivos grandes.</string>
+</dict>
+</plist>

@@ -1,0 +1,152 @@
+import Foundation
+import AppKit
+
+struct UninstallResult {
+    var removedPaths: [String] = []
+    var freedBytes: Int64 = 0
+    var failures: [(path: String, reason: String)] = []
+    var bundleRemoved = false
+
+    var succeeded: Bool { !removedPaths.isEmpty }
+}
+
+/// Remove cache ou o app inteiro com todos os dados de apoio.
+///
+/// Sempre pela Lixeira: nada é apagado de forma irreversível aqui, e nenhuma
+/// operação pede senha. Se o bundle estiver num lugar que exige privilégio, a
+/// falha é reportada com a instrução em vez de escalar sozinho.
+enum AppUninstaller {
+
+    // MARK: - Apenas o cache
+
+    static func clearCache(
+        of app: InstalledApp,
+        progress: (String, Double) -> Void
+    ) -> UninstallResult {
+        let targets = app.residues.filter(\.isCache)
+        return remove(paths: targets.map { ($0.path, $0.size) },
+                      label: "cache de \(app.name)",
+                      progress: progress)
+    }
+
+    // MARK: - App completo
+
+    static func uninstall(
+        app: InstalledApp,
+        includeResidues: Bool = true,
+        progress: (String, Double) -> Void
+    ) -> UninstallResult {
+
+        guard app.canUninstall else {
+            var result = UninstallResult()
+            result.failures.append((app.path, "Aplicativo do sistema — não pode ser removido"))
+            return result
+        }
+
+        var entries: [(String, Int64)] = []
+        if includeResidues {
+            entries += app.residues.map { ($0.path, $0.size) }
+        }
+        entries.append((app.path, app.bundleSize))
+
+        var result = remove(paths: entries, label: app.name, progress: progress)
+        result.bundleRemoved = result.removedPaths.contains(app.path)
+        return result
+    }
+
+    // MARK: - Núcleo
+
+    private static func remove(
+        paths: [(String, Int64)],
+        label: String,
+        progress: (String, Double) -> Void
+    ) -> UninstallResult {
+
+        var result = UninstallResult()
+        let total = max(1, paths.count)
+
+        for (index, entry) in paths.enumerated() {
+            progress(label, Double(index) / Double(total))
+
+            let url = URL(fileURLWithPath: entry.0)
+            guard FileManager.default.fileExists(atPath: url.path) else { continue }
+
+            if let reason = rejectionReason(for: url) {
+                result.failures.append((entry.0, reason))
+                continue
+            }
+
+            do {
+                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                result.removedPaths.append(entry.0)
+                result.freedBytes += entry.1
+            } catch {
+                let reason = url.path.hasPrefix("/Applications")
+                    ? "Sem permissão. Arraste o app para a Lixeira manualmente."
+                    : error.localizedDescription
+                result.failures.append((entry.0, reason))
+            }
+        }
+
+        progress(label, 1.0)
+        return result
+    }
+
+    /// Trava de segurança específica da desinstalação.
+    ///
+    /// É mais permissiva que a da limpeza (aqui `/Applications` é alvo legítimo)
+    /// mas continua barrando o sistema, links simbólicos e qualquer coisa cujo
+    /// conteúdo real esteja em outro volume.
+    static func rejectionReason(for url: URL) -> String? {
+        let path = url.standardizedFileURL.path
+
+        if VolumeResolver.isSymbolicLink(url) {
+            return "É um link simbólico — remova pelo painel de Offload"
+        }
+        if !VolumeResolver.isOnHomeVolume(url) {
+            let volume = VolumeResolver.volumeName(of: url) ?? "outro volume"
+            return "O conteúdo real está em \(volume)"
+        }
+
+        // Caminhos protegidos pelo sistema (SIP) ou vitais.
+        let forbidden = [
+            "/System", "/usr", "/bin", "/sbin", "/private/var/db",
+            "/Library/Apple", "/Library/Security"
+        ]
+        for prefix in forbidden where path.hasPrefix(prefix) {
+            return "Caminho protegido pelo sistema"
+        }
+
+        // Dentro da home, nunca as pastas de topo.
+        let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
+        if path.hasPrefix(home + "/") {
+            let relative = String(path.dropFirst(home.count + 1))
+            let components = relative.split(separator: "/")
+            let protectedTop: Set<String> = [
+                "Documents", "Desktop", "Downloads", "Library", "Pictures",
+                "Movies", "Music", "Public", "Applications", ".Trash"
+            ]
+            if components.count == 1 && protectedTop.contains(String(components[0])) {
+                return "Pasta protegida do usuário"
+            }
+            let blocked = [
+                "Library/Keychains", "Library/Mail", "Library/CloudStorage",
+                "Library/Mobile Documents", "Library/Preferences/com.apple"
+            ]
+            for prefix in blocked where relative.hasPrefix(prefix) {
+                return "Caminho sensível protegido"
+            }
+            return nil
+        }
+
+        // Fora da home só permitimos bundles .app em /Applications.
+        if path.hasPrefix("/Applications") && url.pathExtension == "app" {
+            return nil
+        }
+        if path == "/Applications" {
+            return "Não se remove a pasta Aplicativos"
+        }
+
+        return "Fora do escopo permitido"
+    }
+}
