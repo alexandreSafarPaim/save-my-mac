@@ -45,14 +45,14 @@ enum FileKind: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .video: return "Vídeos"
-        case .virtualMachine: return "Máquinas virtuais"
-        case .diskImage: return "Imagens de disco"
+        case .video: return L("Videos")
+        case .virtualMachine: return L("Virtual machines")
+        case .diskImage: return L("Disk images")
         case .backup: return "Backups"
-        case .audio: return "Áudio"
+        case .audio: return L("Audio")
         case .image: return "Imagens"
         case .archive: return "Compactados"
-        case .data: return "Bases de dados"
+        case .data: return L("Databases")
         case .other: return "Outros"
         }
     }
@@ -244,7 +244,7 @@ final class FileScanner: @unchecked Sendable {
 
         var result = FileScanResult()
 
-        progress("Percorrendo a pasta pessoal…", 0.03)
+        progress(L("Walking the home folder…"), 0.03)
         let entries = enumerateHome(isCancelled: isCancelled) { visited in
             progress("Percorrendo a pasta pessoal… (\(visited) arquivos)",
                      0.03 + min(0.52, Double(visited) / 250_000.0 * 0.52))
@@ -253,7 +253,7 @@ final class FileScanner: @unchecked Sendable {
 
         guard !isCancelled() else { return result }
 
-        progress("Separando os arquivos grandes…", 0.60)
+        progress(L("Sorting the large files…"), 0.60)
         result.largeFiles = entries
             .filter { $0.size >= largeThreshold }
             .sorted { $0.size > $1.size }
@@ -272,12 +272,12 @@ final class FileScanner: @unchecked Sendable {
 
         guard !isCancelled() else { return result }
 
-        progress("Comparando conteúdo para achar duplicados…", 0.70)
+        progress(L("Comparing content to find duplicates…"), 0.70)
         result.duplicates = findDuplicates(in: entries, isCancelled: isCancelled) { fraction in
-            progress("Comparando conteúdo para achar duplicados…", 0.70 + fraction * 0.28)
+            progress(L("Comparing content to find duplicates…"), 0.70 + fraction * 0.28)
         }
 
-        progress("Concluído", 1.0)
+        progress(L("Done"), 1.0)
         return result
     }
 

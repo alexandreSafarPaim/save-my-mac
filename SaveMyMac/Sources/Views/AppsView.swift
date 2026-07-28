@@ -24,10 +24,10 @@ struct AppsView: View {
                 if state.appInventory.isEmpty && !state.isScanningApps {
                     EmptyStateView(
                         symbol: "square.grid.2x2",
-                        title: "Nenhum app analisado ainda",
-                        message: "Lista os apps instalados com tamanho real, último uso e todo o cache e dados de apoio que cada um deixou espalhado pela Library.",
+                        title: L("No apps scanned yet"),
+                        message: L("Lists installed apps with their real size, last use, and all the cache and support data each one left scattered around the Library."),
                         palette: palette,
-                        hint: "O último uso vem do Spotlight. Apps do sistema ficam de fora."
+                        hint: L("Last use comes from Spotlight. System apps are excluded.")
                     )
                     .frame(minHeight: 320)
                 } else if !state.appInventory.isEmpty {
@@ -54,7 +54,7 @@ struct AppsView: View {
             titleVisibility: .visible
         ) {
             if let app = pendingUninstall {
-                Button("Mover tudo para a Lixeira", role: .destructive) {
+                Button(L("Move everything to the Trash"), role: .destructive) {
                     state.uninstall(app: app)
                     pendingUninstall = nil
                 }
@@ -77,7 +77,7 @@ struct AppsView: View {
         ScreenHeader(
             eyebrow: "Aplicativos",
             title: state.appInventory.isEmpty
-                ? "Aplicativos instalados"
+                ? L("Installed apps")
                 : "\(state.appInventory.apps.count) apps · \(state.appInventory.staleCount) sem uso há 90 dias",
             palette: palette
         ) {
@@ -90,7 +90,7 @@ struct AppsView: View {
                 if state.isScanningApps {
                     GhostButton(title: L("Cancel"), palette: palette) { state.cancelAppsScan() }
                 } else {
-                    GhostButton(title: "Analisar apps", systemImage: "magnifyingglass", palette: palette) {
+                    GhostButton(title: L("Scan apps"), systemImage: "magnifyingglass", palette: palette) {
                         state.startAppsScan()
                     }
                 }
@@ -112,7 +112,7 @@ struct AppsView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
                     .foregroundStyle(palette.t3)
-                TextField("Filtrar por nome…", text: $state.appSearch)
+                TextField(L("Filter by name…"), text: $state.appSearch)
                     .textFieldStyle(.plain)
                     .font(Typo.bodySmall)
                     .foregroundStyle(palette.t1)
@@ -135,17 +135,17 @@ struct AppsView: View {
         HStack(spacing: 14) {
             summaryStat(
                 value: Fmt.bytes(state.appInventory.totalSize),
-                label: "ocupado por apps e seus dados",
+                label: L("used by apps and their data"),
                 tint: palette.t1
             )
             summaryStat(
                 value: Fmt.bytes(state.appInventory.totalCache),
-                label: "só em cache, removível sem perda",
+                label: L("in cache alone, removable with no loss"),
                 tint: palette.ok
             )
             summaryStat(
                 value: "\(state.appInventory.staleCount)",
-                label: "sem uso há mais de 90 dias",
+                label: L("unused for over 90 days"),
                 tint: state.appInventory.staleCount > 0 ? palette.warn : palette.t2
             )
             Spacer()
@@ -236,7 +236,7 @@ struct AppsView: View {
                     Button {
                         state.clearCache(of: app)
                     } label: {
-                        Text("Limpar cache")
+                        Text(L("Clear cache"))
                             .font(Typo.caption)
                             .foregroundStyle(app.cacheSize > 0 ? palette.t1 : palette.t3)
                             .frame(maxWidth: .infinity)
@@ -279,9 +279,9 @@ struct AppsView: View {
             }
         }
         .contextMenu {
-            Button("Abrir no Finder") { state.reveal(app.path) }
-            Button("Ver todos os dados de apoio") { detailApp = app }
-            Button("Copiar identificador") { state.copyToClipboard(app.bundleID) }
+            Button(L("Open in Finder")) { state.reveal(app.path) }
+            Button(L("See all support data")) { detailApp = app }
+            Button(L("Copy identifier")) { state.copyToClipboard(app.bundleID) }
         }
     }
 }
@@ -322,9 +322,9 @@ struct AppDetailSheet: View {
             Divider().overlay(palette.stroke)
 
             HStack(spacing: 18) {
-                labelled("Bundle do app", Fmt.bytes(app.bundleSize))
+                labelled(L("App bundle"), Fmt.bytes(app.bundleSize))
                 labelled("Cache", Fmt.bytes(app.cacheSize))
-                labelled("Outros dados", Fmt.bytes(app.residueSize - app.cacheSize))
+                labelled(L("Other data"), Fmt.bytes(app.residueSize - app.cacheSize))
             }
 
             Text("Dados de apoio encontrados (\(app.residues.count))")
@@ -332,7 +332,7 @@ struct AppDetailSheet: View {
                 .foregroundStyle(palette.t1)
 
             if app.residues.isEmpty {
-                Text("Este app não deixou nada identificável na Library.")
+                Text(L("This app left nothing identifiable in the Library."))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t3)
             } else {
@@ -371,7 +371,7 @@ struct AppDetailSheet: View {
             }
 
             HStack {
-                Text("Cache é regenerável. O resto só faz sentido remover junto com o app.")
+                Text(L("Cache is regenerable. The rest only makes sense to remove along with the app."))
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
                 Spacer()

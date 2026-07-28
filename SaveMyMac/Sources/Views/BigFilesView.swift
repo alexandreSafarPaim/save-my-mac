@@ -28,10 +28,10 @@ struct BigFilesView: View {
                 if state.files.largeFiles.isEmpty && !state.isScanningFiles {
                     EmptyStateView(
                         symbol: "square.stack.3d.up",
-                        title: "Nada analisado ainda",
-                        message: "Percorre sua pasta pessoal e lista o que passa de 500 MB, classificado por tipo. A mesma varredura encontra os duplicados.",
+                        title: L("Nothing scanned yet"),
+                        message: L("Walks your home folder and lists anything over 500 MB, sorted by kind. The same scan finds the duplicates."),
                         palette: palette,
-                        hint: "Arquivos que só existem no iCloud e conteúdo já descarregado ficam de fora."
+                        hint: L("Files that exist only in iCloud and already-offloaded content are excluded.")
                     )
                     .frame(minHeight: 320)
                 } else if !state.files.largeFiles.isEmpty {
@@ -55,7 +55,7 @@ struct BigFilesView: View {
         ScreenHeader(
             eyebrow: "Grandes arquivos",
             title: state.files.largeFiles.isEmpty
-                ? "Arquivos acima de 500 MB"
+                ? L("Files over 500 MB")
                 : "\(Fmt.bytes(state.files.largeTotal)) em \(state.files.largeFiles.count) arquivos gigantes",
             palette: palette
         ) {
@@ -68,7 +68,7 @@ struct BigFilesView: View {
                 if state.isScanningFiles {
                     GhostButton(title: L("Cancel"), palette: palette) { state.cancelFilesScan() }
                 } else {
-                    GhostButton(title: "Analisar arquivos", systemImage: "magnifyingglass", palette: palette) {
+                    GhostButton(title: L("Scan files"), systemImage: "magnifyingglass", palette: palette) {
                         state.startFilesScan()
                     }
                 }
@@ -136,7 +136,7 @@ struct BigFilesView: View {
                         .buttonStyle(.plain)
                     }
                 } else {
-                    Text("Clique numa faixa para filtrar a lista")
+                    Text(L("Click a band to filter the list"))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
@@ -177,7 +177,7 @@ struct BigFilesView: View {
                     .foregroundStyle(palette.t2)
             }
             Spacer()
-            GhostButton(title: "Ver duplicados", palette: palette, tint: palette.cyan) {
+            GhostButton(title: L("See duplicates"), palette: palette, tint: palette.cyan) {
                 selection = .duplicates
             }
         }
@@ -234,7 +234,7 @@ struct BigFilesView: View {
                         Button("Mostrar no Finder") { state.reveal(file.path) }
                         Button("Copiar caminho") { state.copyToClipboard(file.path) }
                         Divider()
-                        Button("Descarregar para outro disco…") {
+                        Button(L("Offload to another disk…")) {
                             selection = .offload
                         }
                     } label: {

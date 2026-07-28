@@ -24,14 +24,14 @@ struct DuplicatesView: View {
                         EmptyStateView(
                             symbol: "square.on.square",
                             title: state.lastFilesScanDate == nil
-                                ? "Nada analisado ainda"
-                                : "Nenhum duplicado encontrado",
+                                ? L("Nothing scanned yet")
+                                : L("No duplicates found"),
                             message: state.lastFilesScanDate == nil
-                                ? "A comparação é por conteúdo: primeiro agrupa por tamanho exato, depois confere amostras de 256 KB do início, meio e fim de cada arquivo."
-                                : "Seus arquivos estão sem cópias idênticas acima de 2 MB. Nada a fazer aqui.",
+                                ? L("The comparison is by content: it first groups by exact size, then checks 256 KB samples from the start, middle and end of each file.")
+                                : L("Your files have no identical copies over 2 MB. Nothing to do here."),
                             palette: palette,
                             hint: state.lastFilesScanDate == nil
-                                ? "Nome e data não importam — só o conteúdo."
+                                ? L("Name and date don't matter — only content does.")
                                 : nil
                         )
                         .frame(minHeight: 320)
@@ -73,9 +73,9 @@ struct DuplicatesView: View {
         ScreenHeader(
             eyebrow: "Duplicados",
             title: state.files.duplicates.isEmpty
-                ? "Arquivos duplicados"
+                ? L("Duplicate files")
                 : "\(Fmt.bytes(state.files.duplicateTotal)) em cópias idênticas",
-            subtitle: "Comparação por conteúdo — nome e data não importam. A cópia mais antiga de cada grupo é preservada.",
+            subtitle: L("Compared by content — name and date don't matter. The oldest copy in each group is preserved."),
             palette: palette
         ) {
             FlowLayout(spacing: 10, lineSpacing: 8) {
@@ -125,7 +125,7 @@ struct DuplicatesView: View {
                     Text(Fmt.bytes(group.reclaimable))
                         .font(Typo.mono(15, .bold))
                         .foregroundStyle(palette.ok)
-                    Text("recuperável")
+                    Text(L("reclaimable"))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
@@ -200,7 +200,7 @@ struct DuplicatesView: View {
                     }
                 } else {
                     PrimaryButton(
-                        title: "Remover cópias",
+                        title: L("Remove copies"),
                         systemImage: "square.on.square.badge.person.crop",
                         suffix: state.selectedDuplicateSize > 0
                             ? "+\(GameStore.xpReward(forBytes: state.selectedDuplicateSize)) XP"

@@ -42,7 +42,7 @@ final class CleanupScanner: @unchecked Sendable {
             }
         }
 
-        progress("Concluído", 1.0)
+        progress(L("Done"), 1.0)
         return categories.sorted { $0.totalSize > $1.totalSize }
     }
 

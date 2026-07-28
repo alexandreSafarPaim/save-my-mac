@@ -39,10 +39,10 @@ struct InstalledApp: Identifiable, Hashable {
     }
 
     var lastUsedLabel: String {
-        guard let days = daysSinceUse else { return "uso desconhecido" }
+        guard let days = daysSinceUse else { return L("use unknown") }
         switch days {
-        case ..<1: return "usado hoje"
-        case 1: return "usado ontem"
+        case ..<1: return L("used today")
+        case 1: return L("used yesterday")
         case ..<90: return "usado há \(days) d"
         default: return "sem uso há \(days) d"
         }
@@ -85,7 +85,7 @@ final class AppInventoryScanner: @unchecked Sendable {
         isCancelled: @escaping () -> Bool
     ) -> AppInventoryResult {
 
-        progress("Localizando aplicativos…", 0.02)
+        progress(L("Finding applications…"), 0.02)
 
         var bundles: [(url: URL, isSystem: Bool)] = []
         for (root, isSystem) in searchRoots {
@@ -100,12 +100,12 @@ final class AppInventoryScanner: @unchecked Sendable {
         guard !bundles.isEmpty else { return AppInventoryResult() }
 
         // Último uso via Spotlight, tudo de uma vez.
-        progress("Consultando o Spotlight…", 0.08)
+        progress(L("Querying Spotlight…"), 0.08)
         let lastUsedMap = lastUsedDates(for: bundles.map { $0.url.path }, isCancelled: isCancelled)
 
         // Índice dos diretórios da Library, lido uma única vez, para não
         // percorrer a árvore inteira uma vez por app.
-        progress("Indexando dados de apoio…", 0.14)
+        progress(L("Indexing support data…"), 0.14)
         let libraryIndex = buildLibraryIndex()
 
         var apps: [InstalledApp] = []
@@ -128,7 +128,7 @@ final class AppInventoryScanner: @unchecked Sendable {
         }
 
         apps.sort { $0.totalSize > $1.totalSize }
-        progress("Concluído", 1.0)
+        progress(L("Done"), 1.0)
 
         return AppInventoryResult(apps: apps, staleCount: apps.filter(\.isStale).count)
     }
@@ -190,20 +190,27 @@ final class AppInventoryScanner: @unchecked Sendable {
 
     /// Diretórios da Library onde apps deixam dados, com rótulo amigável e
     /// se aquilo conta como cache (regenerável) ou não.
-    private static let residueLocations: [(relative: String, label: String, isCache: Bool)] = [
+    /// `var`, não `let`.
+    ///
+    /// Um `static let` é avaliado uma única vez, na primeira leitura. Com `L()`
+    /// dentro, os rótulos ficariam congelados no idioma que estava ativo naquele
+    /// instante e não acompanhariam a troca em Ajustes — a lista voltaria em
+    /// inglês para sempre depois de mudar de idioma. Como `var` computada, é
+    /// reconstruída a cada acesso, que é barato: doze tuplas.
+    private static var residueLocations: [(relative: String, label: String, isCache: Bool)] {[
         ("Library/Caches", "Cache", true),
-        ("Library/Application Support", "Dados de apoio", false),
+        ("Library/Application Support", L("Support data"), false),
         ("Library/Containers", "Container", false),
-        ("Library/Group Containers", "Container de grupo", false),
-        ("Library/Saved Application State", "Estado salvo", true),
-        ("Library/HTTPStorages", "Armazenamento HTTP", true),
-        ("Library/WebKit", "Dados WebKit", true),
+        ("Library/Group Containers", L("Group container"), false),
+        ("Library/Saved Application State", L("Saved state"), true),
+        ("Library/HTTPStorages", L("HTTP storage"), true),
+        ("Library/WebKit", L("WebKit data"), true),
         ("Library/Logs", "Logs", true),
-        ("Library/Preferences", "Preferências", false),
+        ("Library/Preferences", L("Preferences"), false),
         ("Library/Application Scripts", "Scripts", false),
         ("Library/Cookies", "Cookies", false),
-        ("Library/LaunchAgents", "Agente de inicialização", false)
-    ]
+        ("Library/LaunchAgents", L("Launch agent"), false)
+    ]}
 
     /// Lê o conteúdo de cada pasta da Library uma única vez.
     private func buildLibraryIndex() -> [String: [URL]] {

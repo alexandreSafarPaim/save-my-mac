@@ -21,12 +21,12 @@ enum MigrationPhase: String, Codable {
         switch self {
         case .preflight: return "Verificando"
         case .copying: return "Copiando"
-        case .verifying: return "Conferindo a cópia"
-        case .quarantining: return "Movendo o original para a quarentena"
-        case .publishing: return "Publicando no destino"
-        case .linking: return "Criando o link"
-        case .validating: return "Testando o link"
-        case .done: return "Concluído"
+        case .verifying: return L("Verifying the copy")
+        case .quarantining: return L("Moving the original to quarantine")
+        case .publishing: return L("Publishing to the destination")
+        case .linking: return L("Creating the link")
+        case .validating: return L("Testing the link")
+        case .done: return L("Done")
         case .failed: return "Falhou"
         case .rolledBack: return "Revertido"
         }
@@ -106,23 +106,23 @@ enum OffloadRecommendation: String, Codable {
 
     var label: String {
         switch self {
-        case .move: return "Bom candidato"
-        case .deleteInstead: return "Melhor apagar"
-        case .useNativeSetting: return "Use o ajuste do app"
-        case .never: return "Não linkar"
+        case .move: return L("Good candidate")
+        case .deleteInstead: return L("Better to delete")
+        case .useNativeSetting: return L("Use the app's own setting")
+        case .never: return L("Do not link")
         }
     }
 
     var explanation: String {
         switch self {
         case .move:
-            return "Volume grande, acesso raro e sem alternativa nativa. É o caso clássico de offload."
+            return L("Large volume, rarely accessed, no native alternative. The classic offload case.")
         case .deleteInstead:
-            return "É cache regenerável e barato de refazer. Mover dá trabalho sem ganho real."
+            return L("It's regenerable cache and cheap to rebuild. Moving it is work with no real gain.")
         case .useNativeSetting:
-            return "O próprio app permite mudar a pasta nas preferências, o que é mais robusto que um link."
+            return L("The app itself lets you change the folder in its preferences, which is more robust than a link.")
         case .never:
-            return "Um serviço do sistema gerencia esta pasta e não lida bem com links simbólicos."
+            return L("A system service manages this folder and does not handle symlinks well.")
         }
     }
 }

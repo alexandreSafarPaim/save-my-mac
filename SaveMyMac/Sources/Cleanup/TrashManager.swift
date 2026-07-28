@@ -174,7 +174,7 @@ enum TrashManager {
             }
         }
 
-        progress("Concluído", 1.0)
+        progress(L("Done"), 1.0)
         return result
     }
 

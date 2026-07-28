@@ -153,7 +153,7 @@ final class CandidateScanner: @unchecked Sendable {
             )
         }
 
-        progress("Concluído", 1.0)
+        progress(L("Done"), 1.0)
 
         // Boas candidatas primeiro, depois por tamanho.
         return candidates.sorted { lhs, rhs in

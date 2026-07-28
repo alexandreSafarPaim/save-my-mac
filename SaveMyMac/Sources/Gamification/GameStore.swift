@@ -11,16 +11,19 @@ struct Achievement: Identifiable, Hashable {
 }
 
 enum Achievements {
-    static let all: [Achievement] = [
+    /// `var` computada e não `static let` pelo mesmo motivo do
+    /// `residueLocations`: `L()` dentro de um `let` estático congela o idioma
+    /// da primeira leitura.
+    static var all: [Achievement] {[
         .init(id: "first_clean", symbol: "sparkles", name: L("First cleanup"),
               requirement: L("Run your first cleanup")),
-        .init(id: "freed_50", symbol: "bolt.fill", name: "50 GB liberados",
+        .init(id: "freed_50", symbol: "bolt.fill", name: L("50 GB freed"),
               requirement: L("Free up 50 GB in total")),
         .init(id: "streak_4", symbol: "flame.fill", name: L("4-week streak"),
               requirement: L("Clean 4 weeks in a row")),
         .init(id: "first_offload", symbol: "link", name: L("First offload"),
               requirement: L("Move a folder to another disk with a link")),
-        .init(id: "freed_100", symbol: "mountain.2.fill", name: "100 GB liberados",
+        .init(id: "freed_100", symbol: "mountain.2.fill", name: L("100 GB freed"),
               requirement: L("Free up 100 GB in total")),
         .init(id: "zero_dupes", symbol: "circle.grid.cross.fill", name: L("Zero duplicates"),
               requirement: L("End up with no duplicate files")),
@@ -34,9 +37,9 @@ enum Achievements {
               requirement: L("Clear the cache of 10 apps")),
         .init(id: "streak_12", symbol: "calendar.badge.checkmark", name: L("Clean quarter"),
               requirement: L("Clean 12 weeks in a row")),
-        .init(id: "offload_100", symbol: "externaldrive.fill.badge.checkmark", name: "100 GB descarregados",
+        .init(id: "offload_100", symbol: "externaldrive.fill.badge.checkmark", name: L("100 GB offloaded"),
               requirement: L("Keep 100 GB off the Mac's disk"))
-    ]
+    ]}
 }
 
 // MARK: - Estado persistido

@@ -79,11 +79,11 @@ struct OffloadView: View {
                         EmptyStateView(
                             symbol: "link",
                             title: state.lastOffloadScanDate == nil
-                                ? "Nada verificado ainda"
-                                : "Nenhum link e nenhum candidato",
-                            message: "Aqui você move uma pasta pesada para um disco externo e deixa um link simbólico no lugar. O macOS continua achando tudo; o espaço volta para o SSD.",
+                                ? L("Nothing checked yet")
+                                : L("No links and no candidates"),
+                            message: L("Here you move a heavy folder to an external disk and leave a symlink in its place. macOS keeps finding everything; the space comes back to the SSD."),
                             palette: palette,
-                            hint: "A verificação é somente leitura."
+                            hint: L("The check is read-only.")
                         )
                         .frame(minHeight: 300)
                     }
@@ -105,7 +105,7 @@ struct OffloadView: View {
             titleVisibility: .visible
         ) {
             if let candidate = pendingMigration {
-                Button("Mover e criar o link") {
+                Button(L("Move and create the link")) {
                     state.migrate(candidate: candidate)
                     pendingMigration = nil
                 }
@@ -132,10 +132,10 @@ struct OffloadView: View {
 
     private var header: some View {
         ScreenHeader(
-            eyebrow: "Offload por link simbólico",
+            eyebrow: L("Symlink offload"),
             title: state.offload.savedBytes > 0
                 ? "\(Fmt.bytes(state.offload.savedBytes)) fora do disco do Mac"
-                : "Descarregar pastas pesadas",
+                : L("Offload heavy folders"),
             palette: palette
         ) {
             FlowLayout(spacing: 10, lineSpacing: 8) {
@@ -147,7 +147,7 @@ struct OffloadView: View {
                 if state.isScanningOffload {
                     GhostButton(title: L("Cancel"), palette: palette) { state.cancelOffloadScan() }
                 } else {
-                    GhostButton(title: "Verificar links", systemImage: "arrow.clockwise", palette: palette) {
+                    GhostButton(title: L("Check links"), systemImage: "arrow.clockwise", palette: palette) {
                         state.startOffloadScan()
                     }
                 }
@@ -170,7 +170,7 @@ struct OffloadView: View {
             Text(state.migrationStatus)
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.t2)
-            Text("Não desconecte o disco externo agora.")
+            Text(L("Do not disconnect the external disk right now."))
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.warn)
         }
@@ -192,11 +192,11 @@ struct OffloadView: View {
             IconTile(symbol: "externaldrive.badge.plus", palette: palette, size: 40, gradient: true)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Destino do offload")
+                Text(L("Offload destination"))
                     .font(Typo.ui(14.5, .semibold))
                     .foregroundStyle(palette.t1)
                 if state.destinationRoot.isEmpty {
-                    Text("Nenhum destino escolhido. Crie uma pasta dedicada no disco externo — por exemplo, uma pasta mac-offload na raiz.")
+                    Text(L("No destination chosen. Create a dedicated folder on the external disk — for example, a mac-offload folder at the root."))
                         .font(Typo.bodySmall)
                         .foregroundStyle(palette.t2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -213,7 +213,7 @@ struct OffloadView: View {
             Spacer()
 
             PrimaryButton(
-                title: state.destinationRoot.isEmpty ? "Configurar destino" : "Trocar",
+                title: state.destinationRoot.isEmpty ? L("Set destination") : "Trocar",
                 palette: palette
             ) {
                 state.chooseDestination()
@@ -237,15 +237,15 @@ struct OffloadView: View {
     private var summaryCard: some View {
         Panel(palette: palette) {
             HStack(alignment: .top, spacing: 28) {
-                stat(Fmt.bytes(state.offload.savedBytes), "fora do disco do Mac", palette.ok)
-                stat("\(state.offload.links.filter(\.savesSpace).count)", "links ativos", palette.cyan)
-                stat("\(state.offload.brokenCount)", "com problema",
+                stat(Fmt.bytes(state.offload.savedBytes), L("off the Mac's disk"), palette.ok)
+                stat("\(state.offload.links.filter(\.savesSpace).count)", L("active links"), palette.cyan)
+                stat("\(state.offload.brokenCount)", L("with problems"),
                      state.offload.brokenCount > 0 ? palette.danger : palette.t3)
                 if state.journal.quarantineBytes > 0 {
-                    stat(Fmt.bytes(state.journal.quarantineBytes), "em quarentena", palette.warn)
+                    stat(Fmt.bytes(state.journal.quarantineBytes), L("in quarantine"), palette.warn)
                 }
                 if state.offload.orphanBytes > 0 {
-                    stat(Fmt.bytes(state.offload.orphanBytes), "órfãos no destino", palette.warn)
+                    stat(Fmt.bytes(state.offload.orphanBytes), L("orphans at the destination"), palette.warn)
                 }
                 Spacer()
             }
@@ -268,7 +268,7 @@ struct OffloadView: View {
     private var candidatesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Candidatos a offload")
+                Text(L("Offload candidates"))
                     .font(Typo.cardTitle)
                     .foregroundStyle(palette.t1)
                 Spacer()
@@ -277,7 +277,7 @@ struct OffloadView: View {
                     .foregroundStyle(palette.t3)
             }
 
-            Text("Nem tudo que é grande deve virar link. O veredito de cada linha diz o porquê.")
+            Text(L("Not everything large should become a link. The verdict on each row says why."))
                 .font(Typo.caption)
                 .foregroundStyle(palette.t3)
 
@@ -327,7 +327,7 @@ struct OffloadView: View {
                     Button {
                         pendingMigration = candidate
                     } label: {
-                        Text("Mover e linkar")
+                        Text(L("Move and link"))
                             .font(Typo.caption)
                             .foregroundStyle(canMigrate ? palette.cyan : palette.t3)
                             .padding(.horizontal, 12)
@@ -347,7 +347,7 @@ struct OffloadView: View {
                     .buttonStyle(.plain)
                     .disabled(!canMigrate)
                     .help(state.destinationRoot.isEmpty
-                          ? "Escolha primeiro a pasta de destino"
+                          ? L("Choose the destination folder first")
                           : candidate.recommendation.explanation)
                 } else {
                     Text(candidate.recommendation.explanation)
@@ -423,7 +423,7 @@ struct OffloadView: View {
                             .font(Typo.monoCaption)
                             .foregroundStyle(palette.t1)
                     } else {
-                        Chip(text: "NÃO MONTADO", palette: palette, color: palette.warn)
+                        Chip(text: L("NOT MOUNTED"), palette: palette, color: palette.warn)
                     }
                 }
 
@@ -503,10 +503,10 @@ struct OffloadView: View {
         }
         .padding(.vertical, 8)
         .contextMenu {
-            Button("Mostrar o link no Finder") { state.reveal(link.linkPath) }
-            Button("Mostrar o destino no Finder") { state.reveal(link.targetPath) }
+            Button(L("Show the link in Finder")) { state.reveal(link.linkPath) }
+            Button(L("Show the target in Finder")) { state.reveal(link.targetPath) }
             Divider()
-            Button("Copiar comando para refazer o link") {
+            Button(L("Copy command to recreate the link")) {
                 state.copyToClipboard("ln -s \"\(link.targetPath)\" \"\(link.linkPath)\"")
             }
         }
@@ -546,13 +546,13 @@ struct OffloadView: View {
                             .foregroundStyle(palette.warn)
                     }
                     Spacer()
-                    GhostButton(title: "Liberar tudo", palette: palette, tint: palette.warn) {
+                    GhostButton(title: L("Release everything"), palette: palette, tint: palette.warn) {
                         state.releaseAllQuarantines()
                     }
                     .disabled(state.isMigrating)
                 }
 
-                Text("Os originais ficam guardados até você conferir que tudo funciona. **O espaço só volta ao liberar.** Enquanto estiverem aqui, cada migração pode ser revertida com um clique.")
+                Text(L("The originals are kept until you confirm everything works. **The space only comes back when you release them.** While they are here, each migration can be undone with one click."))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -610,7 +610,7 @@ struct OffloadView: View {
                         .font(Typo.cardTitle)
                         .foregroundStyle(palette.t1)
                 }
-                Text("O journal registra cada etapa antes dela acontecer, então nada foi perdido. Confira os caminhos abaixo antes de tentar de novo.")
+                Text(L("The journal records each step before it happens, so nothing was lost. Check the paths below before trying again."))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -638,7 +638,7 @@ struct OffloadView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     IconTile(symbol: "questionmark.folder", palette: palette, size: 32, tint: palette.warn)
-                    Text("Dados órfãos no destino")
+                    Text(L("Orphan data at the destination"))
                         .font(Typo.cardTitle)
                         .foregroundStyle(palette.t1)
                     Spacer()
@@ -647,7 +647,7 @@ struct OffloadView: View {
                         .foregroundStyle(palette.warn)
                 }
 
-                Text("Pastas dentro da sua área de offload que **nenhum link aponta**. Costuma ser sobra de um link removido, ocupando espaço no externo sem servir para nada — mas confira antes de apagar.")
+                Text(L("Folders inside your offload area that **no link points to**. Usually leftovers from a removed link, taking up space on the external disk for nothing — but check before deleting."))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -691,18 +691,18 @@ struct OffloadView: View {
     private var notesCard: some View {
         Panel(palette: palette) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("O que vale saber")
+                Text(L("Worth knowing"))
                     .font(Typo.cardTitle)
                     .foregroundStyle(palette.t1)
 
-                note("O disco de destino precisa aceitar link simbólico.",
-                     "exFAT e FAT não aceitam. O app checa isso antes de tocar em qualquer arquivo e recusa o destino.")
-                note("Volume desconectado é o risco real.",
-                     "Alguns apps e instaladores recriam a pasta por cima do link quando o destino não existe, e aí passam a existir dois conjuntos de dados divergindo em silêncio.")
-                note("O Time Machine do disco interno guarda o link, não o conteúdo.",
-                     "As pastas descarregadas precisam de backup próprio.")
-                note("A aba Limpeza ignora tudo que está do outro lado de um link.",
-                     "Apagar no disco externo não devolveria espaço ao Mac, então esses caminhos ficam fora da lista de propósito.")
+                note(L("The destination disk has to support symlinks."),
+                     L("exFAT and FAT do not. The app checks this before touching any file and refuses the destination."))
+                note(L("A disconnected volume is the real risk."),
+                     L("Some apps and installers recreate the folder over the link when the target is missing, and then two sets of data start diverging silently."))
+                note(L("Time Machine on the internal disk backs up the link, not the content."),
+                     L("Offloaded folders need their own backup."))
+                note(L("The Cleanup tab ignores everything on the far side of a link."),
+                     L("Deleting on the external disk would not give space back to the Mac, so those paths are left out of the list on purpose."))
             }
         }
     }

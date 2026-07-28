@@ -311,7 +311,7 @@ final class MigrationEngine: @unchecked Sendable {
         entry.phase = .done
         entry.finishedAt = Date()
         write(entry)
-        progress(.done, "Concluído", 1.0)
+        progress(.done, L("Done"), 1.0)
 
         return MigrationOutcome(
             entry: entry,

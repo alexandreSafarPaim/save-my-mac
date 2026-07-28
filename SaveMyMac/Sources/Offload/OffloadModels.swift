@@ -14,22 +14,22 @@ enum LinkStatus: Equatable {
     var label: String {
         switch self {
         case .offloaded: return "OK"
-        case .volumeMissing: return "Volume ausente"
+        case .volumeMissing: return L("Volume missing")
         case .broken: return "Quebrado"
-        case .sameDisk: return "Mesmo disco"
+        case .sameDisk: return L("Same disk")
         }
     }
 
     var explanation: String {
         switch self {
         case .offloaded:
-            return "O conteúdo está no volume externo e o link está funcionando."
+            return L("The content is on the external volume and the link is working.")
         case .volumeMissing:
-            return "O volume de destino não está montado. Apps que usarem este caminho vão falhar — e alguns podem recriar a pasta por cima do link, criando dois conjuntos de dados divergentes."
+            return L("The destination volume is not mounted. Apps using this path will fail — and some may recreate the folder over the link, creating two diverging sets of data.")
         case .broken:
-            return "O alvo não existe mais. O link precisa ser refeito ou removido."
+            return L("The target no longer exists. The link has to be recreated or removed.")
         case .sameDisk:
-            return "O destino está no mesmo disco do Mac, então este link não economiza espaço."
+            return L("The destination is on the Mac's own disk, so this link saves no space.")
         }
     }
 }
