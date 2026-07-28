@@ -56,11 +56,11 @@ final class Preferences: ObservableObject {
 
         var label: String {
             switch self {
-            case .disk: return "Espaço livre"
-            case .memory: return "Pressão de memória"
-            case .cpu: return "Uso de CPU"
-            case .temperature: return "Temperatura"
-            case .none: return "Só o ícone"
+            case .disk: return L("Free space")
+            case .memory: return L("Memory pressure")
+            case .cpu: return L("CPU usage")
+            case .temperature: return L("Temperature")
+            case .none: return L("Icon only")
             }
         }
     }

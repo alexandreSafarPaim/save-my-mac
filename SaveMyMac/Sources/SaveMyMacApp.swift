@@ -13,12 +13,12 @@ enum AppSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .dashboard: return "Painel"
-        case .cleanup: return "Limpeza"
-        case .apps: return "Aplicativos"
-        case .files: return "Grandes arquivos"
-        case .duplicates: return "Duplicados"
-        case .offload: return "Offload"
+        case .dashboard: return L("Dashboard")
+        case .cleanup: return L("Cleanup")
+        case .apps: return L("Apps")
+        case .files: return L("Large files")
+        case .duplicates: return L("Duplicates")
+        case .offload: return L("Offload")
         }
     }
 
@@ -150,6 +150,7 @@ final class AppRoot {
     let state = AppState()
     let prefs = Preferences()
     let spaceAlert = SpaceAlert()
+    let localization = Localization.shared
     private init() {}
 }
 
@@ -190,6 +191,7 @@ struct SaveMyMacApp: App {
                 .environmentObject(state)
                 .environmentObject(prefs)
                 .environmentObject(spaceAlert)
+                .environmentObject(root.localization)
                 .frame(minWidth: 1080, minHeight: 700)
                 // `.preferredColorScheme` saiu daqui e foi para dentro das
                 // views. Lido aqui, `state.theme` obrigaria o corpo do App a
@@ -226,6 +228,7 @@ struct SaveMyMacApp: App {
                 .environmentObject(state)
                 .environmentObject(prefs)
                 .environmentObject(spaceAlert)
+                .environmentObject(root.localization)
         } label: {
             MenuBarLabel(state: state, prefs: prefs, spaceAlert: spaceAlert)
         }
@@ -249,6 +252,7 @@ struct SaveMyMacApp: App {
                 .environmentObject(state)
                 .environmentObject(prefs)
                 .environmentObject(spaceAlert)
+                .environmentObject(root.localization)
         }
     }
 }
@@ -288,7 +292,7 @@ struct AppCommands: Commands {
             Button("Atualizar métricas") { state.refreshMetrics() }
                 .keyboardShortcut("u", modifiers: .command)
             // Rótulo fixo de propósito — ver a nota no topo do tipo.
-            Button("Alternar tema claro/escuro") { state.toggleTheme() }
+            Button(L("Switch between light and dark theme (⇧⌘T)")) { state.toggleTheme() }
                 .keyboardShortcut("t", modifiers: [.command, .shift])
         }
     }
@@ -296,6 +300,7 @@ struct AppCommands: Commands {
 
 struct RootView: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject var loc: Localization
     @State private var selection: AppSection = .dashboard
 
     private var palette: Palette { state.palette }
@@ -336,6 +341,16 @@ struct RootView: View {
                 }
             }
         }
+        // Trocar de idioma reconstrói a subárvore.
+        //
+        // `L()` é uma função global, não uma propriedade observável, então uma
+        // view que só chama `L()` não tem como saber que o idioma mudou. Marcar
+        // identidade pelo idioma resolve com uma linha, em vez de espalhar um
+        // `@EnvironmentObject` por 25 arquivos só para invalidar.
+        //
+        // O `.id` fica **no conteúdo**, não na `RootView`: assim o `selection`
+        // dela sobrevive e você continua na mesma aba depois de trocar a língua.
+        .id(loc.language)
         .preferredColorScheme(state.theme.colorScheme)
         .animation(.easeInOut(duration: 0.25), value: state.banner?.id)
         .animation(Motion.pop, value: state.celebration?.id)
@@ -393,6 +408,7 @@ struct RootView: View {
 /// Substitui a barra de título falsa do mockup. A janela real já tem os botões
 /// do macOS, então aqui ficam só a trilha e o botão de tema.
 struct TitleStrip: View {
+    @EnvironmentObject var loc: Localization
     @EnvironmentObject var state: AppState
     var sectionTitle: String
 
@@ -437,7 +453,7 @@ struct TitleStrip: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .help("Ajustes do SaveMyMac (⌘,)")
+        .help(L("SaveMyMac settings (⌘,)"))
     }
 
     private var themeButton: some View {
@@ -460,13 +476,14 @@ struct TitleStrip: View {
             .overlay(Capsule().strokeBorder(palette.stroke2, lineWidth: 1))
         }
         .buttonStyle(.plain)
-        .help("Alternar entre tema claro e escuro (⇧⌘T)")
+        .help(L("Switch between light and dark theme (⇧⌘T)"))
     }
 }
 
 // MARK: - Sidebar
 
 struct Sidebar: View {
+    @EnvironmentObject var loc: Localization
     @EnvironmentObject var state: AppState
     @Binding var selection: AppSection
 
@@ -493,7 +510,7 @@ struct Sidebar: View {
 
     private var navigation: some View {
         VStack(alignment: .leading, spacing: 4) {
-            MicroLabel(text: "Navegação", palette: palette)
+            MicroLabel(text: L("Navigation"), palette: palette)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 2)
 
@@ -533,12 +550,12 @@ struct Sidebar: View {
     private var diskSummary: some View {
         VStack(alignment: .leading, spacing: 9) {
             if let volume = state.bootVolume {
-                MicroLabel(text: "Disco de inicialização", palette: palette)
+                MicroLabel(text: L("Startup disk"), palette: palette)
                 GradientBar(value: volume.usedFraction, palette: palette, height: 8)
                 HStack {
-                    Text("\(Fmt.bytes(volume.available)) livres")
+                    Text(L("%@ free", Fmt.bytes(volume.available)))
                     Spacer()
-                    Text("de \(Fmt.bytes(volume.total))")
+                    Text(L("of %@", Fmt.bytes(volume.total)))
                         .foregroundStyle(palette.t3)
                 }
                 .font(Typo.monoCaption)
@@ -546,7 +563,7 @@ struct Sidebar: View {
             }
 
             if state.totalReclaimable > 0 {
-                MicroLabel(text: "Recuperável", palette: palette)
+                MicroLabel(text: L("Reclaimable"), palette: palette)
                     .padding(.top, 6)
                 Text(Fmt.bytes(state.totalReclaimable))
                     .font(Typo.statValue)
@@ -555,7 +572,7 @@ struct Sidebar: View {
             }
 
             if state.offload.savedBytes > 0 {
-                MicroLabel(text: "Descarregado", palette: palette)
+                MicroLabel(text: L("Offloaded"), palette: palette)
                     .padding(.top, 6)
                 Text(Fmt.bytes(state.offload.savedBytes))
                     .font(Typo.mono(18, .bold))
@@ -661,7 +678,7 @@ struct LevelCard: View {
                     }
                     .frame(width: 26, height: 26)
 
-                    Text("Nível \(game.state.level)")
+                    Text(L("Level %d", game.state.level))
                         .font(Typo.ui(12.5, .semibold))
                         .foregroundStyle(palette.t1)
                 }
@@ -678,8 +695,8 @@ struct LevelCard: View {
                     .font(.system(size: 10))
                     .foregroundStyle(palette.warn)
                 Text(game.state.streak == 0
-                     ? "Nenhuma semana ativa ainda"
-                     : "Streak de \(game.state.streak) semana\(game.state.streak == 1 ? "" : "s")")
+                     ? L("No active week yet")
+                     : Lp("%d-week streak", "%d-week streak (plural)", game.state.streak))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t2)
             }

@@ -88,6 +88,14 @@ jobs:
           test "$fail" -eq 0 && echo "no known regressions"
           exit $fail
 
+      # A translation with different %@/%d placeholders than its key crashes the
+      # app at runtime, in that language only — String(format:) reads an argument
+      # that was never passed. That ships easily, because a translator rarely
+      # runs the app in the language they just edited. Cheap to catch here.
+      - name: Check translations
+        working-directory: SaveMyMac
+        run: python3 tools/check-translations.py
+
       - name: Upload app bundle
         if: success()
         uses: actions/upload-artifact@v4

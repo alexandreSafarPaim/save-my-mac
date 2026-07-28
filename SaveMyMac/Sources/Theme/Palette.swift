@@ -6,8 +6,8 @@ enum ThemeMode: String, CaseIterable, Codable {
 
     var label: String {
         switch self {
-        case .dark: return "ESCURO"
-        case .light: return "CLARO"
+        case .dark: return L("Dark").uppercased()
+        case .light: return L("Light").uppercased()
         }
     }
 

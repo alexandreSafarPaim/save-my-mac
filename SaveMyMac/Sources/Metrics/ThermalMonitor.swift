@@ -31,11 +31,11 @@ struct ThermalSnapshot {
 
     var thermalStateLabel: String {
         switch thermalState {
-        case .nominal: return "Normal"
-        case .fair: return "Aquecendo"
-        case .serious: return "Quente"
-        case .critical: return "Crítico"
-        @unknown default: return "Desconhecido"
+        case .nominal: return L("Normal")
+        case .fair: return L("Warming up")
+        case .serious: return L("Hot")
+        case .critical: return L("Critical")
+        @unknown default: return L("Unknown")
         }
     }
 

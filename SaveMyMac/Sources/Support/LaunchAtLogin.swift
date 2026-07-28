@@ -24,9 +24,9 @@ enum LaunchAtLogin {
 
         var label: String {
             switch self {
-            case .serviceManagement: return "Itens de Início do sistema"
-            case .launchAgent: return "LaunchAgent do usuário"
-            case .none: return "desativado"
+            case .serviceManagement: return L("system Login Items")
+            case .launchAgent: return L("user LaunchAgent")
+            case .none: return L("disabled")
             }
         }
     }
@@ -69,7 +69,7 @@ enum LaunchAtLogin {
     struct Snapshot {
         var enabled = false
         var mechanism = Mechanism.none
-        var description = "Verificando…"
+        var description = L("Checking…")
         /// Falso até a primeira consulta terminar, para a interface poder
         /// mostrar que ainda não sabe em vez de mentir "desativado".
         var isKnown = false
@@ -121,14 +121,14 @@ enum LaunchAtLogin {
             return Snapshot(
                 enabled: true,
                 mechanism: .serviceManagement,
-                description: "Ativo pelos Itens de Início do sistema.",
+                description: L("Active through the system Login Items."),
                 isKnown: true
             )
         case .requiresApproval:
             return Snapshot(
                 enabled: true,
                 mechanism: .serviceManagement,
-                description: "Registrado, mas aguardando sua aprovação em Ajustes do Sistema › Geral › Itens de Início.",
+                description: L("Registered, but waiting for your approval in System Settings › General › Login Items."),
                 isKnown: true
             )
         default:
@@ -136,14 +136,14 @@ enum LaunchAtLogin {
                 return Snapshot(
                     enabled: true,
                     mechanism: .launchAgent,
-                    description: "Ativo por LaunchAgent — o caminho alternativo, usado porque o app é assinado ad-hoc.",
+                    description: L("Active through a LaunchAgent — the fallback path, used because the app is ad-hoc signed."),
                     isKnown: true
                 )
             }
             return Snapshot(
                 enabled: false,
                 mechanism: .none,
-                description: "Desativado.",
+                description: L("Disabled."),
                 isKnown: true
             )
         }

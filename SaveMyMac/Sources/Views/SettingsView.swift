@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject var prefs: Preferences
     @EnvironmentObject var spaceAlert: SpaceAlert
+    @EnvironmentObject var loc: Localization
 
     // ATENÇÃO: estes `@State` precisam ser inicializados com valores baratos.
     //
@@ -30,11 +31,13 @@ struct SettingsView: View {
                 menuBarSection
                 alertsSection
                 appearanceSection
+                languageSection
             }
             .padding(22)
         }
         .frame(width: 520, height: 560)
         .background(palette.bg2)
+        .id(loc.language)
         .preferredColorScheme(state.theme.colorScheme)
         // Só agora — com a janela de Ajustes realmente aberta — vale consultar
         // o `smd`. E fora da thread principal.
@@ -44,12 +47,12 @@ struct SettingsView: View {
     // MARK: - Inicialização
 
     private var startupSection: some View {
-        section("Inicialização", "power") {
+        section(L("Startup"), "power") {
             Toggle(isOn: Binding(
                 get: { launch.enabled },
                 set: { toggleLaunch($0) }
             )) {
-                Text("Abrir o SaveMyMac ao ligar o Mac")
+                Text(L("Open SaveMyMac when the Mac starts"))
                     .font(Typo.bodySmall)
                     .foregroundStyle(palette.t1)
             }
@@ -70,20 +73,20 @@ struct SettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text("O app usa a API moderna (Itens de Início do sistema) quando consegue. Como este build é assinado ad-hoc, o registro pode ser recusado — nesse caso ele cai para um LaunchAgent do usuário, que funciona igual. O texto acima diz qual mecanismo está ativo.")
+            Text(L("The app uses the modern API (system Login Items) when it can. Since this build is ad-hoc signed, registration may be refused — it then falls back to a user LaunchAgent, which works the same. The text above says which mechanism is active."))
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.t3)
                 .fixedSize(horizontal: false, vertical: true)
 
             Toggle(isOn: $prefs.hideDockIcon) {
-                Text("Esconder o ícone do Dock")
+                Text(L("Hide the Dock icon"))
                     .font(Typo.bodySmall)
                     .foregroundStyle(palette.t1)
             }
             .toggleStyle(.switch)
             .padding(.top, 4)
 
-            Text("Com o ícone escondido o app vive só na barra de menus. Vale a pena se você deixa ele aberto o tempo todo. Aplica na hora, sem reiniciar.")
+            Text(L("With the icon hidden the app lives only in the menu bar. Worth it if you leave it open all the time. Applies immediately, no restart."))
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.t3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -105,24 +108,28 @@ struct SettingsView: View {
     // MARK: - Barra de menus
 
     private var menuBarSection: some View {
-        section("Barra de menus", "menubar.rectangle") {
+        section(L("Menu bar"), "menubar.rectangle") {
             if MenuBarFeature.isEnabled {
                 Toggle(isOn: $prefs.showMenuBar) {
-                    Text("Mostrar na barra de menus")
+                    Text(L("Show in the menu bar"))
                         .font(Typo.bodySmall)
                         .foregroundStyle(palette.t1)
                 }
                 .toggleStyle(.switch)
 
-                Text("Com isto ligado o app mostra a métrica escolhida ao lado do relógio e o painel abre com um clique, sem precisar trazer a janela.")
+                Text(L("With this on, the app shows the chosen metric next to the clock and the panel opens with one click, without bringing up the window."))
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text("Desligada pelo interruptor de emergência.")
+                Text(L("Turned off by the emergency switch."))
                     .font(Typo.bodySmall)
                     .foregroundStyle(palette.warn)
-                Text("A chave `enableMenuBar` está em falso, ou o app está em modo seguro. Para religar, no Terminal:\ndefaults write br.com.pentagrama.savemymac enableMenuBar -bool true\ne reabra o app.")
+                // O comando fica fora da tradução de propósito: é literal de
+                // Terminal, e traduzir parte dele daria um comando que não roda.
+                Text(L("The `enableMenuBar` key is false, or the app is in safe mode. To turn it back on, in Terminal:")
+                     + "\ndefaults write br.com.pentagrama.savemymac enableMenuBar -bool true\n"
+                     + L("then reopen the app."))
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -130,7 +137,7 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("O que mostrar ao lado do ícone")
+                Text(L("What to show next to the icon"))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t2)
                 Picker("", selection: $prefs.menuBarMetric) {
@@ -143,7 +150,7 @@ struct SettingsView: View {
             }
             .padding(.top, 2)
 
-            Text("O ícone troca para um triângulo de alerta quando o espaço livre cai abaixo do limiar, independente da métrica escolhida.")
+            Text(L("The icon turns into a warning triangle when free space drops below the threshold, whatever metric you picked."))
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.t3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -153,7 +160,7 @@ struct SettingsView: View {
     // MARK: - Alertas
 
     private var alertsSection: some View {
-        section("Alerta de pouco espaço", "exclamationmark.triangle") {
+        section(L("Low space alert"), "exclamationmark.triangle") {
             Toggle(isOn: Binding(
                 get: { prefs.lowSpaceAlerts },
                 set: { value in
@@ -161,14 +168,14 @@ struct SettingsView: View {
                     if value { spaceAlert.requestPermissionIfNeeded() }
                 }
             )) {
-                Text("Notificar quando faltar espaço")
+                Text(L("Notify me when space runs low"))
                     .font(Typo.bodySmall)
                     .foregroundStyle(palette.t1)
             }
             .toggleStyle(.switch)
 
             if spaceAlert.permissionDenied {
-                Text("A permissão de notificação foi negada. Libere em Ajustes do Sistema › Notificações. O aviso na barra de menus continua funcionando.")
+                Text(L("Notification permission was denied. Allow it in System Settings › Notifications. The menu bar warning keeps working."))
                     .font(Typo.caption)
                     .foregroundStyle(palette.warn)
                     .fixedSize(horizontal: false, vertical: true)
@@ -176,11 +183,11 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Avisar abaixo de")
+                    Text(L("Warn below"))
                         .font(Typo.caption)
                         .foregroundStyle(palette.t2)
                     Spacer()
-                    Text("\(Int(prefs.lowSpaceThreshold)) % livres")
+                    Text(L("%d %% free", Int(prefs.lowSpaceThreshold)))
                         .font(Typo.monoCaption)
                         .foregroundStyle(palette.t1)
                 }
@@ -189,13 +196,16 @@ struct SettingsView: View {
 
                 if let volume = state.bootVolume, volume.total > 0 {
                     let free = Double(volume.available) / Double(volume.total) * 100
-                    Text("Agora: \(String(format: "%.1f", free)) % livres em \(volume.name) (\(Fmt.bytes(volume.available))).")
+                    Text(L("Now: %@ %% free on %@ (%@).",
+                           String(format: "%.1f", free),
+                           volume.name,
+                           Fmt.bytes(volume.available)))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
             }
 
-            Text("O aviso dispara ao cruzar o limiar e só rearma depois de o espaço subir 3 pontos acima dele, com no máximo um por 6 horas. Sem isso, um disco oscilando em torno do limiar notificaria sem parar.")
+            Text(L("The warning fires when crossing the threshold and only rearms after space rises 3 points above it, at most one every 6 hours. Without that, a disk hovering around the threshold would notify endlessly."))
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.t3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -205,17 +215,53 @@ struct SettingsView: View {
     // MARK: - Aparência
 
     private var appearanceSection: some View {
-        section("Aparência", "paintbrush") {
+        section(L("Appearance"), "paintbrush") {
             Picker("", selection: Binding(
                 get: { state.theme },
                 set: { state.theme = $0 }
             )) {
                 ForEach(ThemeMode.allCases, id: \.self) { mode in
-                    Text(mode == .dark ? "Escuro" : "Claro").tag(mode)
+                    Text(mode == .dark ? L("Dark") : L("Light")).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
             .fixedSize()
+        }
+    }
+
+    // MARK: - Idioma
+
+    private var languageSection: some View {
+        section(L("Language"), "globe") {
+            Picker("", selection: Binding(
+                get: { loc.language },
+                set: { loc.language = $0 }
+            )) {
+                ForEach(Language.allCases) { language in
+                    // O nome de cada idioma aparece **no próprio idioma**.
+                    // Quem abriu o app numa língua que não entende precisa
+                    // reconhecer a sua na lista, e para isso "Français" serve e
+                    // "Francês" não.
+                    Text(language.label).tag(language)
+                }
+            }
+            .pickerStyle(.radioGroup)
+
+            if loc.language == .system {
+                Text(L("Following macOS: %@", loc.language.resolved.label))
+                    .font(Typo.monoTiny)
+                    .foregroundStyle(palette.t3)
+            }
+
+            Text(L("The interface language. \"Same as macOS\" follows your system setting; anything else overrides it. Applies immediately."))
+                .font(Typo.monoTiny)
+                .foregroundStyle(palette.t3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(L("Numbers, sizes and dates always follow your system region, not this setting."))
+                .font(Typo.monoTiny)
+                .foregroundStyle(palette.t3)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

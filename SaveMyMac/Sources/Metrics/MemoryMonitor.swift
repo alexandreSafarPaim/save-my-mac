@@ -24,9 +24,9 @@ struct MemorySnapshot {
 
     var pressureLabel: String {
         switch pressureFraction {
-        case ..<0.35: return "Normal"
-        case ..<0.60: return "Moderada"
-        default: return "Alta"
+        case ..<0.35: return L("Normal")
+        case ..<0.60: return L("Moderate")
+        default: return L("High")
         }
     }
 }

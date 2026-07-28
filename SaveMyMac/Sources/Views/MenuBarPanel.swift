@@ -9,6 +9,7 @@ struct MenuBarPanel: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject var prefs: Preferences
     @EnvironmentObject var spaceAlert: SpaceAlert
+    @EnvironmentObject var loc: Localization
 
     /// A forma correta de trazer a janela de volta no macOS 13. Um
     /// `NSApp.sendAction` de "nova janela" não recria a cena do WindowGroup.
@@ -48,6 +49,7 @@ struct MenuBarPanel: View {
         .padding(14)
         .frame(width: 320)
         .background(palette.bg2)
+        .id(loc.language)
         .preferredColorScheme(state.theme.colorScheme)
     }
 
@@ -73,7 +75,7 @@ struct MenuBarPanel: View {
                 Text("\(state.health.score)")
                     .font(Typo.mono(19, .bold))
                     .foregroundStyle(palette.scoreTint(state.health.score))
-                Text("SAÚDE")
+                Text(L("Health").uppercased())
                     .font(Typo.mono(8))
                     .tracking(1.4)
                     .foregroundStyle(palette.t3)
@@ -87,11 +89,11 @@ struct MenuBarPanel: View {
                 .font(.system(size: 12))
                 .foregroundStyle(palette.danger)
             VStack(alignment: .leading, spacing: 1) {
-                Text("Pouco espaço no disco")
+                Text(L("Low disk space"))
                     .font(Typo.ui(12, .semibold))
                     .foregroundStyle(palette.t1)
                 if let volume = state.bootVolume {
-                    Text("\(Fmt.bytes(volume.available)) livres — abaixo do limiar de \(Int(prefs.lowSpaceThreshold)) %")
+                    Text(L("%@ free — below the %d %% threshold", Fmt.bytes(volume.available), Int(prefs.lowSpaceThreshold)))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -118,7 +120,7 @@ struct MenuBarPanel: View {
                 metricRow(
                     symbol: "internaldrive",
                     label: volume.name,
-                    value: "\(Fmt.bytes(volume.available)) livres",
+                    value: L("%@ free", Fmt.bytes(volume.available)),
                     fraction: volume.usedFraction,
                     tint: palette.usageTint(volume.usedFraction)
                 )
@@ -126,7 +128,7 @@ struct MenuBarPanel: View {
 
             metricRow(
                 symbol: "memorychip",
-                label: "Memória",
+                label: L("Memory"),
                 value: state.memory.pressureLabel,
                 fraction: state.memory.pressureFraction,
                 tint: palette.usageTint(state.memory.pressureFraction)
@@ -134,7 +136,7 @@ struct MenuBarPanel: View {
 
             metricRow(
                 symbol: "cpu",
-                label: "Processador",
+                label: L("Processor"),
                 value: Fmt.percent(state.cpu.busy),
                 fraction: state.cpu.busy,
                 tint: palette.usageTint(state.cpu.busy)
@@ -143,7 +145,7 @@ struct MenuBarPanel: View {
             if let temp = state.thermal.displayTemperature {
                 metricRow(
                     symbol: "thermometer.medium",
-                    label: "Temperatura",
+                    label: L("Temperature"),
                     value: Fmt.celsius(temp),
                     fraction: (temp / 100).clamped(0, 1),
                     tint: palette.temperatureTint(temp)
@@ -151,7 +153,7 @@ struct MenuBarPanel: View {
             } else {
                 metricRow(
                     symbol: "thermometer.medium",
-                    label: "Estado térmico",
+                    label: L("Thermal state"),
                     value: state.thermal.thermalStateLabel,
                     fraction: 0,
                     tint: palette.t3
@@ -161,7 +163,7 @@ struct MenuBarPanel: View {
             if state.trash.totalBytes > 0 {
                 metricRow(
                     symbol: "trash",
-                    label: "Lixeira",
+                    label: L("Trash"),
                     value: Fmt.bytes(state.trash.totalBytes),
                     fraction: 0,
                     tint: palette.warn
@@ -212,23 +214,23 @@ struct MenuBarPanel: View {
 
     private var actions: some View {
         VStack(spacing: 4) {
-            action("Abrir o SaveMyMac", "square.grid.2x2") { show(.dashboard) }
-            action("Analisar o Mac", "magnifyingglass") {
+            action(L("Open SaveMyMac"), "square.grid.2x2") { show(.dashboard) }
+            action(L("Analyze my Mac"), "magnifyingglass") {
                 state.startScan()
                 show(.cleanup)
             }
             if !state.trash.isEmpty {
-                action("Esvaziar a Lixeira (\(Fmt.bytes(state.trash.totalBytes)))", "trash") {
+                action(L("Empty the Trash (%@)", Fmt.bytes(state.trash.totalBytes)), "trash") {
                     show(.cleanup)
                 }
             }
-            action("Grandes arquivos", "square.stack.3d.up") { show(.files) }
-            action("Offload", "link") { show(.offload) }
+            action(L("Large files"), "square.stack.3d.up") { show(.files) }
+            action(L("Offload"), "link") { show(.offload) }
 
             Divider().overlay(palette.stroke).padding(.vertical, 3)
 
             settingsAction
-            action("Encerrar o SaveMyMac", "power") { NSApp.terminate(nil) }
+            action(L("Quit SaveMyMac"), "power") { NSApp.terminate(nil) }
         }
     }
 
@@ -236,7 +238,7 @@ struct MenuBarPanel: View {
     /// linha, que é a mesma das vizinhas.
     private var settingsAction: some View {
         SettingsOpener {
-            actionRow("Ajustes…", "gearshape")
+            actionRow(L("Settings…"), "gearshape")
         }
         .buttonStyle(MenuRowButtonStyle(palette: palette))
     }
