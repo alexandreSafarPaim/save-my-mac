@@ -1,0 +1,48 @@
+name: Feature request
+description: Suggest something the app should do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One thing to know before you write: **the app never deletes anything the
+        user did not check.** Suggestions built on automatic cleaning won't be
+        accepted, however convenient — that constraint is the point of the
+        project, not a limitation waiting to be lifted.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you hitting
+      description: Describe the situation, not the solution. It often turns out there's a better fix than the one that first comes to mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you have in mind
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried or considered
+      description: Including other tools, if relevant.
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: This does not require deleting or moving files without explicit user selection
+          required: true
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to build it?
+      options:
+        - label: I'd be up for opening a PR for this
+          required: false

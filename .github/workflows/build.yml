@@ -1,0 +1,98 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same PR cancels the older run — no point compiling a commit
+# nobody is going to look at.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile on macOS
+    runs-on: macos-14
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain versions
+        run: |
+          swift --version
+          sw_vers
+
+      # No flags on purpose. Every side effect in build.sh is opt-in:
+      # --install copies to /Applications and opens a System Settings pane,
+      # --dmg mounts a disk image, --run launches the app. None of that belongs
+      # in CI. Bare `./build.sh` only compiles and signs ad-hoc.
+      - name: Build (universal)
+        working-directory: SaveMyMac
+        run: |
+          chmod +x build.sh
+          ./build.sh --universal
+
+      # A compiled binary that isn't a loadable bundle would still "pass" a build
+      # step, so check the artifact rather than trusting the exit code.
+      - name: Verify the bundle
+        working-directory: SaveMyMac
+        run: |
+          APP=build/SaveMyMac.app
+          BIN="$APP/Contents/MacOS/SaveMyMac"
+
+          test -x "$BIN"          || { echo "::error::executable missing"; exit 1; }
+          test -f "$APP/Contents/Info.plist" || { echo "::error::Info.plist missing"; exit 1; }
+
+          echo "architectures: $(lipo -archs "$BIN")"
+          lipo -archs "$BIN" | grep -q arm64  || { echo "::error::no arm64 slice"; exit 1; }
+          lipo -archs "$BIN" | grep -q x86_64 || { echo "::error::no x86_64 slice"; exit 1; }
+
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          echo "bundle OK"
+
+      # Regression guard for two bugs that cost a lot of time and are invisible
+      # at compile time. Both are documented in CONTRIBUTING.md.
+      - name: Check for known regressions
+        working-directory: SaveMyMac
+        run: |
+          fail=0
+
+          # Both patterns are anchored to the start of a line so they match
+          # declarations and not prose. The first version of this check searched
+          # anywhere in the file and failed against the codebase itself: the
+          # comment in Preferences.swift explaining *why not to use* @Published
+          # contains the word four times. A guard that fires on its own
+          # documentation gets disabled by whoever hits it first.
+
+          # @Published republishes on every assignment, even when the value did
+          # not change. Combined with MenuBarExtra(isInserted:), which writes on
+          # every update pass, that produced an update cycle at CPU speed.
+          if grep -nE '^[[:space:]]*@Published' Sources/Support/Preferences.swift 2>/dev/null; then
+            echo "::error file=Sources/Support/Preferences.swift::Preferences must not use @Published — setters have to compare before publishing. See CONTRIBUTING.md."
+            fail=1
+          fi
+
+          # SMAppService.status is a synchronous XPC round trip to smd. Reading it
+          # from a view initializer froze the whole app. Lines starting with `//`
+          # or `///` are excluded so the explanation can mention the type.
+          if grep -rnE '^[[:space:]]*(//|///)' --invert-match Sources/Views/*.swift \
+               | grep -n 'SMAppService' 2>/dev/null; then
+            echo "::error::SMAppService must not be reached from Sources/Views — it blocks the main thread. Use LaunchAtLogin.snapshot / refresh()."
+            fail=1
+          fi
+
+          test "$fail" -eq 0 && echo "no known regressions"
+          exit $fail
+
+      - name: Upload app bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SaveMyMac-${{ github.sha }}
+          path: SaveMyMac/build/SaveMyMac.app
+          retention-days: 14
+          if-no-files-found: error
