@@ -113,11 +113,16 @@ struct SettingsView: View {
                         .foregroundStyle(palette.t1)
                 }
                 .toggleStyle(.switch)
+
+                Text("Com isto ligado o app mostra a métrica escolhida ao lado do relógio e o painel abre com um clique, sem precisar trazer a janela.")
+                    .font(Typo.monoTiny)
+                    .foregroundStyle(palette.t3)
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text("Desativada nesta versão.")
+                Text("Desligada pelo interruptor de emergência.")
                     .font(Typo.bodySmall)
                     .foregroundStyle(palette.warn)
-                Text("O item ao lado do relógio fazia o app travar na abertura e nem chegava a aparecer. Enquanto a causa não é identificada, ele não é carregado.\n\nPara testar mesmo assim, no Terminal:\ndefaults write br.com.pentagrama.savemymac enableMenuBar -bool true\ne reabra o app.")
+                Text("A chave `enableMenuBar` está em falso, ou o app está em modo seguro. Para religar, no Terminal:\ndefaults write br.com.pentagrama.savemymac enableMenuBar -bool true\ne reabra o app.")
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
                     .fixedSize(horizontal: false, vertical: true)

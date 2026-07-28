@@ -32,28 +32,36 @@ enum SafeMode {
     }()
 }
 
-/// A cena da barra de menus.
+/// A cena da barra de menus — **ligada por padrão**.
 ///
-/// **Desativada por padrão.** Ela foi adicionada, o app passou a travar na
-/// abertura e o item nunca apareceu ao lado do relógio — ou seja, o recurso não
-/// funcionava E quebrava o resto. Enquanto a causa não estiver identificada, o
-/// certo é o app abrir sem ela.
+/// Ela ficou desativada por um tempo, e vale registrar por quê, porque a
+/// conclusão foi errada: quando este recurso entrou, o app passou a travar na
+/// abertura e o item nunca apareceu ao lado do relógio. Parecia culpa dele.
 ///
-/// A decisão é lida **uma vez, no lançamento**, e a cena só é construída se
-/// estiver ligada. Um `isInserted: false` não bastaria: a cena continuaria
-/// existindo, o rótulo continuaria sendo avaliado a cada atualização de estado,
-/// e o suspeito seguiria no processo.
+/// Não era. A causa estava no `Preferences`, que usava `@Published`. O
+/// `MenuBarExtra(isInserted:)` escreve no binding a cada passagem de
+/// atualização, e `@Published` publica em toda atribuição — inclusive quando o
+/// valor não muda. Isso fechava um ciclo que consumia 100 % de um núcleo e
+/// impedia o grafo de convergir. **O item nunca apareceu porque o app nunca
+/// terminava a primeira atualização.** O recurso era vítima, não culpado.
 ///
-/// Para testar:
-///     defaults write br.com.pentagrama.savemymac enableMenuBar -bool true
-/// Para voltar:
+/// Corrigido o setter, ele funciona. A chave continua existindo como interruptor
+/// de emergência — é barato manter e evita ter que recompilar para isolar algo:
+///
 ///     defaults write br.com.pentagrama.savemymac enableMenuBar -bool false
+///
+/// A decisão é lida **uma vez, no lançamento**: alternar em tempo real
+/// reconstruiria a árvore de cenas, que é justamente o que não se quer testar
+/// enquanto se investiga instabilidade.
 enum MenuBarFeature {
 
     static let isEnabled: Bool = {
         guard !SafeMode.isOn else { return false }
-        // Padrão FALSE de propósito — ver acima.
-        let on = UserDefaults.standard.bool(forKey: "enableMenuBar")
+        let defaults = UserDefaults.standard
+        // Registrado aqui e não no `Preferences`: isto é lido no lançamento,
+        // possivelmente antes de `Preferences.init` existir.
+        defaults.register(defaults: ["enableMenuBar": true])
+        let on = defaults.bool(forKey: "enableMenuBar")
         NSLog("[SaveMyMac] Barra de menus: \(on ? "ligada" : "desligada")")
         return on
     }()

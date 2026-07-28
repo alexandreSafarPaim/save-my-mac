@@ -227,9 +227,18 @@ struct MenuBarPanel: View {
 
             Divider().overlay(palette.stroke).padding(.vertical, 3)
 
-            action("Ajustes…", "gearshape") { openSettings() }
+            settingsAction
             action("Encerrar o SaveMyMac", "power") { NSApp.terminate(nil) }
         }
+    }
+
+    /// O `SettingsOpener` cuida de *como* abrir; aqui só entra a aparência da
+    /// linha, que é a mesma das vizinhas.
+    private var settingsAction: some View {
+        SettingsOpener {
+            actionRow("Ajustes…", "gearshape")
+        }
+        .buttonStyle(MenuRowButtonStyle(palette: palette))
     }
 
     /// Traz a janela para a frente e leva até a aba pedida.
@@ -243,36 +252,32 @@ struct MenuBarPanel: View {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// O seletor mudou de nome no macOS 13 (`showSettingsWindow:`); o antigo
-    /// fica como rede de segurança.
-    private func openSettings() {
-        NSApp.activate(ignoringOtherApps: true)
-        let modern = Selector(("showSettingsWindow:"))
-        let legacy = Selector(("showPreferencesWindow:"))
-        if NSApp.responds(to: modern) || NSApp.delegate?.responds(to: modern) == true {
-            NSApp.sendAction(modern, to: nil, from: nil)
-        } else {
-            NSApp.sendAction(legacy, to: nil, from: nil)
-        }
-    }
-
     private func action(_ title: String, _ symbol: String, _ perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
-            HStack(spacing: 9) {
-                Image(systemName: symbol)
-                    .font(.system(size: 11))
-                    .frame(width: 15)
-                Text(title)
-                    .font(Typo.bodySmall)
-                    .lineLimit(1)
-                Spacer()
-            }
-            .foregroundStyle(palette.t1)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .contentShape(Rectangle())
+            actionRow(title, symbol)
         }
         .buttonStyle(MenuRowButtonStyle(palette: palette))
+    }
+
+    /// O conteúdo visual de uma linha, separado do `Button`.
+    ///
+    /// Existe porque o `SettingsLink` é seu próprio controle e não aceita uma
+    /// ação — ele precisa do mesmo rótulo sem o botão em volta. Sem essa
+    /// separação, a linha de Ajustes ficaria com aparência diferente das outras.
+    private func actionRow(_ title: String, _ symbol: String) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: symbol)
+                .font(.system(size: 11))
+                .frame(width: 15)
+            Text(title)
+                .font(Typo.bodySmall)
+                .lineLimit(1)
+            Spacer()
+        }
+        .foregroundStyle(palette.t1)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
     }
 }
 
@@ -322,13 +327,31 @@ struct MenuBarLabel: View {
         // Mantido no mínimo de propósito. A Apple documenta suporte limitado a
         // views no rótulo do MenuBarExtra, e ele re-renderiza a cada tique de
         // 2 s — qualquer coisa mais pesada aqui custa caro o dia inteiro.
+        //
+        // O contador é a rede de segurança deste recurso. Ele observa o
+        // `AppState`, que publica várias vezes por tique; se algum dia isso
+        // virar ciclo outra vez, o número aparece no rastro antes de o app
+        // ficar sem resposta. Em uso normal deve crescer devagar.
+        let _ = Trace.count("rótulo da barra de menus", every: 300)
+
         if !MenuBarFeature.isEnabled {
             EmptyView()
         } else if let text = valueText {
-            Label(text, systemImage: isLow ? "exclamationmark.triangle.fill" : "sparkle")
+            // `.titleAndIcon` é obrigatório aqui.
+            //
+            // Um `Label` num item de barra de status usa, por padrão, só o
+            // ícone — o título é descartado sem aviso. O item aparecia, mas
+            // como um `sparkle` solitário no meio de seis outros ícones, o que
+            // é indistinguível de "não apareceu".
+            Label(text, systemImage: symbol)
+                .labelStyle(.titleAndIcon)
         } else {
-            Image(systemName: isLow ? "exclamationmark.triangle.fill" : "sparkle")
+            Image(systemName: symbol)
         }
+    }
+
+    private var symbol: String {
+        isLow ? "exclamationmark.triangle.fill" : "sparkle"
     }
 
     private var valueText: String? {

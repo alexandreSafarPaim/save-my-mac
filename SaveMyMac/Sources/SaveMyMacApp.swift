@@ -73,6 +73,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if hide {
             NSApp.setActivationPolicy(.accessory)
         }
+
+        checkStatusItem()
+    }
+
+    /// Confere se o item da barra de menus está de fato **visível**.
+    ///
+    /// A versão anterior deste método só olhava se existia uma janela com
+    /// "StatusBar" no nome e escrevia "✅ item presente". Isso era um falso
+    /// positivo caro: o SwiftUI cria a janela da cena mesmo com
+    /// `isInserted: false`, então o rastro afirmava que estava tudo bem enquanto
+    /// não havia ícone nenhum na tela. Um diagnóstico que mente é pior que
+    /// nenhum — custou uma rodada inteira.
+    ///
+    /// Agora ele relata as três coisas que decidem a questão, separadas: a trava
+    /// do recurso, a preferência do usuário, e se a janela está visível.
+    private func checkStatusItem() {
+        guard MenuBarFeature.isEnabled else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            let wanted = UserDefaults.standard.bool(forKey: "showMenuBarExtra")
+            let window = NSApp.windows.first { $0.className.contains("StatusBar") }
+
+            Trace.mark("barra de menus — recurso: ligado · preferência showMenuBarExtra: \(wanted)")
+
+            switch (wanted, window?.isVisible) {
+            case (false, _):
+                Trace.mark("⚠️  ÍCONE OCULTO: a preferência está em falso. "
+                    + "Ligue em Ajustes (⌘,) ou: defaults write "
+                    + "br.com.pentagrama.savemymac showMenuBarExtra -bool true")
+            case (true, .some(true)):
+                Trace.mark("✅ ícone visível na barra de menus")
+            case (true, .some(false)):
+                Trace.mark("⚠️  janela do item existe mas está invisível")
+            case (true, .none):
+                Trace.mark("⚠️  preferência ligada mas nenhuma janela de status foi criada")
+            }
+        }
     }
 
     /// Clicar no ícone do Dock com a janela fechada deve reabrir a janela.
@@ -377,30 +413,54 @@ struct TitleStrip: View {
 
             Spacer()
 
-            Button {
-                state.toggleTheme()
-            } label: {
-                HStack(spacing: 7) {
-                    Circle()
-                        .fill(palette.cyan)
-                        .frame(width: 8, height: 8)
-                        .shadow(color: palette.cyan, radius: 5)
-                    Text(state.theme.label)
-                        .font(Typo.mono(11.5))
-                        .tracking(0.9)
-                }
-                .foregroundStyle(palette.t2)
-                .padding(.horizontal, 12)
-                .frame(height: 28)
-                .background(Capsule().fill(palette.card2))
-                .overlay(Capsule().strokeBorder(palette.stroke2, lineWidth: 1))
+            HStack(spacing: 8) {
+                settingsButton
+                themeButton
             }
-            .buttonStyle(.plain)
-            .help("Alternar entre tema claro e escuro (⇧⌘T)")
         }
         .padding(.horizontal, 16)
         .frame(height: 46)
         .background(palette.card)
+    }
+
+    /// Redondo e só com ícone de propósito: ao lado da cápsula de tema, dois
+    /// controles do mesmo tamanho e formato competiriam pela atenção. Ajustes é
+    /// destino, não interruptor.
+    private var settingsButton: some View {
+        SettingsOpener {
+            Image(systemName: "gearshape")
+                .font(.system(size: 12.5))
+                .foregroundStyle(palette.t2)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(palette.card2))
+                .overlay(Circle().strokeBorder(palette.stroke2, lineWidth: 1))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help("Ajustes do SaveMyMac (⌘,)")
+    }
+
+    private var themeButton: some View {
+        Button {
+            state.toggleTheme()
+        } label: {
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(palette.cyan)
+                    .frame(width: 8, height: 8)
+                    .shadow(color: palette.cyan, radius: 5)
+                Text(state.theme.label)
+                    .font(Typo.mono(11.5))
+                    .tracking(0.9)
+            }
+            .foregroundStyle(palette.t2)
+            .padding(.horizontal, 12)
+            .frame(height: 28)
+            .background(Capsule().fill(palette.card2))
+            .overlay(Capsule().strokeBorder(palette.stroke2, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .help("Alternar entre tema claro e escuro (⇧⌘T)")
     }
 }
 

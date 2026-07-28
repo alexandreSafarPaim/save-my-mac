@@ -142,6 +142,27 @@ final class Preferences: ObservableObject {
             Key.lowSpaceThreshold: 10.0
         ])
 
+        // Reparo pontual de um valor escrito por defeito, não pelo usuário.
+        //
+        // Durante o ciclo de atualização infinito, o `MenuBarExtra` escrevia
+        // `false` no binding milhares de vezes, e o `didSet` de então persistia
+        // cada uma em `UserDefaults`. Resultado: a preferência ficou gravada
+        // como falsa sem que ninguém tivesse desligado nada — e `register`
+        // não sobrepõe valor explicitamente gravado. O ícone então nunca
+        // aparecia, mesmo com o recurso ligado e o bug corrigido.
+        //
+        // Isto roda uma única vez, marcado por chave própria. Não é o app
+        // ignorando a escolha do usuário: é o app desfazendo a escolha que ele
+        // nunca fez. Depois desta vez, a preferência é respeitada sempre.
+        let repairKey = "menuBarPreferenceRepaired.v1"
+        if !defaults.bool(forKey: repairKey) {
+            defaults.set(true, forKey: repairKey)
+            if MenuBarFeature.isEnabled {
+                defaults.set(true, forKey: Key.showMenuBar)
+                NSLog("[SaveMyMac] Preferência da barra de menus restaurada para ligada.")
+            }
+        }
+
         // A trava do recurso é aplicada aqui, uma vez. A cena recebe o binding
         // projetado direto; envolvê-lo para aplicar a trava criaria um objeto
         // novo a cada avaliação, que é outro jeito de nunca convergir.

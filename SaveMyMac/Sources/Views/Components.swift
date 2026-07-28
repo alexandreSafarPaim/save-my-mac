@@ -815,6 +815,40 @@ struct AppIconView: View {
 
 // MARK: - Rodapé fixo de ação
 
+/// Abre a janela de Ajustes, com o rótulo que você quiser.
+///
+/// Existe para a decisão de *como* abrir Ajustes ficar num lugar só. A primeira
+/// tentativa mandava `showSettingsWindow:` pela cadeia de resposta e falhava em
+/// silêncio: esse seletor pertence ao delegate interno do SwiftUI, e com
+/// `NSApplicationDelegateAdaptor` o nosso delegate ocupa aquele lugar.
+///
+/// `SettingsLink` é a API oficial e não depende de adivinhar nome de seletor.
+/// Vale do macOS 14 em diante; abaixo, tenta os dois seletores — sem checar
+/// `responds(to:)`, que era justamente o que descartava o caminho certo.
+///
+/// Um detalhe que só aparece no uso: `SettingsLink` é um controle próprio, não
+/// um `Button` com ação. Por isso este tipo recebe apenas o rótulo, e quem usa
+/// aplica o `.buttonStyle` por fora — é o que mantém a linha do painel da barra
+/// de menus idêntica às vizinhas.
+struct SettingsOpener<Label: View>: View {
+    @ViewBuilder var label: () -> Label
+
+    var body: some View {
+        if #available(macOS 14.0, *) {
+            SettingsLink(label: label)
+        } else {
+            Button(action: openLegacy, label: label)
+        }
+    }
+
+    private func openLegacy() {
+        NSApp.activate(ignoringOtherApps: true)
+        if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
+            _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        }
+    }
+}
+
 struct StickyActionBar<Content: View>: View {
     var palette: Palette
     @ViewBuilder var content: () -> Content
