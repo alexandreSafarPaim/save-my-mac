@@ -246,7 +246,7 @@ struct GradientRing: View {
 struct ScoreRing: View {
     var score: Int
     var palette: Palette
-    var caption: String = "SAÚDE"
+    var caption: String = L("Health").uppercased()
 
     var body: some View {
         ZStack {

@@ -13,7 +13,7 @@ enum RiskLevel: Int, Comparable, CaseIterable {
     var label: String {
         switch self {
         case .safe: return "Seguro"
-        case .caution: return "Atenção"
+        case .caution: return L("Caution")
         case .review: return "Revisar"
         }
     }
@@ -21,11 +21,11 @@ enum RiskLevel: Int, Comparable, CaseIterable {
     var explanation: String {
         switch self {
         case .safe:
-            return "Arquivos temporários que o sistema recria automaticamente."
+            return L("Temporary files the system recreates automatically.")
         case .caution:
-            return "Pode ser removido, mas será baixado ou reconstruído na próxima vez que você usar o app."
+            return L("Can be removed, but it will be downloaded or rebuilt the next time you use the app.")
         case .review:
-            return "Pode conter arquivos seus. Confira item por item antes de marcar."
+            return L("May contain your own files. Check item by item before selecting.")
         }
     }
 }
@@ -80,17 +80,17 @@ enum CleanupMode: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .trash: return "Mover para a Lixeira"
-        case .permanent: return "Apagar definitivamente"
+        case .trash: return L("Move to Trash")
+        case .permanent: return L("Delete permanently")
         }
     }
 
     var description: String {
         switch self {
         case .trash:
-            return "Mais seguro: você pode restaurar. O espaço só volta ao esvaziar a Lixeira — o que dá para fazer aqui mesmo, no card do topo."
+            return L("Safer: you can restore. The space only comes back when the Trash is emptied — which you can do right here, in the card at the top.")
         case .permanent:
-            return "Libera o espaço imediatamente, sem possibilidade de recuperação."
+            return L("Frees the space immediately, with no chance of recovery.")
         }
     }
 }

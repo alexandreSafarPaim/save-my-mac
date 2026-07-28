@@ -30,7 +30,8 @@ struct CelebrationOverlay: View {
                     .foregroundStyle(palette.t1)
 
                 HStack(spacing: 6) {
-                    Text("\(celebration.wentToTrash ? "movidos para a Lixeira" : "liberados") · saúde \(celebration.score) ·")
+                    Text((celebration.wentToTrash ? L("moved to the Trash") : L("freed"))
+                         + L(" · health %d · ", celebration.score))
                         .font(Typo.bodySmall)
                         .foregroundStyle(palette.t2)
                     Text("+\(celebration.xp) XP")
@@ -39,7 +40,7 @@ struct CelebrationOverlay: View {
                 }
 
                 if celebration.wentToTrash {
-                    Text("O espaço só volta ao esvaziar a Lixeira.")
+                    Text(L("The space only comes back when you empty the Trash."))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
@@ -48,7 +49,7 @@ struct CelebrationOverlay: View {
                     VStack(spacing: 8) {
                         Divider().overlay(palette.stroke).frame(width: 200)
                         MicroLabel(
-                            text: celebration.unlocked.count == 1 ? "Conquista desbloqueada" : "Conquistas desbloqueadas",
+                            text: celebration.unlocked.count == 1 ? L("Achievement unlocked") : L("Achievements unlocked"),
                             palette: palette
                         )
                         HStack(spacing: 10) {

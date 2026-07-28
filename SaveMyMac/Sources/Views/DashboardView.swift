@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject var loc: Localization
     @Binding var selection: AppSection
     @State private var showFactors = false
 
@@ -44,19 +45,19 @@ struct DashboardView: View {
 
     private var header: some View {
         ScreenHeader(
-            eyebrow: "Painel do sistema",
+            eyebrow: L("System dashboard"),
             title: state.system.modelName,
-            subtitle: "\(state.system.modelIdentifier) · \(Fmt.bytes(state.system.totalMemory)) de RAM · \(state.system.osVersion)",
+            subtitle: L("%@ · %@ of RAM · %@", state.system.modelIdentifier, Fmt.bytes(state.system.totalMemory), state.system.osVersion),
             palette: palette,
             large: true
         ) {
             VStack(alignment: .trailing, spacing: 3) {
-                Text("Ligado há \(Fmt.duration(state.system.uptime))")
+                Text(L("Up for %@", Fmt.duration(state.system.uptime)))
                     .font(Typo.monoCaption)
                     .foregroundStyle(palette.t2)
                 HStack(spacing: 6) {
                     LiveDot(palette: palette)
-                    Text("ao vivo · 2 s")
+                    Text(L("live · 2 s"))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
@@ -87,7 +88,7 @@ struct DashboardView: View {
 
                         FlowLayout(spacing: 10, lineSpacing: 10) {
                             PrimaryButton(
-                                title: state.categories.isEmpty ? "Analisar o Mac" : "Limpar agora",
+                                title: state.categories.isEmpty ? L("Analyze my Mac") : L("Clean now"),
                                 palette: palette
                             ) {
                                 if state.categories.isEmpty {
@@ -95,7 +96,7 @@ struct DashboardView: View {
                                 }
                                 selection = .cleanup
                             }
-                            GhostButton(title: "Ver o que ocupa espaço", palette: palette) {
+                            GhostButton(title: L("See what takes up space"), palette: palette) {
                                 if state.files.isEmpty { state.startFilesScan() }
                                 selection = .files
                             }
@@ -111,7 +112,7 @@ struct DashboardView: View {
                     HStack(spacing: 6) {
                         Image(systemName: showFactors ? "chevron.up" : "chevron.down")
                             .font(.system(size: 9, weight: .bold))
-                        Text("Como esse número é calculado")
+                        Text(L("How this number is calculated"))
                             .font(Typo.caption)
                     }
                     .foregroundStyle(palette.t2)
@@ -120,7 +121,7 @@ struct DashboardView: View {
 
                 if showFactors {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("O score é do próprio app, não do macOS. Cada fator entra com um peso:")
+                        Text(L("The score belongs to the app, not to macOS. Each factor carries a weight:"))
                             .font(Typo.caption)
                             .foregroundStyle(palette.t3)
                             .fixedSize(horizontal: false, vertical: true)
@@ -157,10 +158,12 @@ struct DashboardView: View {
 
     private var heroDetail: String {
         if state.categories.isEmpty {
-            return "Nenhuma análise feita ainda. Uma varredura completa leva menos de um minuto e não apaga nada."
+            return L("No scan yet. A full scan takes under a minute and deletes nothing.")
         }
         let count = state.categories.count
-        return "Encontramos \(Fmt.bytes(state.totalReclaimable)) de lixo recuperável em \(count) categoria\(count == 1 ? "" : "s")."
+        return Lp("We found %@ of reclaimable junk in %d category",
+                  "We found %@ of reclaimable junk in %d categories",
+                  count, Fmt.bytes(state.totalReclaimable))
     }
 
     // MARK: - Conquistas
@@ -203,7 +206,7 @@ struct DashboardView: View {
 
                 VStack(alignment: .leading, spacing: 7) {
                     HStack {
-                        Text("Meta do mês · \(Fmt.bytes(state.game.state.monthlyGoalBytes))")
+                        Text(L("Monthly goal · %@", Fmt.bytes(state.game.state.monthlyGoalBytes)))
                             .font(Typo.caption)
                             .foregroundStyle(palette.t2)
                         Spacer()
@@ -228,7 +231,7 @@ struct DashboardView: View {
         Panel(palette: palette, cornerRadius: 18, padding: 18) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    MicroLabel(text: "Memória", palette: palette)
+                    MicroLabel(text: L("Memory"), palette: palette)
                     Spacer()
                     Text(Fmt.bytes(state.memory.total))
                         .font(Typo.monoCaption)
@@ -248,12 +251,12 @@ struct DashboardView: View {
                 GradientBar(value: state.memory.usedFraction, palette: palette)
 
                 VStack(alignment: .leading, spacing: 5) {
-                    StatRow(key: "Disponível", value: Fmt.bytes(state.memory.available), palette: palette)
-                    StatRow(key: "Em uso", value: Fmt.bytes(state.memory.used), palette: palette)
-                    StatRow(key: "Pressão", value: state.memory.pressureLabel, palette: palette)
+                    StatRow(key: L("Available"), value: Fmt.bytes(state.memory.available), palette: palette)
+                    StatRow(key: L("In use"), value: Fmt.bytes(state.memory.used), palette: palette)
+                    StatRow(key: L("Pressure"), value: state.memory.pressureLabel, palette: palette)
                     StatRow(
                         key: "Swap",
-                        value: state.swap.used == 0 ? "não usado" : Fmt.bytes(state.swap.used),
+                        value: state.swap.used == 0 ? L("unused") : Fmt.bytes(state.swap.used),
                         palette: palette
                     )
                 }
@@ -262,15 +265,15 @@ struct DashboardView: View {
 
                 // A pressão ao longo do tempo responde a pergunta que o número
                 // instantâneo não responde: preciso de mais RAM ou não?
-                MicroLabel(text: "Pressão de memória", palette: palette)
+                MicroLabel(text: L("Memory pressure"), palette: palette)
                 PressureChart(values: state.memoryHistory.pressureCurve, palette: palette)
 
-                Text(state.memoryHistory.verdict ?? "Coletando amostras…")
+                Text(state.memoryHistory.verdict ?? L("Collecting samples…"))
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("No macOS, RAM livre é RAM desperdiçada: o sistema usa a sobra como cache de disco. O que importa é esta curva, não o percentual.")
+                Text(L("On macOS, free RAM is wasted RAM: the system uses the leftover as disk cache. What matters is this curve, not the percentage."))
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -286,10 +289,10 @@ struct DashboardView: View {
             unit: "%",
             fraction: state.cpu.busy,
             rows: [
-                ("Núcleos", coreDescription),
+                (L("Cores"), coreDescription),
                 ("Load average", String(format: "%.2f", state.cpu.loadAverage.first ?? 0)),
                 ("Processos", "\(state.cpu.processCount)"),
-                ("Sistema / usuário", "\(Fmt.percent(state.cpu.system)) / \(Fmt.percent(state.cpu.user))")
+                (L("System / user"), "\(Fmt.percent(state.cpu.system)) / \(Fmt.percent(state.cpu.user))")
             ],
             palette: palette
         )
@@ -306,7 +309,7 @@ struct DashboardView: View {
         if info.performanceCores > 0 && info.efficiencyCores > 0 {
             return "\(info.logicalCores) (\(info.performanceCores)P + \(info.efficiencyCores)E)"
         }
-        return "\(info.logicalCores) / \(info.physicalCores) físicos"
+        return L("%d / %d physical", info.logicalCores, info.physicalCores)
     }
 
     private var thermalCard: some View {
@@ -346,7 +349,7 @@ struct DashboardView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 5) {
-                    StatRow(key: "Estado térmico", value: state.thermal.thermalStateLabel, palette: palette)
+                    StatRow(key: L("Thermal state"), value: state.thermal.thermalStateLabel, palette: palette)
                     if let cpu = state.thermal.cpuTemperature {
                         StatRow(key: "CPU / SoC", value: Fmt.celsius(cpu), palette: palette)
                     }
@@ -369,13 +372,13 @@ struct DashboardView: View {
                         HStack(spacing: 5) {
                             Image(systemName: "lock.open")
                                 .font(.system(size: 9))
-                            Text("Ler sensores com senha de admin")
+                            Text(L("Read sensors with admin password"))
                                 .font(Typo.monoTiny)
                         }
                         .foregroundStyle(palette.cyan)
                     }
                     .buttonStyle(.plain)
-                    .help("Executa powermetrics uma vez. O macOS pedirá sua senha.")
+                    .help(L("Runs powermetrics once. macOS will ask for your password."))
                 }
             }
         }
@@ -445,7 +448,7 @@ struct DashboardView: View {
         Panel(palette: palette) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Text("Quem está consumindo")
+                    Text(L("What's using resources"))
                         .font(Typo.cardTitle)
                         .foregroundStyle(palette.t1)
                     Spacer()
@@ -461,7 +464,7 @@ struct DashboardView: View {
                         Image(systemName: "hourglass")
                             .font(.system(size: 11))
                             .foregroundStyle(palette.t3)
-                        Text(state.processFailure ?? "Lendo a lista de processos…")
+                        Text(state.processFailure ?? L("Reading the process list…"))
                             .font(Typo.caption)
                             .foregroundStyle(state.processFailure == nil ? palette.t3 : palette.warn)
                             .fixedSize(horizontal: false, vertical: true)
@@ -469,7 +472,7 @@ struct DashboardView: View {
                 }
 
                 if !state.topByMemory.isEmpty {
-                    MicroLabel(text: "Por memória", palette: palette)
+                    MicroLabel(text: L("By memory"), palette: palette)
                     VStack(spacing: 0) {
                         ForEach(state.topByMemory.prefix(6)) { row in
                             processRow(row, value: Fmt.bytes(row.memoryBytes))
@@ -487,7 +490,7 @@ struct DashboardView: View {
                     }
                 }
 
-                Text("Encerrar pede ao app para sair, e ele pode perguntar sobre trabalho não salvo. Forçar só com confirmação.")
+                Text(L("Quitting asks the app to exit, and it may ask about unsaved work. Force quit only with confirmation."))
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -514,7 +517,7 @@ struct DashboardView: View {
 
             if let extra = state.growthAmount(row) {
                 Chip(text: "+\(Fmt.bytes(extra))", palette: palette, color: palette.warn)
-                    .help("Cresceu \(Fmt.bytes(extra)) desde que o app começou a observar. Pode ser vazamento.")
+                    .help(L("Grew %@ since the app started watching. Could be a leak.", Fmt.bytes(extra)))
             }
 
             Spacer(minLength: 6)
@@ -531,8 +534,8 @@ struct DashboardView: View {
                         Text(warning)
                         Divider()
                     }
-                    Button("Pedir para encerrar") { state.requestQuit(row) }
-                    Button("Forçar encerramento…", role: .destructive) {
+                    Button(L("Ask it to quit")) { state.requestQuit(row) }
+                    Button(L("Force quit…"), role: .destructive) {
                         state.pendingForceQuit = row
                     }
                 }
@@ -556,7 +559,7 @@ struct DashboardView: View {
         Panel(palette: palette) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Text("Histórico")
+                    Text(L("History"))
                         .font(Typo.cardTitle)
                         .foregroundStyle(palette.t1)
                     Spacer()
@@ -566,7 +569,7 @@ struct DashboardView: View {
                 }
 
                 if state.game.state.history.isEmpty {
-                    Text("Nada registrado ainda. Cada limpeza, cache removido ou app desinstalado entra aqui com data e tamanho real.")
+                    Text(L("Nothing recorded yet. Every cleanup, removed cache or uninstalled app lands here with a date and its real size."))
                         .font(Typo.caption)
                         .foregroundStyle(palette.t3)
                         .fixedSize(horizontal: false, vertical: true)

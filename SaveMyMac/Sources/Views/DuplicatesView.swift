@@ -61,7 +61,7 @@ struct DuplicatesView: View {
             Button(state.cleanupMode.label, role: .destructive) {
                 state.removeSelectedDuplicates()
             }
-            Button("Cancelar", role: .cancel) {}
+            Button(L("Cancel"), role: .cancel) {}
         } message: {
             Text("A cópia mais antiga de cada grupo é sempre preservada e nunca aparece na remoção.\n\n\(state.cleanupMode.description)")
         }
@@ -80,7 +80,7 @@ struct DuplicatesView: View {
         ) {
             FlowLayout(spacing: 10, lineSpacing: 8) {
                 if state.isScanningFiles {
-                    GhostButton(title: "Cancelar", palette: palette) { state.cancelFilesScan() }
+                    GhostButton(title: L("Cancel"), palette: palette) { state.cancelFilesScan() }
                 } else {
                     GhostButton(title: "Analisar", systemImage: "magnifyingglass", palette: palette) {
                         state.startFilesScan()

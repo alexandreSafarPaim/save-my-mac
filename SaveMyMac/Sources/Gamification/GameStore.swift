@@ -12,30 +12,30 @@ struct Achievement: Identifiable, Hashable {
 
 enum Achievements {
     static let all: [Achievement] = [
-        .init(id: "first_clean", symbol: "sparkles", name: "Primeira limpeza",
-              requirement: "Faça sua primeira limpeza"),
+        .init(id: "first_clean", symbol: "sparkles", name: L("First cleanup"),
+              requirement: L("Run your first cleanup")),
         .init(id: "freed_50", symbol: "bolt.fill", name: "50 GB liberados",
-              requirement: "Libere 50 GB no total"),
-        .init(id: "streak_4", symbol: "flame.fill", name: "Streak de 4 semanas",
-              requirement: "Limpe em 4 semanas seguidas"),
-        .init(id: "first_offload", symbol: "link", name: "Primeiro offload",
-              requirement: "Mova uma pasta para outro disco com link"),
+              requirement: L("Free up 50 GB in total")),
+        .init(id: "streak_4", symbol: "flame.fill", name: L("4-week streak"),
+              requirement: L("Clean 4 weeks in a row")),
+        .init(id: "first_offload", symbol: "link", name: L("First offload"),
+              requirement: L("Move a folder to another disk with a link")),
         .init(id: "freed_100", symbol: "mountain.2.fill", name: "100 GB liberados",
-              requirement: "Libere 100 GB no total"),
-        .init(id: "zero_dupes", symbol: "circle.grid.cross.fill", name: "Zero duplicados",
-              requirement: "Fique sem nenhum arquivo duplicado"),
+              requirement: L("Free up 100 GB in total")),
+        .init(id: "zero_dupes", symbol: "circle.grid.cross.fill", name: L("Zero duplicates"),
+              requirement: L("End up with no duplicate files")),
         .init(id: "score_95", symbol: "shield.fill", name: "Score 95+",
-              requirement: "Chegue a 95 de saúde"),
-        .init(id: "level_10", symbol: "crown.fill", name: "Nível 10",
-              requirement: "Alcance o nível 10"),
-        .init(id: "app_purge", symbol: "trash.fill", name: "Faxina de apps",
-              requirement: "Desinstale 5 apps completamente"),
-        .init(id: "cache_master", symbol: "shippingbox.fill", name: "Cache zero",
-              requirement: "Limpe o cache de 10 apps"),
-        .init(id: "streak_12", symbol: "calendar.badge.checkmark", name: "Trimestre limpo",
-              requirement: "Limpe em 12 semanas seguidas"),
+              requirement: L("Reach 95 health")),
+        .init(id: "level_10", symbol: "crown.fill", name: L("Level 10"),
+              requirement: L("Reach level 10")),
+        .init(id: "app_purge", symbol: "trash.fill", name: L("App spring cleaning"),
+              requirement: L("Uninstall 5 apps completely")),
+        .init(id: "cache_master", symbol: "shippingbox.fill", name: L("Zero cache"),
+              requirement: L("Clear the cache of 10 apps")),
+        .init(id: "streak_12", symbol: "calendar.badge.checkmark", name: L("Clean quarter"),
+              requirement: L("Clean 12 weeks in a row")),
         .init(id: "offload_100", symbol: "externaldrive.fill.badge.checkmark", name: "100 GB descarregados",
-              requirement: "Mantenha 100 GB fora do disco do Mac")
+              requirement: L("Keep 100 GB off the Mac's disk"))
     ]
 }
 
@@ -46,7 +46,7 @@ struct CleanupRecord: Codable, Identifiable {
     var date: Date
     var bytes: Int64
     var itemCount: Int
-    var kind: String        // "limpeza", "lixeira", "cache", "desinstalação", "offload"
+    var kind: String        // "limpeza", "lixeira", "cache", L("uninstall"), "offload"
 }
 
 struct GameState: Codable {
@@ -160,7 +160,7 @@ final class GameStore: ObservableObject {
 
         switch kind {
         case "limpeza", "lixeira": state.cleanCount += 1
-        case "desinstalação": state.appsUninstalled += 1
+        case L("uninstall"): state.appsUninstalled += 1
         case "cache": state.appCachesCleared += 1
         case "offload": state.offloadCount += 1
         default: break

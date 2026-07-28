@@ -59,7 +59,7 @@ struct AppsView: View {
                     pendingUninstall = nil
                 }
             }
-            Button("Cancelar", role: .cancel) { pendingUninstall = nil }
+            Button(L("Cancel"), role: .cancel) { pendingUninstall = nil }
         } message: {
             if let app = pendingUninstall {
                 Text("Vão para a Lixeira o app (\(Fmt.bytes(app.bundleSize))) e \(app.residues.count) itens de dados de apoio (\(Fmt.bytes(app.residueSize))). Total: \(Fmt.bytes(app.totalSize)).\n\nNada é apagado de forma irreversível — você pode restaurar da Lixeira.")
@@ -88,7 +88,7 @@ struct AppsView: View {
                         .foregroundStyle(palette.t3)
                 }
                 if state.isScanningApps {
-                    GhostButton(title: "Cancelar", palette: palette) { state.cancelAppsScan() }
+                    GhostButton(title: L("Cancel"), palette: palette) { state.cancelAppsScan() }
                 } else {
                     GhostButton(title: "Analisar apps", systemImage: "magnifyingglass", palette: palette) {
                         state.startAppsScan()

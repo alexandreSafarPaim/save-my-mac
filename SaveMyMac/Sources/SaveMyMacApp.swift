@@ -378,7 +378,7 @@ struct RootView: View {
                     state.forceQuit(row)
                 }
             }
-            Button("Cancelar", role: .cancel) { state.pendingForceQuit = nil }
+            Button(L("Cancel"), role: .cancel) { state.pendingForceQuit = nil }
         } message: {
             Text("Forçar mata o processo na hora. Tudo que não foi salvo é perdido, sem chance de o app perguntar.\n\nSe ainda não tentou, prefira \"Pedir para encerrar\".")
         }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CleanupView: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject var loc: Localization
     @State private var expanded: Set<UUID> = []
     @State private var confirming = false
     @State private var confirmingEmptyTrash = false
@@ -29,14 +30,14 @@ struct CleanupView: View {
                             // modificadores de apresentação no mesmo nó competem
                             // e só um abre.
                             .confirmationDialog(
-                                "Esvaziar a Lixeira: \(state.trash.count) itens (\(Fmt.bytes(state.trash.totalBytes)))?",
+                                L("Empty the Trash: %d items (%@)?", state.trash.count, Fmt.bytes(state.trash.totalBytes)),
                                 isPresented: $confirmingEmptyTrash,
                                 titleVisibility: .visible
                             ) {
-                                Button("Esvaziar definitivamente", role: .destructive) {
+                                Button(L("Empty permanently"), role: .destructive) {
                                     state.emptyTrash()
                                 }
-                                Button("Cancelar", role: .cancel) {}
+                                Button(L("Cancel"), role: .cancel) {}
                             } message: {
                                 Text(emptyTrashMessage)
                             }
@@ -46,20 +47,20 @@ struct CleanupView: View {
                         VStack(spacing: 14) {
                             EmptyStateView(
                                 symbol: "sparkles.rectangle.stack",
-                                title: "Nada analisado ainda",
-                                message: "Mapeia caches, logs, builds do Xcode, caches de gerenciadores de pacotes, backups de iPhone e sobras de apps.",
+                                title: L("Nothing scanned yet"),
+                                message: L("It maps caches, logs, Xcode builds, package manager caches, iPhone backups and app leftovers."),
                                 palette: palette,
-                                hint: "A varredura é somente leitura."
+                                hint: L("The scan is read-only.")
                             )
                             GhostButton(
-                                title: "Conceder Acesso Total ao Disco",
+                                title: L("Grant Full Disk Access"),
                                 systemImage: "lock.shield",
                                 palette: palette,
                                 tint: palette.cyan
                             ) {
                                 state.openFullDiskAccessSettings()
                             }
-                            .help("Sem essa permissão várias pastas voltam vazias e os números ficam subestimados.")
+                            .help(L("Without that permission several folders come back empty and the numbers are underestimated."))
                         }
                         .frame(minHeight: 320)
                     } else {
@@ -88,18 +89,18 @@ struct CleanupView: View {
             Button(state.cleanupMode.label, role: .destructive) {
                 state.removeSelected()
             }
-            Button("Cancelar", role: .cancel) {}
+            Button(L("Cancel"), role: .cancel) {}
         } message: {
             Text(confirmMessage)
         }
     }
 
     private var emptyTrashMessage: String {
-        var text = "Isto é permanente: não existe mover para a Lixeira o que já está nela. É a única ação do app sem volta."
+        var text = L("This is permanent: there is no moving to the Trash what is already in it. It is the only action in the app with no way back.")
         if let oldest = state.trash.oldestLabel {
-            text += "\n\nO item mais antigo foi descartado \(oldest)."
+            text += L("\n\nThe oldest item was discarded %@.", oldest)
         }
-        text += "\n\nEscopo: apenas a Lixeira do Mac. A Lixeira dos discos externos não é tocada."
+        text += L("\n\nScope: the Mac's Trash only. The Trash on external disks is not touched.")
         return text
     }
 
@@ -138,11 +139,11 @@ struct CleanupView: View {
                 }
             } else {
                 FlowLayout(spacing: 8, lineSpacing: 8) {
-                    GhostButton(title: "Abrir no Finder", palette: palette) {
+                    GhostButton(title: L("Open in Finder"), palette: palette) {
                         state.openTrashInFinder()
                     }
                     PrimaryButton(
-                        title: "Esvaziar",
+                        title: L("Empty"),
                         systemImage: "trash",
                         suffix: "+\(GameStore.xpReward(forBytes: state.trash.totalBytes)) XP",
                         palette: palette
@@ -176,32 +177,32 @@ struct CleanupView: View {
 
     private var header: some View {
         ScreenHeader(
-            eyebrow: "Limpeza de disco",
+            eyebrow: L("Disk cleanup"),
             title: state.selectedSize > 0
-                ? "\(Fmt.bytes(state.selectedSize)) prontos para sair"
-                : "\(Fmt.bytes(state.totalReclaimable)) recuperáveis",
+                ? L("%@ ready to go", Fmt.bytes(state.selectedSize))
+                : L("%@ reclaimable", Fmt.bytes(state.totalReclaimable)),
             palette: palette
         ) {
             FlowLayout(spacing: 10, lineSpacing: 8) {
                 if let date = state.lastScanDate {
-                    Text("Última análise: \(Fmt.shortDate(date))")
+                    Text(L("Last scan: %@", Fmt.shortDate(date)))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
                 if state.isScanning {
-                    GhostButton(title: "Cancelar", palette: palette) { state.cancelScan() }
+                    GhostButton(title: L("Cancel"), palette: palette) { state.cancelScan() }
                 } else {
-                    GhostButton(title: "Analisar o Mac", systemImage: "magnifyingglass", palette: palette) {
+                    GhostButton(title: L("Analyze my Mac"), systemImage: "magnifyingglass", palette: palette) {
                         state.startScan()
                     }
                 }
                 if !state.categories.isEmpty {
                     Menu {
-                        Button("Marcar só os seguros") { state.selectAll(maximumRisk: .safe) }
-                        Button("Marcar seguros + atenção") { state.selectAll(maximumRisk: .caution) }
-                        Button("Marcar tudo") { state.selectAll(maximumRisk: .review) }
+                        Button(L("Check only the safe ones")) { state.selectAll(maximumRisk: .safe) }
+                        Button(L("Check safe + caution")) { state.selectAll(maximumRisk: .caution) }
+                        Button(L("Check everything")) { state.selectAll(maximumRisk: .review) }
                         Divider()
-                        Button("Desmarcar tudo") { state.clearSelection() }
+                        Button(L("Uncheck everything")) { state.clearSelection() }
                     } label: {
                         Image(systemName: "checklist")
                     }
@@ -273,7 +274,7 @@ struct CleanupView: View {
                         itemRow(item)
                     }
                     if category.items.count > 200 {
-                        Text("+ \(category.items.count - 200) itens não listados (todos incluídos na seleção)")
+                        Text(L("+ %d items not listed (all included in the selection)", category.items.count - 200))
                             .font(Typo.monoTiny)
                             .foregroundStyle(palette.t3)
                             .padding(.vertical, 8)
@@ -337,8 +338,8 @@ struct CleanupView: View {
         .contentShape(Rectangle())
         .onTapGesture { state.toggle(item) }
         .contextMenu {
-            Button("Mostrar no Finder") { state.reveal(item.path) }
-            Button("Copiar caminho") { state.copyToClipboard(item.path) }
+            Button(L("Show in Finder")) { state.reveal(item.path) }
+            Button(L("Copy path")) { state.copyToClipboard(item.path) }
         }
         .help(item.path.tildeShortened)
     }
@@ -383,7 +384,7 @@ struct CleanupView: View {
                     .help(state.cleanupMode.description)
 
                     PrimaryButton(
-                        title: "Limpar agora",
+                        title: L("Clean now"),
                         systemImage: "trash",
                         suffix: state.selectedSize > 0
                             ? "+\(GameStore.xpReward(forBytes: state.selectedSize)) XP"
@@ -407,7 +408,7 @@ struct CleanupView: View {
             .filter { state.selectedItemIDs.contains($0.id) }
             .count
         if reviewCount > 0 {
-            text += "\n\nAtenção: \(reviewCount) itens estão em categorias marcadas como \"Revisar\" — podem ser arquivos seus."
+            text += L("\n\nCaution: %d items are in categories marked \"Review\" — they may be your own files.", reviewCount)
         }
         return text
     }

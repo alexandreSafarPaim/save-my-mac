@@ -66,7 +66,7 @@ struct BigFilesView: View {
                         .foregroundStyle(palette.t3)
                 }
                 if state.isScanningFiles {
-                    GhostButton(title: "Cancelar", palette: palette) { state.cancelFilesScan() }
+                    GhostButton(title: L("Cancel"), palette: palette) { state.cancelFilesScan() }
                 } else {
                     GhostButton(title: "Analisar arquivos", systemImage: "magnifyingglass", palette: palette) {
                         state.startFilesScan()

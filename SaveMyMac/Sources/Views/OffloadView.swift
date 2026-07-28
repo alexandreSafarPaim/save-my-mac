@@ -65,7 +65,7 @@ struct OffloadView: View {
                                         pendingRelease = nil
                                     }
                                 }
-                                Button("Cancelar", role: .cancel) { pendingRelease = nil }
+                                Button(L("Cancel"), role: .cancel) { pendingRelease = nil }
                             } message: {
                                 Text("O original vai para a Lixeira e o espaço volta para o disco do Mac. Depois disso a migração não pode mais ser revertida com um clique.\n\nO app confere antes se o link e o destino estão íntegros.")
                             }
@@ -110,7 +110,7 @@ struct OffloadView: View {
                     pendingMigration = nil
                 }
             }
-            Button("Cancelar", role: .cancel) { pendingMigration = nil }
+            Button(L("Cancel"), role: .cancel) { pendingMigration = nil }
         } message: {
             if let candidate = pendingMigration {
                 Text(migrationExplanation(candidate))
@@ -145,7 +145,7 @@ struct OffloadView: View {
                         .foregroundStyle(palette.t3)
                 }
                 if state.isScanningOffload {
-                    GhostButton(title: "Cancelar", palette: palette) { state.cancelOffloadScan() }
+                    GhostButton(title: L("Cancel"), palette: palette) { state.cancelOffloadScan() }
                 } else {
                     GhostButton(title: "Verificar links", systemImage: "arrow.clockwise", palette: palette) {
                         state.startOffloadScan()
