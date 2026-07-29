@@ -1,48 +1,48 @@
 import SwiftUI
 
-/// Equivalentes SwiftUI das oito animações nomeadas do design.
+/// SwiftUI equivalents of the design's eight named animations.
 enum Motion {
 
-    /// `smRise` — entrada de tela: sobe 10px e aparece.
+    /// `smRise` — screen entrance: rises 10px and fades in.
     static let rise = Animation.easeOut(duration: 0.4)
 
-    /// `smPop` — surgimento com leve overshoot (overlay de comemoração).
+    /// `smPop` — appearance with a slight overshoot (celebration overlay).
     static let pop = Animation.spring(response: 0.45, dampingFraction: 0.62)
 
-    /// `smBar` — barra crescendo da esquerda.
+    /// `smBar` — bar growing from the left.
     static let bar = Animation.easeOut(duration: 1.0)
 
-    /// `smDash` — anel se preenchendo.
+    /// `smDash` — ring filling up.
     static let ring = Animation.timingCurve(0.2, 0.9, 0.2, 1, duration: 1.2)
 
-    // ATENÇÃO às duas abaixo. `repeatForever` obriga o SwiftUI a redesenhar a
-    // 60 fps enquanto a view existir — não é "animação leve", é custo
-    // permanente. Só valem quando a view é temporária.
+    // CAREFUL with the two below. `repeatForever` forces SwiftUI to redraw at
+    // 60 fps for as long as the view exists — that isn't a "light animation", it
+    // is a permanent cost. They only make sense when the view is temporary.
     //
-    // O `pulse` do ponto "ao vivo" e o `float` do anel de saúde foram removidos
-    // justamente por isso: viviam no Painel, que é a tela padrão, e mantinham a
-    // main thread ocupada o app inteiro aberto.
+    // The `pulse` on the "live" dot and the `float` on the health ring were
+    // removed for exactly that reason: they lived on the Dashboard, which is the
+    // default screen, and kept the main thread busy the whole time the app was
+    // open.
 
-    /// `smScan` — faixa varrendo a barra. Só existe DURANTE a varredura.
+    /// `smScan` — band sweeping across the bar. Exists only DURING a scan.
     static let scan = Animation.linear(duration: 1.1).repeatForever(autoreverses: false)
 
-    /// `smRing` — ondas da comemoração. Só existe enquanto o overlay está na tela.
+    /// `smRing` — celebration ripples. Exists only while the overlay is on screen.
     static let expandingRing = Animation.easeOut(duration: 1.6).repeatForever(autoreverses: false)
 
-    /// Transição padrão entre telas.
+    /// Default transition between screens.
     static let screen = AnyTransition.opacity.combined(with: .offset(y: 10))
 }
 
-/// Entrada `smRise` de uma tela.
+/// A screen's `smRise` entrance.
 ///
-/// A primeira versão começava em `opacity(0)` e só ficava visível no
-/// `onAppear`. Isso transformou um enfeite em falha total: bastou o app
-/// engasgar antes do `onAppear` para a tela inteira ficar em branco, sem
-/// nenhuma pista do motivo.
+/// The first version started at `opacity(0)` and only became visible in
+/// `onAppear`. That turned a decoration into total failure: the app only had to
+/// stall before `onAppear` for the entire screen to go blank, with no clue why.
 ///
-/// Agora o conteúdo é **visível por padrão** e a animação é aditiva: usa
-/// `transition`, que o SwiftUI aplica na inserção e ignora se não puder. Um
-/// efeito decorativo nunca deve poder esconder a interface.
+/// Now the content is **visible by default** and the animation is additive: it
+/// uses `transition`, which SwiftUI applies on insertion and ignores when it
+/// can't. A decorative effect must never be able to hide the interface.
 extension View {
     @ViewBuilder
     func riseIn() -> some View {

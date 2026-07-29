@@ -34,39 +34,39 @@ enum AppSection: String, CaseIterable, Identifiable {
     }
 }
 
-/// Delegate mínimo, para dois comportamentos que o SwiftUI puro não dá.
+/// Minimal delegate, for two behaviours plain SwiftUI does not give us.
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
-    /// O ponto mais cedo que temos. O adaptor cria o delegate antes de qualquer
-    /// cena existir, então o rastro começa antes de qualquer suspeito.
+    /// The earliest hook we have. The adaptor creates the delegate before any
+    /// scene exists, so the trace starts before any suspect does.
     override init() {
         super.init()
         Trace.begin()
         Trace.mark("AppDelegate.init")
     }
 
-    /// Sobreviver ao fechar a janela SÓ faz sentido se houver de fato um item na
-    /// barra de menus para trazer o app de volta.
+    /// Surviving a window close ONLY makes sense if there really is a menu bar
+    /// item to bring the app back.
     ///
-    /// Retornar `false` incondicionalmente foi um erro grave: se o
-    /// `MenuBarExtra` não aparece — porque está desligado nas preferências, ou
-    /// porque falhou —, o app fica sem janela, sem ícone e sem forma de sair.
-    /// Só resta forçar o encerramento. Um app nunca deve poder chegar nesse
-    /// estado.
+    /// Returning `false` unconditionally was a serious mistake: if the
+    /// `MenuBarExtra` doesn't appear — because it's off in preferences, or
+    /// because it failed — the app is left with no window, no icon and no way to
+    /// quit. Force-quitting is all that's left. An app should never be able to
+    /// reach that state.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        // Só sobrevive ao fechar a janela se houver mesmo um item na barra de
-        // menus para trazer o app de volta.
+        // Only survives a window close if there is genuinely a menu bar item to
+        // bring the app back.
         let hasStatusItem = MenuBarFeature.isEnabled
             && NSApp.windows.contains { $0.className.contains("StatusBar") }
         return !hasStatusItem
     }
 
-    /// Mexer na política de ativação durante a apresentação da primeira janela
-    /// deixa o macOS confuso: a janela pode nunca ser ordenada para a frente.
-    /// Aqui o lançamento já terminou.
+    /// Changing the activation policy while the first window is being presented
+    /// confuses macOS: the window may never be ordered front. By here, launch has
+    /// finished.
     func applicationDidFinishLaunching(_ notification: Notification) {
         Trace.mark("applicationDidFinishLaunching")
-        // Só agora existe run loop para o vigia bater ponto.
+        // Only now is there a run loop for the watchdog to check in on.
         Trace.startWatchdog()
 
         let hide = UserDefaults.standard.bool(forKey: "hideDockIcon")
@@ -77,17 +77,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         checkStatusItem()
     }
 
-    /// Confere se o item da barra de menus está de fato **visível**.
+    /// Checks whether the menu bar item is actually **visible**.
     ///
-    /// A versão anterior deste método só olhava se existia uma janela com
-    /// "StatusBar" no nome e escrevia "✅ item presente". Isso era um falso
-    /// positivo caro: o SwiftUI cria a janela da cena mesmo com
-    /// `isInserted: false`, então o rastro afirmava que estava tudo bem enquanto
-    /// não havia ícone nenhum na tela. Um diagnóstico que mente é pior que
-    /// nenhum — custou uma rodada inteira.
+    /// The previous version of this method only looked for a window with
+    /// "StatusBar" in its name and wrote "✅ item present". That was an expensive
+    /// false positive: SwiftUI creates the scene's window even with
+    /// `isInserted: false`, so the trace claimed everything was fine while there
+    /// was no icon on screen at all. A diagnostic that lies is worse than none —
+    /// it cost a full round trip.
     ///
-    /// Agora ele relata as três coisas que decidem a questão, separadas: a trava
-    /// do recurso, a preferência do usuário, e se a janela está visível.
+    /// It now reports the three things that decide the question, separately: the
+    /// feature gate, the user preference, and whether the window is visible.
     private func checkStatusItem() {
         guard MenuBarFeature.isEnabled else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -111,7 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Clicar no ícone do Dock com a janela fechada deve reabrir a janela.
+    /// Clicking the Dock icon with the window closed should reopen the window.
     func applicationShouldHandleReopen(
         _ sender: NSApplication,
         hasVisibleWindows flag: Bool
@@ -123,27 +123,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-/// Identificadores de cena, para o painel da barra de menus poder reabrir a
-/// janela principal com `openWindow(id:)`.
+/// Scene identifiers, so the menu bar panel can reopen the main window with
+/// `openWindow(id:)`.
 enum AppScene {
     static let main = "main"
 }
 
-/// Dono dos objetos de estado — **sem observá-los**.
+/// Owns the state objects — **without observing them**.
 ///
-/// Isto existe por causa de um travamento real. Com `@StateObject` no App, o
-/// corpo do App vira assinante de todo `@Published` do `AppState`. E o corpo do
-/// App não é uma view qualquer: reavaliá-lo dispara `scenesDidChange`, que
-/// dispara `makeMainMenu`, que reconstrói a barra de menus inteira do sistema.
+/// This exists because of a real hang. With `@StateObject` in the App, the App
+/// body becomes a subscriber to every `@Published` of `AppState`. And the App
+/// body is not an ordinary view: re-evaluating it fires `scenesDidChange`, which
+/// fires `makeMainMenu`, which rebuilds the system's entire menu bar.
 ///
-/// O `AppState` publica umas dez propriedades por tique de métricas. O
-/// resultado, medido no rastro, foi **7.200 reconstruções em 10 segundos** a
-/// 100 % de CPU, com a memória subindo 80 MB em 17 s. O grafo nunca convergia.
+/// `AppState` publishes about ten properties per metrics tick. The result,
+/// measured in the trace, was **7,200 rebuilds in 10 seconds** at 100% of a
+/// core, with memory climbing 80 MB in 17 s. The graph never converged.
 ///
-/// Quem precisa reagir a mudança de estado são as views, e elas continuam
-/// reagindo pelo `@EnvironmentObject`. O App só precisa **segurar** os objetos.
-/// Um singleton faz isso e sobrevive à recriação do struct do App, que é a
-/// única razão de `@StateObject` existir aqui.
+/// The things that need to react to state changes are the views, and they still
+/// do, through `@EnvironmentObject`. The App only needs to **hold** the objects.
+/// A singleton does that and survives recreation of the App struct, which is the
+/// only reason `@StateObject` would be here.
 @MainActor
 final class AppRoot {
     static let shared = AppRoot()
@@ -162,43 +162,43 @@ struct SaveMyMacApp: App {
     private var state: AppState { root.state }
     private var spaceAlert: SpaceAlert { root.spaceAlert }
 
-    /// Este **é** observado, e de propósito: o `MenuBarExtra` precisa de
-    /// `$prefs.showMenuBar`, e só um wrapper de propriedade projeta binding.
+    /// This one **is** observed, deliberately: `MenuBarExtra` needs
+    /// `$prefs.showMenuBar`, and only a property wrapper projects a binding.
     ///
-    /// Aqui é seguro. `Preferences` só muda quando o usuário mexe em Ajustes —
-    /// algumas vezes por sessão. O que não podia continuar era o App observar o
-    /// `AppState`, que publica dez vezes por tique de métricas.
+    /// It's safe here. `Preferences` changes only when the user touches Settings
+    /// — a few times per session. What couldn't continue was the App observing
+    /// `AppState`, which publishes ten times per metrics tick.
     @ObservedObject private var prefs = AppRoot.shared.prefs
 
-    // O corpo é dividido em cenas nomeadas de propósito.
+    // The body is split into named scenes on purpose.
     //
-    // Tudo isto estava inline e o compilador respondeu com
-    // "failed to produce diagnostic for expression" — o type-checker desistiu
-    // de inferir a expressão inteira. Cenas grandes com `.commands` embutido
-    // são um caso clássico; quebrar em partes com tipo próprio resolve e ainda
-    // deixa o arquivo legível.
+    // All of this was inline and the compiler answered with "failed to produce
+    // diagnostic for expression" — the type checker gave up on inferring the
+    // whole expression. Large scenes with an embedded `.commands` are a classic
+    // case; breaking it into parts with their own types fixes it and leaves the
+    // file readable too.
     var body: some Scene {
         mainWindow
         menuBarScene
         settingsScene
     }
 
-    // MARK: - Janela principal
+    // MARK: - Main window
 
-    /// `Window`, **não** `WindowGroup`.
+    /// `Window`, **not** `WindowGroup`.
     ///
-    /// Um `WindowGroup` é um molde: `openWindow(id:)` cria uma janela nova a
-    /// cada chamada. Como o painel da barra de menus chama isso em toda ação,
-    /// clicar em "Abrir o SaveMyMac" cinco vezes abria cinco janelas — cada uma
-    /// com sua própria árvore de views, todas observando o mesmo `AppState` e
-    /// todas re-renderizando a cada tique de métricas.
+    /// A `WindowGroup` is a template: `openWindow(id:)` creates a new window on
+    /// every call. Since the menu bar panel calls that on every action, clicking
+    /// "Open SaveMyMac" five times opened five windows — each with its own view
+    /// tree, all observing the same `AppState` and all re-rendering on every
+    /// metrics tick.
     ///
-    /// `Window` é instância única. `openWindow(id:)` passa a trazer a que já
-    /// existe para a frente, que é o comportamento certo para um app de painel:
-    /// não há documento nenhum para ter em duplicata.
+    /// `Window` is a single instance. `openWindow(id:)` now brings the existing
+    /// one forward, which is the right behaviour for a dashboard app: there is no
+    /// document to have two of.
     ///
-    /// De bônus, `Window` remove sozinho o "Nova janela" do menu Arquivo — o
-    /// `CommandGroup(replacing: .newItem)` continua ali como cinto e suspensório.
+    /// As a bonus, `Window` removes "New Window" from the File menu by itself —
+    /// the `CommandGroup(replacing: .newItem)` stays as belt and braces.
     private var mainWindow: some Scene {
         Window("SaveMyMac", id: AppScene.main) {
             RootView()
@@ -223,19 +223,19 @@ struct SaveMyMacApp: App {
         .commands { AppCommands(state: state) }
     }
 
-    // MARK: - Barra de menus
+    // MARK: - Menu bar
 
-    /// `SceneBuilder` **não aceita `if`** — só sabe compor uma lista fixa de
-    /// cenas. A alternativa correta é a cena existir sempre e o `isInserted`
-    /// decidir se o item aparece.
+    /// `SceneBuilder` **does not accept `if`** — it only knows how to compose a
+    /// fixed list of scenes. The correct alternative is for the scene to always
+    /// exist and let `isInserted` decide whether the item appears.
     ///
-    /// O `isInserted` precisa ser o `Binding` projetado (`$prefs.showMenuBar`),
-    /// nunca um `Binding(get:set:)` montado aqui. Um binding construído no corpo
-    /// é um objeto novo a cada avaliação: o SwiftUI compara os dois, nunca os vê
-    /// iguais, marca a cena como alterada e reavalia — para sempre. Foi um dos
-    /// motivos do loop de 100 % de CPU.
+    /// `isInserted` has to be the projected `Binding` (`$prefs.showMenuBar`),
+    /// never a `Binding(get:set:)` assembled here. A binding built in the body is
+    /// a new object on every evaluation: SwiftUI compares the two, never sees
+    /// them as equal, marks the scene as changed and re-evaluates — forever. It
+    /// was one of the causes of the 100%-CPU loop.
     ///
-    /// A trava do recurso mora no `Preferences.init`, onde é aplicada uma vez.
+    /// The feature gate lives in `Preferences.init`, where it is applied once.
     private var menuBarScene: some Scene {
         MenuBarExtra(isInserted: $prefs.showMenuBar) {
             MenuBarPanel()
@@ -249,16 +249,16 @@ struct SaveMyMacApp: App {
         .menuBarExtraStyle(.window)
     }
 
-    // MARK: - Ajustes
+    // MARK: - Settings
 
-    /// O conteúdo desta cena é construído a cada avaliação do corpo do App —
-    /// mesmo com a janela de Ajustes fechada, mesmo sem ela nunca ter sido
-    /// aberta. E o corpo do App é invalidado a cada `@Published` do `AppState`.
+    /// This scene's content is built on every App body evaluation — even with
+    /// the Settings window closed, even if it was never opened. And the App body
+    /// used to be invalidated by every `@Published` of `AppState`.
     ///
-    /// Ou seja: **o que estiver no `init` do `SettingsView` roda dezenas de
-    /// vezes por segundo.** Foi por isso que duas chamadas XPC ali dentro
-    /// travaram o app inteiro. O contador abaixo existe para essa frequência
-    /// ficar visível no rastro em vez de ser surpresa de novo.
+    /// Which means: **whatever is in `SettingsView`'s `init` runs dozens of times
+    /// per second.** That is why two XPC calls in there hung the whole app. The
+    /// counter below exists so that frequency is visible in the trace instead of
+    /// being a surprise again.
     private var settingsScene: some Scene {
         Trace.count("cena Ajustes reconstruída", every: 200)
         return Settings {
@@ -271,20 +271,19 @@ struct SaveMyMacApp: App {
     }
 }
 
-/// Menu L("Actions") da barra de menus do sistema.
+/// The system menu bar's "Actions" menu.
 ///
-/// `let state`, **não** `@ObservedObject`. Isso é o ponto principal deste tipo.
+/// `let state`, **not** `@ObservedObject`. That is the main point of this type.
 ///
-/// Observar o `AppState` aqui parece inofensivo e não é: o spindump mostrou
-/// `AppDelegate.scenesDidChange` → `makeMainMenu` → `updateMainMenu` →
-/// reconstrução da lista inteira de itens, com alocação de subgrafo e `memmove`
-/// a cada passagem. A barra de menus do sistema estava sendo remontada do zero
-/// a cada leitura de CPU.
+/// Observing `AppState` here looks harmless and isn't: the spindump showed
+/// `AppDelegate.scenesDidChange` → `makeMainMenu` → `updateMainMenu` → rebuilding
+/// the entire item list, with subgraph allocation and `memmove` on every pass.
+/// The system menu bar was being reassembled from scratch on every CPU reading.
 ///
-/// Os botões só precisam **chamar** métodos do estado. Chamar não exige
-/// observar. A única coisa que exigia era o título do botão de tema mudar entre
-/// "claro" e "escuro" — trocado por um rótulo fixo, porque um menu que se
-/// reconstrói sozinho custa caro demais para essa conveniência.
+/// The buttons only need to **call** methods on the state. Calling doesn't
+/// require observing. The one thing that did was the theme button's title
+/// switching between "light" and "dark" — replaced with a fixed label, because a
+/// menu that rebuilds itself is far too expensive for that convenience.
 struct AppCommands: Commands {
     let state: AppState
 
@@ -305,7 +304,7 @@ struct AppCommands: Commands {
 
             Button(L("Refresh metrics")) { state.refreshMetrics() }
                 .keyboardShortcut("u", modifiers: .command)
-            // Rótulo fixo de propósito — ver a nota no topo do tipo.
+            // Fixed label on purpose — see the note at the top of the type.
             Button(L("Switch between light and dark theme (⇧⌘T)")) { state.toggleTheme() }
                 .keyboardShortcut("t", modifiers: [.command, .shift])
         }
@@ -355,15 +354,15 @@ struct RootView: View {
                 }
             }
         }
-        // Trocar de idioma reconstrói a subárvore.
+        // Switching language rebuilds the subtree.
         //
-        // `L()` é uma função global, não uma propriedade observável, então uma
-        // view que só chama `L()` não tem como saber que o idioma mudou. Marcar
-        // identidade pelo idioma resolve com uma linha, em vez de espalhar um
-        // `@EnvironmentObject` por 25 arquivos só para invalidar.
+        // `L()` is a global function, not an observable property, so a view that
+        // merely calls `L()` has no way to know the language changed. Keying
+        // identity on the language solves it in one line, instead of threading an
+        // `@EnvironmentObject` through 25 files purely to invalidate.
         //
-        // O `.id` fica **no conteúdo**, não na `RootView`: assim o `selection`
-        // dela sobrevive e você continua na mesma aba depois de trocar a língua.
+        // The `.id` goes **on the content**, not on `RootView`: that way its
+        // `selection` survives and you stay on the same tab after switching.
         .id(loc.language)
         .preferredColorScheme(state.theme.colorScheme)
         .animation(.easeInOut(duration: 0.25), value: state.banner?.id)
@@ -379,10 +378,10 @@ struct RootView: View {
             state.pendingForceQuit.map { L("Force quit %@?", $0.name) } ?? "",
             isPresented: Binding(
                 get: { state.pendingForceQuit != nil },
-                // O `!= nil` não é redundante: o SwiftUI chama este setter
-                // durante a atualização, e escrever `nil` sobre `nil` num
-                // `@Published` publica mesmo assim — o mesmo mecanismo que
-                // gerou o ciclo da barra de menus.
+                // The `!= nil` is not redundant: SwiftUI calls this setter
+                // during an update, and writing `nil` over `nil` on a
+                // `@Published` publishes anyway — the same mechanism that
+                // produced the menu bar cycle.
                 set: { if !$0 && state.pendingForceQuit != nil { state.pendingForceQuit = nil } }
             ),
             titleVisibility: .visible
@@ -417,10 +416,10 @@ struct RootView: View {
     }
 }
 
-// MARK: - Faixa do topo
+// MARK: - Top strip
 
-/// Substitui a barra de título falsa do mockup. A janela real já tem os botões
-/// do macOS, então aqui ficam só a trilha e o botão de tema.
+/// Replaces the mockup's fake title bar. The real window already has the macOS
+/// buttons, so all that lives here is the breadcrumb and the theme button.
 struct TitleStrip: View {
     @EnvironmentObject var loc: Localization
     @EnvironmentObject var state: AppState
@@ -430,15 +429,15 @@ struct TitleStrip: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            // Espaço para os botões nativos da janela.
+            // Room for the window's native buttons.
             Spacer().frame(width: 68)
 
             Spacer()
 
-            // Passa pela tabela mesmo sendo idêntico em todos os idiomas hoje: o
-            // separador pode mudar (o francês usa espaço antes do travessão), e
-            // uma exceção na verificação é um buraco permanente, enquanto uma
-            // chave é um ponto de extensão.
+            // Goes through the table even though it is identical in every
+            // language today: the separator may change (French puts a space
+            // before the em dash), and an exception in the checker is a permanent
+            // hole, whereas a key is an extension point.
             Text(L("SaveMyMac — %@", sectionTitle))
                 .font(Typo.mono(12.5))
                 .tracking(Track.crumb)
@@ -457,9 +456,9 @@ struct TitleStrip: View {
         .background(palette.card)
     }
 
-    /// Redondo e só com ícone de propósito: ao lado da cápsula de tema, dois
-    /// controles do mesmo tamanho e formato competiriam pela atenção. Ajustes é
-    /// destino, não interruptor.
+    /// Round and icon-only on purpose: next to the theme capsule, two controls
+    /// of the same size and shape would compete for attention. Settings is a
+    /// destination, not a switch.
     private var settingsButton: some View {
         SettingsOpener {
             Image(systemName: "gearshape")
@@ -550,8 +549,8 @@ struct Sidebar: View {
         case .cleanup:
             let count = state.selectedCategoryCount
             if count > 0 { return "\(count)" }
-            // Sem isto o aviso desaparecia justamente depois de uma limpeza para
-            // a Lixeira, que é quando ele mais importa.
+            // Without this, the badge vanished right after a cleanup to the
+            // Trash, which is exactly when it matters most.
             return state.trash.isEmpty ? nil : Fmt.bytes(state.trash.totalBytes)
         case .duplicates:
             let total = state.files.duplicateTotal
@@ -677,7 +676,7 @@ struct NavRow: View {
     }
 }
 
-// MARK: - Card de nível
+// MARK: - Level card
 
 struct LevelCard: View {
     var palette: Palette
@@ -731,7 +730,7 @@ struct LevelCard: View {
     }
 }
 
-// MARK: - Banner de aviso
+// MARK: - Notice banner
 
 struct BannerView: View {
     var banner: AppState.Banner

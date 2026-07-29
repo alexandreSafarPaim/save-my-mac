@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// Layout que coloca os filhos em linha e **passa para a linha de baixo** quando
-/// não cabem — o equivalente ao `flex-wrap: wrap` do CSS, que o design usa em
-/// várias barras de ação.
+/// A layout that places children in a row and **wraps to the next line** when
+/// they don't fit — the equivalent of CSS `flex-wrap: wrap`, which the design
+/// uses in several action bars.
 ///
-/// Sem isso, um `HStack` comprime os filhos até o texto truncar ("Limp ar…").
-/// Aqui cada filho recebe o tamanho ideal dele e a quebra acontece no espaço
-/// entre eles, onde deveria.
+/// Without it, an `HStack` compresses the children until the text truncates
+/// ("Clea n…"). Here each child gets its ideal size and the break happens in the
+/// space between them, where it should.
 struct FlowLayout: Layout {
 
     var spacing: CGFloat = 10
@@ -23,13 +23,13 @@ struct FlowLayout: Layout {
         var result: [Row] = []
         var current = Row()
 
-        // Largura inválida (0, negativa, NaN ou infinita) vinda de uma proposta
-        // intermediária do SwiftUI faria a quebra de linha se comportar de
-        // forma imprevisível. Trata como "cabe tudo numa linha".
+        // An invalid width (0, negative, NaN or infinite) coming from an
+        // intermediate SwiftUI proposal would make line breaking behave
+        // unpredictably. Treat it as "everything fits on one line".
         let limit = (maxWidth.isFinite && maxWidth > 1) ? maxWidth : .greatestFiniteMagnitude
 
         for index in subviews.indices {
-            // `.unspecified` dá a cada filho o tamanho ideal dele, sem compressão.
+            // `.unspecified` gives each child its ideal size, with no compression.
             let size = subviews[index].sizeThatFits(.unspecified)
             let needed = current.indices.isEmpty ? size.width : current.width + spacing + size.width
 
@@ -60,8 +60,9 @@ struct FlowLayout: Layout {
         let height = lines.map(\.height).reduce(0, +)
             + lineSpacing * CGFloat(max(0, lines.count - 1))
 
-        // `min` com uma proposta infinita devolveria infinito; o SwiftUI então
-        // proporia outra largura e poderia oscilar. Devolver sempre finito.
+        // `min` against an infinite proposal would return infinity; SwiftUI
+        // would then propose another width and could oscillate. Always return
+        // something finite.
         let resolved = maxWidth.isFinite ? Swift.min(width, maxWidth) : width
         return CGSize(width: resolved.isFinite ? resolved : 0, height: height.isFinite ? height : 0)
     }

@@ -1,22 +1,22 @@
 import SwiftUI
 
-/// Ajustes do app (⌘,).
+/// App settings (⌘,).
 struct SettingsView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject var prefs: Preferences
     @EnvironmentObject var spaceAlert: SpaceAlert
     @EnvironmentObject var loc: Localization
 
-    // ATENÇÃO: estes `@State` precisam ser inicializados com valores baratos.
+    // WARNING: these `@State` values must be initialised with cheap values.
     //
-    // Antes eram `LaunchAtLogin.isEnabled` e `.statusDescription`, que fazem XPC
-    // síncrono para o `smd`. Um inicializador de `@State` roda dentro do
-    // `init()` da view, e o SwiftUI constrói o conteúdo da cena `Settings` a
-    // cada avaliação do corpo do App — inclusive com a janela de Ajustes
-    // fechada. O resultado foi o app inteiro travar em `mach_msg`.
+    // They used to be `LaunchAtLogin.isEnabled` and `.statusDescription`, which
+    // do synchronous XPC to `smd`. A `@State` initialiser runs inside the view's
+    // `init()`, and SwiftUI builds the `Settings` scene content on every App body
+    // evaluation — including with the Settings window closed. The result was the
+    // whole app hanging in `mach_msg`.
     //
-    // Regra que vale para qualquer view daqui em diante: **inicializador de view
-    // não faz I/O**. O valor real chega pelo `.task` abaixo.
+    // The rule for every view from here on: **a view initialiser does no I/O**.
+    // The real value arrives through the `.task` below.
     @State private var launch = LaunchAtLogin.snapshot
     @State private var launchMessage: String?
     @State private var launchMessageIsError = false
@@ -39,12 +39,12 @@ struct SettingsView: View {
         .background(palette.bg2)
         .id(loc.language)
         .preferredColorScheme(state.theme.colorScheme)
-        // Só agora — com a janela de Ajustes realmente aberta — vale consultar
-        // o `smd`. E fora da thread principal.
+        // Only now — with the Settings window actually open — is it worth asking
+        // `smd`. And off the main thread.
         .task { launch = await LaunchAtLogin.refresh() }
     }
 
-    // MARK: - Inicialização
+    // MARK: - Startup
 
     private var startupSection: some View {
         section(L("Startup"), "power") {
@@ -57,8 +57,8 @@ struct SettingsView: View {
                     .foregroundStyle(palette.t1)
             }
             .toggleStyle(.switch)
-            // Enquanto a consulta não volta, mexer no interruptor agiria sobre
-            // um estado que ainda não conhecemos.
+            // Until the query returns, flipping the switch would act on a state
+            // we don't know yet.
             .disabled(!launch.isKnown || launchBusy)
 
             Text(launch.description)
@@ -105,7 +105,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Barra de menus
+    // MARK: - Menu bar
 
     private var menuBarSection: some View {
         section(L("Menu bar"), "menubar.rectangle") {
@@ -125,8 +125,9 @@ struct SettingsView: View {
                 Text(L("Turned off by the emergency switch."))
                     .font(Typo.bodySmall)
                     .foregroundStyle(palette.warn)
-                // O comando fica fora da tradução de propósito: é literal de
-                // Terminal, e traduzir parte dele daria um comando que não roda.
+                // The command stays out of the translation on purpose: it is a
+                // Terminal literal, and translating part of it would produce a
+                // command that doesn't run.
                 Text(L("The `enableMenuBar` key is false, or the app is in safe mode. To turn it back on, in Terminal:")
                      + "\ndefaults write br.com.pentagrama.savemymac enableMenuBar -bool true\n"
                      + L("then reopen the app."))
@@ -157,7 +158,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Alertas
+    // MARK: - Alerts
 
     private var alertsSection: some View {
         section(L("Low space alert"), "exclamationmark.triangle") {
@@ -212,7 +213,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Aparência
+    // MARK: - Appearance
 
     private var appearanceSection: some View {
         section(L("Appearance"), "paintbrush") {
@@ -229,7 +230,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Idioma
+    // MARK: - Language
 
     private var languageSection: some View {
         section(L("Language"), "globe") {
@@ -238,10 +239,10 @@ struct SettingsView: View {
                 set: { loc.language = $0 }
             )) {
                 ForEach(Language.allCases) { language in
-                    // O nome de cada idioma aparece **no próprio idioma**.
-                    // Quem abriu o app numa língua que não entende precisa
-                    // reconhecer a sua na lista, e para isso "Français" serve e
-                    // "Francês" não.
+                    // Each language's name appears **in its own language**.
+                    // Someone who opened the app in a language they don't read
+                    // needs to recognise theirs in the list, and for that
+                    // "Français" works and "French" does not.
                     Text(language.label).tag(language)
                 }
             }
@@ -265,7 +266,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Estrutura
+    // MARK: - Structure
 
     private func section<Content: View>(
         _ title: String,

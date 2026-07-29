@@ -79,7 +79,7 @@ final class OffloadScanner: @unchecked Sendable {
 
             // Dois links aninhados no mesmo alvo (ex.: `~/.gradle` e
             // `~/.gradle/caches`) contariam o mesmo conteúdo duas vezes e
-            // inflariam o total L("off the Mac's disk"). Mantém só o de fora.
+            // inflariam o total "fora do disco do Mac". Mantém só o de fora.
             if entry.statusRaw == 0 {
                 let isNested = acceptedTargets.contains { entry.targetPath.hasPrefix($0 + "/") }
                 if isNested { continue }

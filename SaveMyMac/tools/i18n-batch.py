@@ -528,15 +528,28 @@ def main() -> int:
     for path in sorted(SOURCES.rglob("*.swift")):
         if path.name == "Strings.swift":
             continue
-        src = original = path.read_text(encoding="utf-8")
-        for pt, (en, _es, _fr) in MAP.items():
-            if pt in NEVER_TRANSLATE:
-                continue
-            needle = f'"{pt}"'
-            if needle in src:
-                escaped = en.replace('"', '\\"')
-                src = src.replace(needle, f'L("{escaped}")')
-                replaced += 1
+        original = path.read_text(encoding="utf-8")
+
+        # Substitui linha por linha e **pula comentários**.
+        #
+        # A primeira versão fazia `src.replace(...)` no arquivo inteiro, e isso
+        # reescreveu literais citados dentro de doc-comments: um comentário que
+        # dizia `Menu "Ações" da barra de menus` virou
+        # `Menu L("Actions") da barra de menus`. Compila, porque comentário é
+        # comentário — e é exatamente por isso que passa despercebido.
+        out = []
+        for line in original.split("\n"):
+            if not re.match(r"\s*(//|///)", line):
+                for pt, (en, _es, _fr) in MAP.items():
+                    if pt in NEVER_TRANSLATE:
+                        continue
+                    needle = f'"{pt}"'
+                    if needle in line:
+                        escaped = en.replace('"', '\\"')
+                        line = line.replace(needle, f'L("{escaped}")')
+                        replaced += 1
+            out.append(line)
+        src = "\n".join(out)
         if src != original:
             changed_files += 1
             if apply:

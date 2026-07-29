@@ -1,18 +1,19 @@
 import SwiftUI
 import AppKit
 
-/// O painel que abre ao clicar no ícone da barra de menus.
+/// The panel that opens when you click the menu bar icon.
 ///
-/// Ele não é uma cópia menor do Painel: mostra só o que se responde de relance
-/// — espaço, pressão de memória, CPU e temperatura — e dá atalho para o resto.
+/// It is not a smaller copy of the Dashboard: it shows only what can be answered
+/// at a glance — space, memory pressure, CPU and temperature — and links out for
+/// the rest.
 struct MenuBarPanel: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject var prefs: Preferences
     @EnvironmentObject var spaceAlert: SpaceAlert
     @EnvironmentObject var loc: Localization
 
-    /// A forma correta de trazer a janela de volta no macOS 13. Um
-    /// `NSApp.sendAction` de "nova janela" não recria a cena do WindowGroup.
+    /// The correct way to bring the window back on macOS 13. An
+    /// `NSApp.sendAction` for "new window" does not recreate the scene.
     @Environment(\.openWindow) private var openWindow
 
     private var palette: Palette { state.palette }
@@ -23,8 +24,8 @@ struct MenuBarPanel: View {
 
     @ViewBuilder
     var body: some View {
-        // Inerte quando o recurso está desligado: sem isto o painel continuaria
-        // lendo o estado a cada atualização mesmo sem nunca ser exibido.
+        // Inert when the feature is off: without this the panel would keep
+        // reading state on every update despite never being shown.
         if MenuBarFeature.isEnabled {
             panel
         }
@@ -53,7 +54,7 @@ struct MenuBarPanel: View {
         .preferredColorScheme(state.theme.colorScheme)
     }
 
-    // MARK: - Cabeçalho
+    // MARK: - Header
 
     private var header: some View {
         HStack(spacing: 10) {
@@ -112,7 +113,7 @@ struct MenuBarPanel: View {
         )
     }
 
-    // MARK: - Métricas
+    // MARK: - Metrics
 
     private var metrics: some View {
         VStack(spacing: 10) {
@@ -210,7 +211,7 @@ struct MenuBarPanel: View {
         }
     }
 
-    // MARK: - Ações
+    // MARK: - Actions
 
     private var actions: some View {
         VStack(spacing: 4) {
@@ -234,8 +235,8 @@ struct MenuBarPanel: View {
         }
     }
 
-    /// O `SettingsOpener` cuida de *como* abrir; aqui só entra a aparência da
-    /// linha, que é a mesma das vizinhas.
+    /// `SettingsOpener` handles *how* to open; all that goes here is the row's
+    /// appearance, which is the same as its neighbours'.
     private var settingsAction: some View {
         SettingsOpener {
             actionRow(L("Settings…"), "gearshape")
@@ -243,11 +244,11 @@ struct MenuBarPanel: View {
         .buttonStyle(MenuRowButtonStyle(palette: palette))
     }
 
-    /// Traz a janela para a frente e leva até a aba pedida.
+    /// Brings the window forward and takes it to the requested tab.
     ///
-    /// Não mexe na política de ativação: se o usuário escondeu o ícone do Dock,
-    /// o app continua `.accessory` e ainda assim mostra janela — trazer o ícone
-    /// de volta aqui desfaria a preferência dele pelas costas.
+    /// Does not touch the activation policy: if the user hid the Dock icon, the
+    /// app stays `.accessory` and still shows a window — bringing the icon back
+    /// here would undo their preference behind their back.
     private func show(_ section: AppSection) {
         state.requestedSection = section
         openWindow(id: AppScene.main)
@@ -261,11 +262,11 @@ struct MenuBarPanel: View {
         .buttonStyle(MenuRowButtonStyle(palette: palette))
     }
 
-    /// O conteúdo visual de uma linha, separado do `Button`.
+    /// A row's visual content, separated from the `Button`.
     ///
-    /// Existe porque o `SettingsLink` é seu próprio controle e não aceita uma
-    /// ação — ele precisa do mesmo rótulo sem o botão em volta. Sem essa
-    /// separação, a linha de Ajustes ficaria com aparência diferente das outras.
+    /// It exists because the settings opener needs the same label without a
+    /// button wrapped around it. Without that separation, the Settings row would
+    /// look different from all the others.
     private func actionRow(_ title: String, _ symbol: String) -> some View {
         HStack(spacing: 9) {
             Image(systemName: symbol)
@@ -283,7 +284,7 @@ struct MenuBarPanel: View {
     }
 }
 
-/// Realce de linha de menu — o `.plain` não dá retorno nenhum ao passar o mouse.
+/// Menu row highlight — `.plain` gives no hover feedback at all.
 struct MenuRowButtonStyle: ButtonStyle {
     var palette: Palette
 
@@ -311,10 +312,10 @@ struct MenuRowButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Rótulo ao lado do relógio
+// MARK: - Label next to the clock
 
-/// O que aparece na barra de menus. Mantido minúsculo de propósito: a barra é
-/// espaço compartilhado e um app de manutenção não deve dominá-la.
+/// What appears in the menu bar. Kept tiny on purpose: the bar is shared space
+/// and a maintenance app should not dominate it.
 struct MenuBarLabel: View {
     @ObservedObject var state: AppState
     @ObservedObject var prefs: Preferences
@@ -326,25 +327,25 @@ struct MenuBarLabel: View {
 
     @ViewBuilder
     var body: some View {
-        // Mantido no mínimo de propósito. A Apple documenta suporte limitado a
-        // views no rótulo do MenuBarExtra, e ele re-renderiza a cada tique de
-        // 2 s — qualquer coisa mais pesada aqui custa caro o dia inteiro.
+        // Kept minimal on purpose. Apple documents limited support for views in
+        // a MenuBarExtra label, and it re-renders on every 2 s tick — anything
+        // heavier here costs all day long.
         //
-        // O contador é a rede de segurança deste recurso. Ele observa o
-        // `AppState`, que publica várias vezes por tique; se algum dia isso
-        // virar ciclo outra vez, o número aparece no rastro antes de o app
-        // ficar sem resposta. Em uso normal deve crescer devagar.
+        // The counter is this feature's safety net. It observes `AppState`, which
+        // publishes several times per tick; if that ever becomes a cycle again,
+        // the number shows up in the trace before the app stops responding. In
+        // normal use it should grow slowly.
         let _ = Trace.count("rótulo da barra de menus", every: 300)
 
         if !MenuBarFeature.isEnabled {
             EmptyView()
         } else if let text = valueText {
-            // `.titleAndIcon` é obrigatório aqui.
+            // `.titleAndIcon` is mandatory here.
             //
-            // Um `Label` num item de barra de status usa, por padrão, só o
-            // ícone — o título é descartado sem aviso. O item aparecia, mas
-            // como um `sparkle` solitário no meio de seis outros ícones, o que
-            // é indistinguível de "não apareceu".
+            // A `Label` in a status bar item uses only the icon by default — the
+            // title is dropped with no warning. The item did appear, but as a
+            // lone `sparkle` among six other icons, which is indistinguishable
+            // from "it didn't appear".
             Label(text, systemImage: symbol)
                 .labelStyle(.titleAndIcon)
         } else {

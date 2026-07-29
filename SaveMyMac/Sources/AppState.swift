@@ -755,7 +755,7 @@ final class AppState: ObservableObject {
 
                 // Sem isto, uma Lixeira já vazia ou itens travados renderiam
                 // 20 XP de piso, marcariam a semana no streak e mostrariam
-                // L("Trash emptied") sem nada ter saído.
+                // "Lixeira esvaziada" sem nada ter saído.
                 guard result.removedCount > 0 else {
                     self.banner = Banner(
                         text: result.failures.isEmpty
