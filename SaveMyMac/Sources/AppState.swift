@@ -241,8 +241,12 @@ final class AppState: ObservableObject {
         Trace.span("DiskMonitor.volumes (launch)") { volumes = DiskMonitor.volumes() }
         refreshMetrics()
         Trace.span("refreshTrash") { refreshTrash() }
+        // The explicit [weak self] on the inner Task is not redundant: the outer
+        // `self` is a captured weak var, and Swift 5.10 rejects referencing a
+        // captured var from concurrently-executing code. Newer compilers accept
+        // it, which is how this built locally and failed in CI.
         timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refreshMetrics() }
+            Task { @MainActor [weak self] in self?.refreshMetrics() }
         }
         Trace.mark("AppState.start finished")
     }
@@ -1127,7 +1131,12 @@ final class AppState: ObservableObject {
                 if outcome.succeeded { freed += entry.bytes } else { failures += 1 }
             }
 
-            Task { @MainActor [weak self] in
+            // Captured by value: Swift 5.10 refuses to read mutable locals from
+            // concurrently-executing code (newer compilers allow it once the
+            // mutation has provably ended, which is why this built locally and
+            // failed in CI). The duplicates path above already snapshots into
+            // `let` for the same reason; this block had missed it.
+            Task { @MainActor [weak self, freed, failures] in
                 guard let self else { return }
                 self.isMigrating = false
                 self.journal = engine.loadJournal()
