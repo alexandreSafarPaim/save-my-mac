@@ -1,14 +1,15 @@
 import Foundation
 
-/// Um item de primeiro nível dentro da Lixeira.
+/// A top-level item inside the Trash.
 struct TrashItem: Identifiable, Hashable, Sendable {
     let id = UUID()
     var path: String
     var name: String
     var size: Int64
     var discardedAt: Date?
-    /// `false` quando `addedToDirectoryDate` não estava disponível e caímos no
-    /// mtime original — nesse caso a data não diz quando o item foi descartado.
+    /// `false` when `addedToDirectoryDate` was unavailable and we fell back to
+    /// the original mtime — in that case the date does not say when the item was
+    /// discarded.
     var discardedDateIsExact: Bool = true
     var isDirectory: Bool
 }
@@ -16,19 +17,20 @@ struct TrashItem: Identifiable, Hashable, Sendable {
 struct TrashInfo: Sendable {
     var items: [TrashItem] = []
     var totalBytes: Int64 = 0
-    /// Distingue "Lixeira vazia" de "ainda não medida".
+    /// Tells "Trash is empty" apart from "not measured yet".
     var isMeasured = false
 
     var count: Int { items.count }
     var isEmpty: Bool { items.isEmpty }
 
-    /// O item mais antigo, para dar noção de quanto tempo aquilo está parado.
+    /// The oldest item, to give a sense of how long that has been sitting there.
     var oldest: Date? {
         items.compactMap(\.discardedAt).min()
     }
 
-    /// Só devolve texto quando a data é confiável: a frase aparece no diálogo
-    /// da única ação irreversível do app e serve de argumento para confirmar.
+    /// Only returns text when the date is trustworthy: the sentence appears in
+    /// the dialog for the app's only irreversible action and serves as an argument
+    /// for confirming.
     var oldestLabel: String? {
         let exact = items.filter(\.discardedDateIsExact).compactMap(\.discardedAt)
         guard let oldest = exact.min() else { return nil }
@@ -42,16 +44,16 @@ struct TrashEmptyResult: Sendable {
     var failures: [(path: String, reason: String)] = []
 }
 
-/// Lê e esvazia a Lixeira do usuário.
+/// Reads and empties the user's Trash.
 ///
-/// Escopo deliberado: **apenas `~/.Trash`**. Cada volume externo tem a sua
-/// própria Lixeira em `/Volumes/<nome>/.Trashes/<uid>/`, e mexer nelas é uma
-/// decisão diferente — some espaço de um disco que talvez não seja o que você
-/// quer limpar. Aqui a conta é só a do Mac.
+/// Deliberate scope: **`~/.Trash` only**. Every external volume has its own Trash
+/// at `/Volumes/<name>/.Trashes/<uid>/`, and touching those is a different
+/// decision — it frees space on a disk that may not be the one you meant to
+/// clean. Here the accounting is the Mac's alone.
 ///
-/// Esvaziar é, por definição, permanente: não existe "mover para a Lixeira" o
-/// que já está nela. Por isso esta é a única operação do app sem volta, e ela
-/// sempre passa por confirmação com total e contagem.
+/// Emptying is permanent by definition: there is no "move to the Trash" for what
+/// is already in it. That makes this the app's only operation with no way back,
+/// and it always goes through a confirmation showing the total and the count.
 enum TrashManager {
 
     static var trashURL: URL {
@@ -97,9 +99,9 @@ enum TrashManager {
                 ? DiskMonitor.directorySize(at: url, isCancelled: isCancelled)
                 : Int64(values?.totalFileAllocatedSize ?? values?.fileSize ?? 0)
 
-            // `addedToDirectoryDate` é quando o item entrou na Lixeira, que é o
-            // que interessa. A Apple avisa que não é suportado em todo volume,
-            // daí o fallback — marcado como impreciso.
+            // `addedToDirectoryDate` is when the item entered the Trash, which is
+            // what matters. Apple warns it isn't supported on every volume, hence
+            // the fallback — flagged as imprecise.
             let added = values?.addedToDirectoryDate
             info.items.append(TrashItem(
                 path: url.path,
@@ -119,22 +121,23 @@ enum TrashManager {
 
     // MARK: - Esvaziar
 
-    /// Esvazia enumerando o diretório **ao vivo**.
+    /// Empties by enumerating the directory **live**.
     ///
-    /// Não recebe a lista da interface de propósito: o snapshot da tela pode ser
-    /// de antes da última limpeza — e é justamente a limpeza no modo "Mover para
-    /// a Lixeira" que enche isto aqui. Iterando um snapshot velho, o app diria
-    /// "Lixeira esvaziada" sem apagar o que acabou de ser movido.
+    /// It deliberately does not take the list from the interface: the on-screen
+    /// snapshot may predate the last cleanup — and it is precisely a cleanup in
+    /// "Move to Trash" mode that fills this up. Iterating a stale snapshot, the
+    /// app would report "Trash emptied" without deleting what had just been
+    /// moved there.
     static func empty(progress: (String, Double) -> Void) -> TrashEmptyResult {
         var result = TrashEmptyResult()
         let fm = FileManager.default
         let root = trashURL
         let rootPath = root.standardizedFileURL.path
 
-        // `standardizedFileURL` resolve `.` e `..` mas NÃO resolve symlink. Se
-        // `~/.Trash` for um link, a trava de caminho abaixo passaria e o app
-        // apagaria recursivamente o alvo real. Esta é a única operação sem volta
-        // do app, então vale a checagem.
+        // `standardizedFileURL` resolves `.` and `..` but does NOT resolve
+        // symlinks. If `~/.Trash` is a link, the path guard below would pass and
+        // the app would recursively delete the real target. This is the app's only
+        // operation with no way back, so the check earns its place.
         let rootValues = try? root.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
         guard rootValues?.isSymbolicLink != true, rootValues?.isDirectory == true else {
             result.failures.append((root.path, L("~/.Trash is not a real folder — nothing was removed")))
@@ -164,8 +167,8 @@ enum TrashManager {
                 : Int64(values?.totalFileAllocatedSize ?? values?.fileSize ?? 0)
 
             do {
-                // `removeItem` não segue symlink: um link dentro da Lixeira
-                // apontando para fora tem só o link removido.
+                // `removeItem` does not follow symlinks: a link inside the Trash
+                // pointing outside has only the link removed.
                 try fm.removeItem(at: url)
                 result.removedCount += 1
                 result.freedBytes += size
@@ -182,8 +185,8 @@ enum TrashManager {
     private static func friendlyReason(for error: Error, url: URL) -> String {
         let ns = error as NSError
 
-        // Arquivo com o flag de imutável (`chflags uchg`) — o Finder pede
-        // confirmação nesse caso; aqui só reportamos.
+        // A file with the immutable flag (`chflags uchg`) — Finder asks for
+        // confirmation in that case; here we just report it.
         if let values = try? url.resourceValues(forKeys: [.isUserImmutableKey]),
            values.isUserImmutable == true {
             return L("File is locked. Unlock it in Finder (Get Info) and try again.")

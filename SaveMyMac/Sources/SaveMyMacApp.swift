@@ -94,19 +94,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let wanted = UserDefaults.standard.bool(forKey: "showMenuBarExtra")
             let window = NSApp.windows.first { $0.className.contains("StatusBar") }
 
-            Trace.mark("barra de menus — recurso: ligado · preferência showMenuBarExtra: \(wanted)")
+            Trace.mark("menu bar — feature: on · showMenuBarExtra preference: \(wanted)")
 
             switch (wanted, window?.isVisible) {
             case (false, _):
-                Trace.mark("⚠️  ÍCONE OCULTO: a preferência está em falso. "
-                    + "Ligue em Ajustes (⌘,) ou: defaults write "
+                Trace.mark("⚠️  ICON HIDDEN: the preference is false. "
+                    + "Turn it on in Settings (⌘,) or: defaults write "
                     + "br.com.pentagrama.savemymac showMenuBarExtra -bool true")
             case (true, .some(true)):
-                Trace.mark("✅ ícone visível na barra de menus")
+                Trace.mark("✅ icon visible in the menu bar")
             case (true, .some(false)):
-                Trace.mark("⚠️  janela do item existe mas está invisível")
+                Trace.mark("⚠️  the item window exists but is invisible")
             case (true, .none):
-                Trace.mark("⚠️  preferência ligada mas nenhuma janela de status foi criada")
+                Trace.mark("⚠️  preference is on but no status window was created")
             }
         }
     }
@@ -216,7 +216,7 @@ struct SaveMyMacApp: App {
                     Trace.mark("RootView.onAppear")
                     state.start()
                     state.attach(preferences: prefs, spaceAlert: spaceAlert)
-                    Trace.mark("RootView.onAppear concluído")
+                    Trace.mark("RootView.onAppear finished")
                 }
         }
         .windowStyle(.hiddenTitleBar)
@@ -260,7 +260,7 @@ struct SaveMyMacApp: App {
     /// counter below exists so that frequency is visible in the trace instead of
     /// being a surprise again.
     private var settingsScene: some Scene {
-        Trace.count("cena Ajustes reconstruída", every: 200)
+        Trace.count("Settings scene rebuilt", every: 200)
         return Settings {
             SettingsView()
                 .environmentObject(state)

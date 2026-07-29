@@ -7,10 +7,10 @@ struct ProcessInfoRow: Identifiable, Hashable {
     var name: String
     var cpuPercent: Double
     var memoryBytes: Int64
-    /// Dono do processo. `nil` quando o `ps` não devolveu a coluna.
+    /// The process owner. `nil` when `ps` didn't return the column.
     var uid: Int32?
-    /// Caminho do bundle, quando o processo é um app com interface — permite
-    /// mostrar o ícone real e o nome que o usuário reconhece.
+    /// Bundle path, when the process is an app with a UI — lets us show the real
+    /// icon and the name the user recognises.
     var bundlePath: String?
 
     var isApp: Bool { bundlePath != nil }
@@ -18,8 +18,8 @@ struct ProcessInfoRow: Identifiable, Hashable {
 
 enum ProcessMonitor {
 
-    /// Por que a última leitura falhou. Existe para a interface poder dizer o
-    /// motivo em vez de renderizar um card vazio.
+    /// Why the last read failed. It exists so the interface can state the reason
+    /// instead of rendering an empty card.
     private static let failureLock = NSLock()
     private static var storedFailure: String?
 
@@ -35,7 +35,7 @@ enum ProcessMonitor {
         failureLock.unlock()
     }
 
-    /// Top processos por CPU e por memória, via `ps`.
+    /// Top processes by CPU and by memory, through `ps`.
     static func top(limit: Int = 8) -> (byCPU: [ProcessInfoRow], byMemory: [ProcessInfoRow]) {
         let rows = allProcesses()
         let byCPU = Array(rows.sorted { $0.cpuPercent > $1.cpuPercent }.prefix(limit))
@@ -44,10 +44,9 @@ enum ProcessMonitor {
     }
 
     static func allProcesses() -> [ProcessInfoRow] {
-        // Três formas de chamar o `ps`. A primeira usa `=` para suprimir o
-        // cabeçalho; as outras servem de rede de segurança, porque o parse
-        // ignora qualquer linha cujo primeiro campo não seja um número — o
-        // cabeçalho cai fora sozinho.
+        // Three ways to call `ps`. The first uses `=` to suppress the header;
+        // the others are a safety net, because the parser ignores any line whose
+        // first field isn't a number — the header falls out on its own.
         let attempts: [[String]] = [
             ["-axo", "pid=,pcpu=,rss=,uid=,comm="],
             ["-axo", "pid,pcpu,rss,uid,comm"],
@@ -77,10 +76,10 @@ enum ProcessMonitor {
         return []
     }
 
-    /// Resolve nome localizado e bundle das linhas exibidas.
+    /// Resolves the localized name and bundle for the rows on screen.
     ///
-    /// Precisa rodar na thread principal: mexe com AppKit. São ~12 consultas,
-    /// não as centenas que uma resolução no parse faria.
+    /// Has to run on the main thread: it touches AppKit. That's ~12 lookups, not
+    /// the hundreds that resolving during the parse would do.
     @MainActor
     static func enrich(_ rows: [ProcessInfoRow]) -> [ProcessInfoRow] {
         rows.map { row in
@@ -92,19 +91,19 @@ enum ProcessMonitor {
         }
     }
 
-    /// Converte número aceitando ponto **ou** vírgula como separador decimal.
-    /// Segunda camada de defesa: o LC_ALL=C já deveria garantir o ponto, mas
-    /// custa três linhas não depender disso.
+    /// Parses a number accepting either a dot **or** a comma as the decimal
+    /// separator. A second line of defence: LC_ALL=C should already guarantee the
+    /// dot, but not depending on that costs three lines.
     static func decimal(_ text: Substring) -> Double? {
         if let value = Double(text) { return value }
         return Double(text.replacingOccurrences(of: ",", with: "."))
     }
 
-    /// Interpreta a saída do `ps`, pulando cabeçalho e linhas malformadas.
+    /// Parses `ps` output, skipping the header and malformed lines.
     ///
-    /// Aceita os dois formatos: com a coluna `uid` (5 campos) e sem ela (4).
-    /// Distingue os dois pelo 4º campo — se for um inteiro puro é o uid, porque
-    /// nenhum caminho de comando é só dígitos.
+    /// Accepts both formats: with the `uid` column (5 fields) and without it (4).
+    /// It tells them apart by the 4th field — if it's a bare integer it's the uid,
+    /// because no command path is all digits.
     static func parse(_ output: String) -> [ProcessInfoRow] {
         var rows: [ProcessInfoRow] = []
 
@@ -128,11 +127,11 @@ enum ProcessMonitor {
             let commandPath = parts[commandStart...].joined(separator: " ")
             let fallbackName = (commandPath as NSString).lastPathComponent
 
-            // O nome bonito e o ícone NÃO são resolvidos aqui de propósito:
-            // `NSRunningApplication` é AppKit, esta função roda em thread de
-            // fundo, e resolver para centenas de processos a cada 2 s seria
-            // caro e de segurança de thread duvidosa. Quem enriquece é
-            // `enrich(_:)`, chamado só para as linhas que vão à tela.
+            // The pretty name and the icon are deliberately NOT resolved here:
+            // `NSRunningApplication` is AppKit, this function runs on a
+            // background thread, and resolving for hundreds of processes every
+            // 2 s would be expensive and of dubious thread safety. `enrich(_:)`
+            // does that, called only for the rows that reach the screen.
             rows.append(ProcessInfoRow(
                 pid: pid,
                 name: fallbackName.isEmpty ? "pid \(pid)" : fallbackName,
@@ -146,15 +145,15 @@ enum ProcessMonitor {
         return rows
     }
 
-    /// Executa um comando e devolve status, stdout e stderr.
-    /// Necessário quando o código de saída importa — `shell` sozinho não
-    /// distingue "rodou e não imprimiu nada" de "falhou".
+    /// Runs a command and returns status, stdout and stderr.
+    /// Needed when the exit code matters — `shell` alone can't tell "ran and
+    /// printed nothing" from "failed".
     ///
-    /// `forceCLocale` existe por um motivo concreto: utilitários BSD formatam
-    /// números com o separador decimal do sistema. Num Mac em português o `ps`
-    /// imprime `%CPU` como "0,0", e `Double("0,0")` devolve nil — o que fazia
-    /// TODA linha ser descartada e o card de processos ficar vazio. Com LC_ALL=C
-    /// a saída é sempre "0.0". Também estabiliza o formato de data do `mdls`.
+    /// `forceCLocale` exists for a concrete reason: BSD utilities format numbers
+    /// with the system's decimal separator. On a Portuguese Mac, `ps` prints
+    /// `%CPU` as "0,0", and `Double("0,0")` returns nil — which made EVERY line
+    /// be discarded and left the processes card empty. With LC_ALL=C the output is
+    /// always "0.0". It also stabilises `mdls` date formatting.
     static func run(
         _ launchPath: String,
         _ arguments: [String],
@@ -180,20 +179,21 @@ enum ProcessMonitor {
         do {
             try process.run()
         } catch {
-            Trace.mark("exec falhou: \(error.localizedDescription)")
+            Trace.mark("exec failed: \(error.localizedDescription)")
             return (-1, "", error.localizedDescription)
         }
-        defer { Trace.mark("exec \(launchPath) terminou") }
+        defer { Trace.mark("exec \(launchPath) finished") }
 
-        // Os dois canos são esvaziados **em paralelo**.
+        // Both pipes are drained **in parallel**.
         //
-        // Ler stdout até o fim e só depois stderr parece inofensivo e não é: o
-        // buffer de um pipe tem 64 KB. Se o filho encher o de stderr enquanto o
-        // pai ainda espera o fim do stdout, o filho bloqueia na escrita, nunca
-        // fecha o stdout, e o pai espera para sempre. É um impasse silencioso —
-        // nada trava, nada falha, a thread simplesmente some.
+        // Reading stdout to EOF and only then stderr looks harmless and isn't: a
+        // pipe's buffer is 64 KB. If the child fills the stderr one while the
+        // parent is still waiting for the end of stdout, the child blocks on the
+        // write, never closes stdout, and the parent waits forever. It is a
+        // silent deadlock — nothing crashes, nothing fails, the thread just
+        // disappears.
         //
-        // Com uma tarefa por cano nenhum dos dois pode segurar o outro.
+        // With one task per pipe, neither can hold the other.
         var outData = Data()
         var errData = Data()
         let group = DispatchGroup()

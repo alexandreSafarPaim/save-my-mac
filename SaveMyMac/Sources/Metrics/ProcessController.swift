@@ -2,12 +2,12 @@ import Foundation
 import AppKit
 import Darwin
 
-/// Encerra processos, com as travas que faltam num `kill` cru.
+/// Quits processes, with the guards a bare `kill` lacks.
 ///
-/// A ordem importa: primeiro pede ao app para sair — o que dá a ele a chance de
-/// salvar o que estava aberto —, e só força se o usuário confirmar depois. Um
-/// "liberar memória" que mata processos à força perde trabalho do usuário para
-/// melhorar um número que, no macOS, nem deveria ser otimizado.
+/// The order matters: it first asks the app to quit — which gives it the chance
+/// to save what was open — and only forces if the user confirms afterwards. A
+/// "free memory" button that force-kills processes trades the user's work for a
+/// number that, on macOS, shouldn't be optimised in the first place.
 enum ProcessController {
 
     enum Outcome {
@@ -37,11 +37,11 @@ enum ProcessController {
         }
     }
 
-    /// Processos que o app nunca encerra.
+    /// Processes the app never quits.
     ///
-    /// Não é lista de "pode dar problema": é lista de "vai quebrar a sessão".
-    /// Matar o WindowServer derruba a interface inteira; matar o launchd
-    /// reinicia a máquina.
+    /// This is not a "might cause trouble" list: it is a "will break the session"
+    /// list. Killing WindowServer takes down the entire interface; killing
+    /// launchd reboots the machine.
     private static let critical: Set<String> = [
         "kernel_task", "launchd", "WindowServer", "loginwindow", "logind",
         "opendirectoryd", "securityd", "secinitd", "trustd", "configd",
@@ -51,13 +51,13 @@ enum ProcessController {
         "backupd", "installd", "runningboardd", "SystemUIServer"
     ]
 
-    /// Processos que voltam sozinhos e cujo encerramento é apenas irritante.
-    /// Permitidos, mas com aviso.
+    /// Processes that come back on their own and whose termination is merely
+    /// annoying. Allowed, but with a warning.
     static let relaunches: Set<String> = ["Finder", "Dock", "ControlCenter", "NotificationCenter"]
 
-    // MARK: - Verificação
+    // MARK: - Checks
 
-    /// Motivo para não encerrar, ou `nil` se pode.
+    /// Reason not to quit, or `nil` if it is allowed.
     static func rejectionReason(for row: ProcessInfoRow) -> String? {
         if row.pid <= 1 {
             return L("Core system process.")
@@ -68,18 +68,18 @@ enum ProcessController {
         if critical.contains(row.name) {
             return L("%@ is essential to the session — quitting it would take down the interface.", row.name)
         }
-        // Sem privilégio de root não há como encerrar processo de outro dono, e
-        // pedir senha para isso seria trocar estabilidade por um número.
-        // `bitPattern` em vez de `Int32(getuid())`: a conversão de UInt32 daria
-        // trap se o uid passasse de Int32.max.
+        // Without root there is no way to quit another owner's process, and
+        // asking for a password to do it would trade stability for a number.
+        // `bitPattern` rather than `Int32(getuid())`: converting from UInt32 would
+        // trap if the uid exceeded Int32.max.
         if let uid = row.uid, uid != Int32(bitPattern: getuid()) {
             return L("%@ is not yours (runs as uid %d). The app does not escalate privileges for that.", row.name, uid)
         }
         return nil
     }
 
-    /// Aviso extra para processos que o macOS relança sozinho — encerrar não
-    /// quebra nada, só pisca a interface.
+    /// Extra warning for processes macOS relaunches by itself — quitting breaks
+    /// nothing, it just flickers the interface.
     static func warning(for row: ProcessInfoRow) -> String? {
         guard relaunches.contains(row.name) else { return nil }
         return L("macOS relaunches %@ automatically.", row.name)
@@ -98,8 +98,8 @@ enum ProcessController {
             return .refused(reason)
         }
 
-        // App com interface: `terminate()` manda um Apple Event de quit, que é
-        // o mesmo que ⌘Q. `kill` puro não daria essa chance.
+        // App with a UI: `terminate()` sends a quit Apple Event, which is the
+        // same as ⌘Q. A bare `kill` would not give it that chance.
         if let app = NSRunningApplication(processIdentifier: row.pid) {
             let name = app.localizedName ?? row.name
             return app.terminate()
@@ -107,15 +107,15 @@ enum ProcessController {
                 : .failed(L("%@ did not accept the quit request. Use force quit if you need to.", name))
         }
 
-        // Daemon ou helper sem interface: SIGTERM é o equivalente educado.
+        // Daemon or headless helper: SIGTERM is the polite equivalent.
         if kill(row.pid, SIGTERM) == 0 {
             return .askedToQuit(row.name)
         }
         return .failed(L("Could not quit %@: %@.", row.name, String(cString: strerror(errno))))
     }
 
-    /// Força. Só deve ser chamado depois de confirmação explícita, porque
-    /// trabalho não salvo é perdido.
+    /// Forces it. Should only be called after explicit confirmation, because
+    /// unsaved work is lost.
     @discardableResult
     static func forceQuit(_ row: ProcessInfoRow) -> Outcome {
         if let reason = rejectionReason(for: row) {
@@ -135,9 +135,9 @@ enum ProcessController {
         return .failed(L("Could not force %@: %@.", row.name, String(cString: strerror(errno))))
     }
 
-    // MARK: - Informação extra
+    // MARK: - Extra information
 
-    /// Nome e ícone de verdade quando o processo é um app com interface.
+    /// The real name and icon when the process is an app with a UI.
     static func appInfo(for pid: Int32) -> (name: String, bundlePath: String)? {
         guard let app = NSRunningApplication(processIdentifier: pid),
               let url = app.bundleURL else { return nil }

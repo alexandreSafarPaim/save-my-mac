@@ -335,7 +335,7 @@ struct MenuBarLabel: View {
         // publishes several times per tick; if that ever becomes a cycle again,
         // the number shows up in the trace before the app stops responding. In
         // normal use it should grow slowly.
-        let _ = Trace.count("rótulo da barra de menus", every: 300)
+        let _ = Trace.count("menu bar label", every: 300)
 
         if !MenuBarFeature.isEnabled {
             EmptyView()

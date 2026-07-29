@@ -238,13 +238,13 @@ final class AppState: ObservableObject {
         // One synchronous read at launch only, so the window opens with the
         // disk already filled in. After that, volumes are always read off the
         // main thread.
-        Trace.span("DiskMonitor.volumes (lançamento)") { volumes = DiskMonitor.volumes() }
+        Trace.span("DiskMonitor.volumes (launch)") { volumes = DiskMonitor.volumes() }
         refreshMetrics()
         Trace.span("refreshTrash") { refreshTrash() }
         timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refreshMetrics() }
         }
-        Trace.mark("AppState.start concluído")
+        Trace.mark("AppState.start finished")
     }
 
     func stop() {

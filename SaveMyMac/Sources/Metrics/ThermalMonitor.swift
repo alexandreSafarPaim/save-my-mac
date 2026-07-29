@@ -9,24 +9,24 @@ struct SensorReading: Identifiable, Hashable {
 }
 
 struct ThermalSnapshot {
-    /// Estado térmico oficial da Apple — sempre disponível, sem senha.
+    /// Apple's official thermal state — always available, no password.
     var thermalState: ProcessInfo.ThermalState = .nominal
 
-    /// Temperaturas lidas por sensor (pode vir vazio dependendo do modelo/macOS).
+    /// Per-sensor temperature readings (may be empty depending on model/macOS).
     var sensors: [SensorReading] = []
 
-    /// Melhor estimativa da temperatura da CPU/SoC.
+    /// Best estimate of the CPU/SoC temperature.
     var cpuTemperature: Double?
 
     var gpuTemperature: Double?
 
-    /// Temperatura da bateria (fallback confiável em notebooks).
+    /// Battery temperature (a reliable fallback on laptops).
     var batteryTemperature: Double?
 
-    /// RPM das ventoinhas, se disponível.
+    /// Fan RPM, when available.
     var fans: [Int] = []
 
-    /// Origem dos dados, para mostrar na interface.
+    /// Where the data came from, to show in the interface.
     var source: String = "—"
 
     var thermalStateLabel: String {
@@ -39,7 +39,7 @@ struct ThermalSnapshot {
         }
     }
 
-    /// Melhor temperatura disponível para exibir no card principal.
+    /// Best available temperature to show on the main card.
     var displayTemperature: Double? {
         cpuTemperature ?? sensors.map(\.celsius).max() ?? batteryTemperature
     }
@@ -47,13 +47,13 @@ struct ThermalSnapshot {
 
 enum ThermalMonitor {
 
-    // MARK: - Leitura principal (sem senha)
+    // MARK: - Main read (no password)
 
     static func read() -> ThermalSnapshot {
         var snap = ThermalSnapshot()
         snap.thermalState = ProcessInfo.processInfo.thermalState
 
-        // 1) Sensores via IOHID (funciona em Apple Silicon sem senha, quando disponível)
+        // 1) Sensors through IOHID (works on Apple Silicon with no password, when available)
         let hidSensors = HIDSensors.readTemperatureSensors()
         if !hidSensors.isEmpty {
             snap.sensors = hidSensors.sorted { $0.celsius > $1.celsius }
@@ -63,7 +63,7 @@ enum ThermalMonitor {
             snap.source = L("IOHID sensors")
         }
 
-        // 2) Bateria — quase sempre disponível em notebooks
+        // 2) Battery — almost always available on laptops
         let battery = BatteryMonitor.read()
         snap.batteryTemperature = battery.temperature
 
@@ -78,10 +78,10 @@ enum ThermalMonitor {
         return snap
     }
 
-    // MARK: - Leitura elevada (pede senha uma vez)
+    // MARK: - Elevated read (asks for a password once)
 
-    /// Roda `powermetrics` com privilégios de administrador. Retorna nil se o
-    /// usuário cancelar ou se o comando não expuser temperaturas neste Mac.
+    /// Runs `powermetrics` with administrator privileges. Returns nil if the
+    /// user cancels, or if the command exposes no temperatures on this Mac.
     static func readElevated() -> ThermalSnapshot? {
         let command = "/usr/bin/powermetrics --samplers smc,thermal -n 1 -i 800 2>/dev/null"
         guard let output = runWithAdminPrivileges(command), !output.isEmpty else { return nil }
@@ -122,11 +122,11 @@ enum ThermalMonitor {
 
     // MARK: - Helpers
 
-    /// Extrai o primeiro número de uma string como "45.12 C" ou "1998 rpm".
+    /// Extracts the first number from a string like "45.12 C" or "1998 rpm".
     ///
-    /// Aceita vírgula como separador decimal: num Mac em português o
-    /// powermetrics imprime "45,12 C", e parar no primeiro caractere não
-    /// numérico devolveria 45 em vez de 45,12.
+    /// Accepts a comma as the decimal separator: on a Portuguese Mac,
+    /// powermetrics prints "45,12 C", and stopping at the first non-numeric
+    /// character would return 45 instead of 45.12.
     private static func firstDouble(in text: String) -> Double? {
         var buffer = ""
         for char in text {
@@ -154,28 +154,27 @@ enum ThermalMonitor {
         return matches.map(\.celsius).max()
     }
 
-    /// Executa um comando shell com privilégios de administrador.
-    /// Usa `osascript` num processo separado (NSAppleScript não é thread-safe),
-    /// então o macOS mostra o diálogo nativo de senha sem travar o app.
+    /// Runs a shell command with administrator privileges.
+    /// Uses `osascript` in a separate process (NSAppleScript is not thread-safe),
+    /// so macOS shows the native password dialog without hanging the app.
     static func runWithAdminPrivileges(_ command: String) -> String? {
         let escaped = command
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
         let source = "do shell script \"\(escaped)\" with administrator privileges"
 
-        // Aqui NÃO forçamos locale: o diálogo de senha é do sistema e deve
-        // continuar no idioma do usuário. A saída do powermetrics é tratada
-        // pelo `firstDouble`, que aceita vírgula.
+        // We do NOT force the locale here: the password dialog belongs to the
+        // system and should stay in the user's language. powermetrics output is
+        // handled by `firstDouble`, which accepts a comma.
         return ProcessMonitor.shell("/usr/bin/osascript", ["-e", source])
     }
 }
 
-// MARK: - Sensores IOHID (API privada, com degradação segura)
+// MARK: - IOHID sensors (private API, with safe degradation)
 
-/// Acessa os sensores de temperatura/ventoinha via IOHIDEventSystemClient.
-/// Todos os símbolos são resolvidos em tempo de execução com `dlsym`, então se
-/// a Apple mudar/remover a API o app simplesmente não mostra temperaturas
-/// em vez de falhar.
+/// Reaches the temperature/fan sensors through IOHIDEventSystemClient.
+/// Every symbol is resolved at runtime with `dlsym`, so if Apple changes or
+/// removes the API the app simply shows no temperatures instead of failing.
 enum HIDSensors {
 
     private static let kHIDPageAppleVendor: Int = 0xff00
@@ -245,22 +244,22 @@ enum HIDSensors {
             .filter { $0 > 0 }
     }
 
-    // MARK: - Sessão persistente
+    // MARK: - Persistent session
     //
-    // A versão anterior chamava `IOHIDEventSystemClientCreate` **a cada
-    // leitura**. Como `ThermalMonitor.read()` lê temperatura e ventoinha, e
-    // rodava no ciclo de 2 segundos, o app abria dois clientes HID novos a cada
-    // 2 s — mais de três mil por hora.
+    // The previous version called `IOHIDEventSystemClientCreate` **on every
+    // read**. Since `ThermalMonitor.read()` reads temperature and fans, and ran
+    // on the 2-second cycle, the app opened two new HID clients every 2 s — over
+    // three thousand per hour.
     //
-    // Isso não é um vazamento comum de memória. Um IOHIDEventSystemClient não é
-    // um objeto local: criá-lo registra um cliente no `hidd`, o daemon que
-    // entrega teclado e mouse para o sistema inteiro, com portas mach e
-    // notificação de correspondência. Criar e destruir milhares deles
-    // sobrecarrega o `hidd` — e quando o `hidd` engasga, **o Mac inteiro
-    // congela**, não só este app. Era esse o "trava tudo".
+    // That is not an ordinary memory leak. An IOHIDEventSystemClient is not a
+    // local object: creating one registers a client with `hidd`, the daemon that
+    // delivers keyboard and mouse to the entire system, with mach ports and a
+    // matching notification. Creating and tearing down thousands of them
+    // overloads `hidd` — and when `hidd` chokes, **the whole Mac freezes**, not
+    // just this app. That was the "everything hangs".
     //
-    // Agora o cliente é criado uma vez por tipo de sensor e vive enquanto o app
-    // viver, que é como essa API foi feita para ser usada.
+    // The client is now created once per sensor type and lives as long as the app
+    // does, which is how this API was meant to be used.
 
     private final class Session {
         let client: AnyObject
@@ -271,20 +270,20 @@ enum HIDSensors {
         }
     }
 
-    /// Serializa também as *leituras*: um único cliente compartilhado não deve
-    /// receber chamadas concorrentes, e o custo é irrelevante porque só existe
-    /// um leitor a cada poucos segundos.
+    /// Serialises the *reads* as well: a single shared client should not receive
+    /// concurrent calls, and the cost is irrelevant because there is only one
+    /// reader every few seconds.
     private static let lock = NSLock()
     private static var sessions: [Int: Session?] = [:]
 
     private static func session(for usage: Int, _ s: Symbols) -> Session? {
-        // `sessions[usage]` é `Session??`: o valor externo diz "já tentei",
-        // o interno diz "consegui". Sem essa distinção, um Mac sem sensores
-        // tentaria criar o cliente de novo a cada leitura — exatamente o
-        // comportamento que estamos eliminando.
+        // `sessions[usage]` is `Session??`: the outer value says "already
+        // tried", the inner one says "succeeded". Without that distinction, a Mac
+        // with no sensors would try to create the client again on every read —
+        // exactly the behaviour we are eliminating.
         if let attempted = sessions[usage] { return attempted }
 
-        Trace.mark("HID usage \(usage): CRIANDO cliente (deve acontecer uma única vez)")
+        Trace.mark("HID usage \(usage): CREATING client (should happen exactly once)")
         let made: Session? = {
             guard let clientRef = s.createClient(kCFAllocatorDefault) else { return nil }
             let client = clientRef.takeRetainedValue()
@@ -299,19 +298,19 @@ enum HIDSensors {
         }()
 
         sessions[usage] = made
-        NSLog("[SaveMyMac] Sensores HID (usage \(usage)): \(made?.services.count ?? -1) serviço(s).")
+        NSLog("[SaveMyMac] HID sensors (usage \(usage)): \(made?.services.count ?? -1) service(s).")
         return made
     }
 
     private static func readSensors(usage: Int, eventType: Int64) -> [(name: String, value: Double)] {
         guard let s = symbols else { return [] }
 
-        Trace.mark("HID usage \(usage): aguardando cadeado")
+        Trace.mark("HID usage \(usage): waiting for lock")
         lock.lock()
         defer { lock.unlock() }
 
         guard let session = session(for: usage, s) else { return [] }
-        Trace.mark("HID usage \(usage): \(session.services.count) serviço(s), lendo eventos")
+        Trace.mark("HID usage \(usage): \(session.services.count) service(s), reading events")
 
         let field = Int32(truncatingIfNeeded: eventType << 16)
         var results: [(name: String, value: Double)] = []
