@@ -351,7 +351,7 @@ final class CleanupScanner: @unchecked Sendable {
             }
             .map { item -> CleanupItem in
                 var copy = item
-                copy.note = "Baixado \(Fmt.relativeDate(item.modified))"
+                copy.note = L("Downloaded %@", Fmt.relativeDate(item.modified))
                 return copy
             }
 

@@ -403,15 +403,64 @@ final class FileScanner: @unchecked Sendable {
             }
         ) else { return (entries, denied, deniedExamples, 0) }
 
+        // ── Instrumentation ──────────────────────────────────────────────────
+        //
+        // Permanent, not temporary. The walk has now been wrong three times for
+        // three different reasons, and each time the only visible symptom was a
+        // single number on screen with no way to ask it *where* it stopped.
+        // A tally per top-level folder answers that in one run: if `Library`
+        // shows 3 visited when it holds 96 entries at its first level alone, the
+        // walk is being cut, and the skip log says by what.
+        var perTopFolder: [String: Int] = [:]
+        var skipped: [String] = []
+        let homeComponents = home.standardizedFileURL.pathComponents.count
+
         var visited = 0
         for case let url as URL in enumerator {
             if isCancelled() { break }
             visited += 1
             if visited % 5000 == 0 { progress(visited) }
 
-            if excludedNames.contains(url.lastPathComponent)
-                || packageExtensions.contains(url.pathExtension.lowercased()) {
+            let components = url.standardizedFileURL.pathComponents
+            if components.count > homeComponents {
+                perTopFolder[components[homeComponents], default: 0] += 1
+            }
+
+            if excludedNames.contains(url.lastPathComponent) {
+                if skipped.count < 40 {
+                    skipped.append("excluded \(url.path.replacingOccurrences(of: home.path, with: "~"))")
+                }
                 enumerator.skipDescendants()
+                continue
+            }
+
+            // A package is opaque, not absent.
+            //
+            // Packages used to be skipped and forgotten, which meant the single
+            // biggest thing on the machine this was written on — a 7.3 GB
+            // `claudevm.bundle` holding three files over 500 MB — never appeared
+            // on a screen whose entire job is showing large files. Three of the
+            // Mac's five biggest files were inside it.
+            //
+            // Descending into one is wrong: the user thinks of a `.photoslibrary`
+            // as one object and cannot delete half of it. So it is measured as a
+            // whole and listed as one entry. `logicalSize` stays 0 to keep it out
+            // of the duplicate comparison, which is defined for files only.
+            if packageExtensions.contains(url.pathExtension.lowercased()) {
+                enumerator.skipDescendants()
+                let bytes = packageSize(of: url, isCancelled: isCancelled)
+                if skipped.count < 40 {
+                    skipped.append("package \(Fmt.bytes(bytes)) \(url.path.replacingOccurrences(of: home.path, with: "~"))")
+                }
+                if bytes >= duplicateThreshold {
+                    entries.append(Entry(
+                        url: url,
+                        size: bytes,
+                        logicalSize: 0,
+                        modified: (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
+                            .contentModificationDate
+                    ))
+                }
                 continue
             }
 
@@ -433,8 +482,56 @@ final class FileScanner: @unchecked Sendable {
             if entries.count > 300_000 { break }
         }
 
+        // The return type is written out rather than inferred: this is a
+        // multi-statement closure passed to an `@autoclosure`, and spelling it
+        // removes any doubt about which Swift versions can infer it.
+        Trace.mark({ () -> String in
+            var lines = ["walk report — visited \(visited), candidates \(entries.count), errors \(denied)"]
+            for (folder, count) in perTopFolder.sorted(by: { $0.value > $1.value }) {
+                lines.append("  ~/\(folder): \(count) visited")
+            }
+            lines.append("  skipDescendants called \(skipped.count) time(s)\(skipped.count >= 40 ? " (first 40)" : "")")
+            for path in skipped { lines.append("    skip \(path)") }
+            return lines.joined(separator: "\n")
+        }())
+
         progress(visited)
         return (entries, denied, deniedExamples, visited)
+    }
+
+    /// Total bytes occupied by a package directory.
+    ///
+    /// Uses its own enumerator with `.skipsPackageDescendants` **absent**, since
+    /// the whole point is to look inside one package. Packages are few — a
+    /// handful of `.app`s and libraries — so the extra walk is cheap next to the
+    /// main one, and it is the only way to give a `.photoslibrary` or a VM bundle
+    /// an honest size.
+    private func packageSize(of url: URL, isCancelled: () -> Bool) -> Int64 {
+        guard let inner = fm.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.totalFileAllocatedSizeKey, .fileSizeKey, .isRegularFileKey],
+            options: [],
+            errorHandler: { _, _ in true }
+        ) else { return 0 }
+
+        var total: Int64 = 0
+        var counted = 0
+        for case let child as URL in inner {
+            if isCancelled() { return total }
+            counted += 1
+            // A package with more than this many files is pathological; stop and
+            // report what was counted rather than stalling the scan. The number
+            // is reported in the trace so a truncated total is never silent.
+            if counted > 200_000 {
+                Trace.mark("package size truncated at 200k files: \(url.lastPathComponent)")
+                break
+            }
+            guard let values = try? child.resourceValues(
+                forKeys: [.totalFileAllocatedSizeKey, .fileSizeKey, .isRegularFileKey]
+            ), values.isRegularFile == true else { continue }
+            total += Int64(values.totalFileAllocatedSize ?? values.fileSize ?? 0)
+        }
+        return total
     }
 
     // MARK: - Duplicates

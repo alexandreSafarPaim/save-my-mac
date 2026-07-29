@@ -409,7 +409,7 @@ final class AppState: ObservableObject {
         isScanning = true
         cancelFlag.reset()
         scanProgress = 0
-        scanStatus = "Preparando…"
+        scanStatus = L("Preparing…")
         categories = []
         selectedItemIDs = []
 
@@ -431,7 +431,7 @@ final class AppState: ObservableObject {
                 self.isScanning = false
                 self.scanProgress = 1
                 self.lastScanDate = Date()
-                self.scanStatus = flag.isCancelled ? "Cancelada" : L("Done")
+                self.scanStatus = flag.isCancelled ? L("Cancelled") : L("Done")
                 self.selectedItemIDs = Set(
                     result.filter { $0.risk == .safe }.flatMap(\.items).map(\.id)
                 )
@@ -443,7 +443,7 @@ final class AppState: ObservableObject {
 
     func cancelScan() {
         cancelFlag.cancel()
-        scanStatus = "Cancelando…"
+        scanStatus = L("Cancelling…")
     }
 
     // MARK: - File scan
@@ -453,7 +453,7 @@ final class AppState: ObservableObject {
         isScanningFiles = true
         filesCancelFlag.reset()
         filesProgress = 0
-        filesStatus = "Preparando…"
+        filesStatus = L("Preparing…")
         selectedDuplicateIDs = []
 
         let flag = filesCancelFlag
@@ -474,7 +474,7 @@ final class AppState: ObservableObject {
                 self.isScanningFiles = false
                 self.filesProgress = 1
                 self.lastFilesScanDate = Date()
-                self.filesStatus = flag.isCancelled ? "Cancelada" : L("Done")
+                self.filesStatus = flag.isCancelled ? L("Cancelled") : L("Done")
                 self.recomputeHealth()
                 self.game.evaluateAchievements(
                     score: self.health.score,
@@ -487,7 +487,7 @@ final class AppState: ObservableObject {
 
     func cancelFilesScan() {
         filesCancelFlag.cancel()
-        filesStatus = "Cancelando…"
+        filesStatus = L("Cancelling…")
     }
 
     // MARK: - App scan
@@ -497,7 +497,7 @@ final class AppState: ObservableObject {
         isScanningApps = true
         appsCancelFlag.reset()
         appsProgress = 0
-        appsStatus = "Preparando…"
+        appsStatus = L("Preparing…")
 
         let flag = appsCancelFlag
         queue.async { [weak self] in
@@ -517,14 +517,14 @@ final class AppState: ObservableObject {
                 self.isScanningApps = false
                 self.appsProgress = 1
                 self.lastAppsScanDate = Date()
-                self.appsStatus = flag.isCancelled ? "Cancelada" : L("Done")
+                self.appsStatus = flag.isCancelled ? L("Cancelled") : L("Done")
             }
         }
     }
 
     func cancelAppsScan() {
         appsCancelFlag.cancel()
-        appsStatus = "Cancelando…"
+        appsStatus = L("Cancelling…")
     }
 
     // MARK: - Offload scan
@@ -534,7 +534,7 @@ final class AppState: ObservableObject {
         isScanningOffload = true
         offloadCancelFlag.reset()
         offloadProgress = 0
-        offloadStatus = "Preparando…"
+        offloadStatus = L("Preparing…")
 
         let flag = offloadCancelFlag
         queue.async { [weak self] in
@@ -565,7 +565,7 @@ final class AppState: ObservableObject {
                 self.isScanningOffload = false
                 self.offloadProgress = 1
                 self.lastOffloadScanDate = Date()
-                self.offloadStatus = flag.isCancelled ? "Cancelada" : L("Done")
+                self.offloadStatus = flag.isCancelled ? L("Cancelled") : L("Done")
                 self.recomputeHealth()
                 self.game.evaluateAchievements(
                     score: self.health.score,
@@ -578,7 +578,7 @@ final class AppState: ObservableObject {
 
     func cancelOffloadScan() {
         offloadCancelFlag.cancel()
-        offloadStatus = "Cancelando…"
+        offloadStatus = L("Cancelling…")
     }
 
     // MARK: - Cleanup selection
@@ -630,7 +630,7 @@ final class AppState: ObservableObject {
 
         isRemoving = true
         removeProgress = 0
-        removeStatus = "Iniciando…"
+        removeStatus = L("Starting…")
         let mode = cleanupMode
 
         queue.async { [weak self] in
@@ -733,12 +733,12 @@ final class AppState: ObservableObject {
 
         isEmptyingTrash = true
         trashProgress = 0
-        trashStatus = "Esvaziando a Lixeira…"
+        trashStatus = L("Emptying the Trash…")
 
         queue.async { [weak self] in
             let result = TrashManager.empty { name, fraction in
                 Task { @MainActor [weak self] in
-                    self?.trashStatus = "Removendo \(name)…"
+                    self?.trashStatus = L("Removing %@…", name)
                     self?.trashProgress = fraction
                 }
             }
@@ -818,7 +818,7 @@ final class AppState: ObservableObject {
                 let originalURL = URL(fileURLWithPath: original.path)
                 for copy in group.removable {
                     Task { @MainActor [weak self] in
-                        self?.removeStatus = "Conferindo \((copy.path as NSString).lastPathComponent)…"
+                        self?.removeStatus = L("Checking %@…", (copy.path as NSString).lastPathComponent)
                     }
                     guard FileComparator.identical(originalURL, URL(fileURLWithPath: copy.path)) else {
                         mismatched += 1
@@ -908,7 +908,7 @@ final class AppState: ObservableObject {
         queue.async { [weak self] in
             let result = AppUninstaller.clearCache(of: app) { label, fraction in
                 Task { @MainActor [weak self] in
-                    self?.removeStatus = "Limpando \(label)…"
+                    self?.removeStatus = L("Clearing %@…", label)
                     self?.removeProgress = fraction
                 }
             }
@@ -924,13 +924,13 @@ final class AppState: ObservableObject {
     func uninstall(app: InstalledApp) {
         guard !isRemoving else { return }
         isRemoving = true
-        removeStatus = "Desinstalando \(app.name)…"
+        removeStatus = L("Uninstalling %@…", app.name)
         removeProgress = 0
 
         queue.async { [weak self] in
             let result = AppUninstaller.uninstall(app: app) { label, fraction in
                 Task { @MainActor [weak self] in
-                    self?.removeStatus = "Removendo \(label)…"
+                    self?.removeStatus = L("Removing %@…", label)
                     self?.removeProgress = fraction
                 }
             }
@@ -1013,7 +1013,7 @@ final class AppState: ObservableObject {
         isMigrating = true
         migrationProgress = 0
         migrationPhase = .preflight
-        migrationStatus = "Preparando…"
+        migrationStatus = L("Preparing…")
 
         let source = URL(fileURLWithPath: candidate.path)
         let engine = self.engine
@@ -1063,7 +1063,7 @@ final class AppState: ObservableObject {
     func restore(_ entry: MigrationJournalEntry) {
         guard !isMigrating else { return }
         isMigrating = true
-        migrationStatus = "Revertendo \(entry.name)…"
+        migrationStatus = L("Rolling back %@…", entry.name)
 
         let engine = self.engine
         queue.async { [weak self] in
@@ -1112,7 +1112,7 @@ final class AppState: ObservableObject {
         guard !entries.isEmpty, !isMigrating else { return }
 
         isMigrating = true
-        migrationStatus = "Liberando \(entries.count) quarentena(s)…"
+        migrationStatus = Lp("Releasing %d quarantine…", "Releasing %d quarantines…", count: entries.count)
 
         let engine = self.engine
         queue.async { [weak self] in
@@ -1121,7 +1121,7 @@ final class AppState: ObservableObject {
 
             for entry in entries {
                 Task { @MainActor [weak self] in
-                    self?.migrationStatus = "Liberando \(entry.name)…"
+                    self?.migrationStatus = L("Releasing %@…", entry.name)
                 }
                 let outcome = engine.releaseQuarantine(entry)
                 if outcome.succeeded { freed += entry.bytes } else { failures += 1 }

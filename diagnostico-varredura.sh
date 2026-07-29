@@ -149,28 +149,45 @@ say "  there is genuinely nothing to find and the empty screen is correct."
 # section 3 shows Downloads with 11 entries and the app reports 0, the answer is
 # permission, not tidiness.
 say ""
-say "═══ 7. What SaveMyMac itself could read (from its trace)"
+say "═══ 7. What SaveMyMac itself measured (from its trace)"
 say ""
 TRACE="$HOME/Library/Logs/SaveMyMac-trace.log"
+
+# Keeps only the LAST block for a marker: the trace accumulates across runs, and
+# a block written before a fix would be read as current.
+#
+# The tag class is [a-zA-Z ] rather than [A-Z]: the real trace writes "[bg  ]",
+# lowercase and space-padded, so an uppercase-only class left the timestamps
+# unstripped in the output. Small, but it is the fifth time in this project that
+# a character class was narrower than the thing it was matching.
+last_block() {
+  awk -v marker="$1" '
+    index($0, marker) { count = 0; delete block; grabbing = 1; block[count++] = $0; next }
+    # Stop BEFORE recording, not after: the first version appended the line that
+    # ended the block, so every report carried a stray "tick" at the bottom.
+    grabbing && /^[0-9.[:space:]]*\[[a-zA-Z ]+\]/ { grabbing = 0; next }
+    grabbing { block[count++] = $0 }
+    END { for (i = 0; i < count; i++) print block[i] }
+  ' "$TRACE" | sed -E 's/^[0-9.[:space:]]*\[[a-zA-Z ]+\] //' | sed 's/^/  /'
+}
+
 if [ ! -f "$TRACE" ]; then
   say "  No trace file yet. Run the app and press Scan files, then run this again."
 elif ! grep -q "access probe" "$TRACE"; then
   say "  The trace has no access probe. Either the app predates it or no scan has"
   say "  run since. Open SaveMyMac › Large files › Scan files, then run this again."
 else
-  # Keeps only the LAST probe block: the trace accumulates across runs, and an
-  # old block from before permission was granted would be read as current.
-  # A block starts at "access probe" and continues while lines are indented
-  # continuations rather than new timestamped trace entries.
-  awk '
-    /access probe/ { count = 0; delete block; grabbing = 1; block[count++] = $0; next }
-    # Stop BEFORE recording, not after: the first version appended the line that
-    # ended the block, so the report always carried a stray "tick" at the bottom.
-    grabbing && /^[0-9. ]*\[[A-Z]+\]/ { grabbing = 0; next }
-    grabbing { block[count++] = $0 }
-    END { for (i = 0; i < count; i++) print block[i] }
-  ' "$TRACE" \
-    | sed -E 's/^[0-9. ]*\[[A-Z]+\] //' | sed 's/^/  /' | tee -a "$OUT"
+  # Two separate questions, and conflating them is what cost the last round trip.
+  # The probe answers "what CAN the app read". The walk report answers "what DID
+  # the walk visit". Full access with a truncated walk is a real state, and it is
+  # the state this Mac turned out to be in.
+  last_block "access probe" | tee -a "$OUT"
+  say ""
+  if grep -q "walk report" "$TRACE"; then
+    last_block "walk report" | tee -a "$OUT"
+  else
+    say "  No walk report in the trace — rebuild and scan again."
+  fi
 fi
 
 say ""

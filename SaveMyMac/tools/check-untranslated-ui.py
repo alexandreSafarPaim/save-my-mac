@@ -90,6 +90,22 @@ UI_DECLARATION = re.compile(
 )
 RETURNS_LITERAL = re.compile(r'\breturn\s+"')
 
+# ── The third hole ──────────────────────────────────────────────────────────────
+#
+# `filesStatus = "Preparando…"` is neither a call argument nor a `return`, so both
+# rules above walk past it. Three status strings shown in the scan banner survived
+# that way. An assignment to a property whose name is a UI role is a UI position.
+#
+# Deliberately does NOT require the quote right after `=`. Requiring it would
+# still miss `filesStatus = flag.isCancelled ? "Cancelada" : L("Done")`, where a
+# literal hides in a ternary — the same near-miss shape as every other hole in
+# this file's history. Matching the assignment and letting the literal scan below
+# handle the rest costs nothing and closes the whole family.
+ASSIGNS_LITERAL = re.compile(
+    r"\b(?:self\.)?\w*(?:[Ss]tatus|[Mm]essage|[Ll]abel|[Tt]itle|[Nn]ote"
+    r"|[Hh]int|[Cc]aption|[Ss]ubtitle|[Ee]rror|[Ss]ummary)\s*=[^=]"
+)
+
 
 def main() -> int:
     findings = []
@@ -115,7 +131,9 @@ def main() -> int:
                 bool(UI_DECLARATION.search(declaration))
                 and RETURNS_LITERAL.search(line) is not None
             )
-            if not UI_POSITION.search(line) and not in_ui_declaration:
+            if (not UI_POSITION.search(line)
+                    and not in_ui_declaration
+                    and not ASSIGNS_LITERAL.search(line)):
                 continue
 
             # Blank out anything already inside L(...) / Lp(...) so only bare
