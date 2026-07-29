@@ -293,7 +293,7 @@ final class AppState: ObservableObject {
         defer { tick &+= 1 }
 
         // Cheap, every tick.
-        Trace.mark("tique \(tick)")
+        Trace.mark("tick \(tick)")
         memory = MemoryMonitor.read()
         swap = MemoryMonitor.readSwap()
         memoryHistory.record(memory: memory, swap: swap)

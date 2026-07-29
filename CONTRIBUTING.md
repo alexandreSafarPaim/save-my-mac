@@ -76,6 +76,49 @@ stderr buffer: it blocks writing, never closes stdout, and the parent waits
 forever. Silent — nothing crashes, the thread just disappears. See
 `ProcessMonitor.run`.
 
+## Testing
+
+```bash
+cd SaveMyMac
+./tools/e2e.sh              # everything
+./tools/e2e.sh --quick      # skips the universal build and the runtime phase
+```
+
+Four phases, cheapest first, each gating the next:
+
+**1. Static** — translation tables, hardcoded UI strings, and the two regressions
+no compiler catches (`@Published` in `Preferences`, `SMAppService` in `Views/`).
+
+**2. Build** — compiles universal, then checks the artifact rather than trusting
+the exit code: executable present, Info.plist, icon, both fonts, both
+architectures, valid signature.
+
+**3. Behavioural** — `tests/E2EMain.swift`, compiled from the same sources as the
+app minus the UI layer, so it links the real implementations. It runs the
+safety-critical functions against real files in a temporary directory: the
+symlink guard, every `CleanupRemover` refusal, byte-by-byte duplicate comparison
+including the same-size-different-middle case, the `ps` parser with comma
+decimals, the offload source guards, and the French zero-plural rule.
+
+**This is the only phase that executes the code that deletes files.** Everything
+before it is a regex over source text — it can tell you a guard is still written,
+never that it still refuses. If you change anything in `Cleanup/`, `Offload/` or
+`Apps/AppUninstaller`, this phase is the review.
+
+**4. Runtime** — launches the app for 15 s and reads the trace: no main-thread
+stall, no update-loop counters firing, HID clients created at most twice, metric
+ticks at the expected cadence, CPU at rest under 15%, quits on request.
+
+Two deliberate gaps, both documented in the test file:
+
+- `TrashManager.empty` is never called. It acts on the real `~/.Trash` with no way
+  to redirect it, so running it would delete your Trash. Only `inspect` is
+  exercised.
+- The "content lives on another disk" guard is tested for symlinks but not for a
+  real second mount, which would require the machine to have one.
+
+Phases 1–3 run in CI on every PR.
+
 ## Debugging
 
 The app writes an execution trace to `~/Library/Logs/SaveMyMac-trace.log` using

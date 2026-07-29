@@ -25,3 +25,4 @@ venv/
 *.xcuserdatad
 xcuserdata/
 DerivedData/
+build/e2e-tests

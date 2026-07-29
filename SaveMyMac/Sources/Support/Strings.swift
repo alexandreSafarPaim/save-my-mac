@@ -676,6 +676,8 @@ enum Strings {
         "%@ off the Mac's disk": "%@ fora do disco do Mac",
         "%@ still taking up the Mac's disk": "%@ ainda ocupando o disco do Mac",
 
+        "another volume": "outro volume",
+
     ]
 
     // MARK: - Español
@@ -1311,6 +1313,8 @@ enum Strings {
         "%@ off the Mac's disk": "%@ fuera del disco del Mac",
         "%@ still taking up the Mac's disk": "%@ todavía ocupando el disco del Mac",
 
+        "another volume": "otro volumen",
+
     ]
 
     // MARK: - French
@@ -1941,6 +1945,8 @@ enum Strings {
         "%@ freed on the Mac's disk.": "%@ libérés sur le disque du Mac.",
         "%@ off the Mac's disk": "%@ hors du disque du Mac",
         "%@ still taking up the Mac's disk": "%@ occupant encore le disque du Mac",
+
+        "another volume": "un autre volume",
 
     ]
 }

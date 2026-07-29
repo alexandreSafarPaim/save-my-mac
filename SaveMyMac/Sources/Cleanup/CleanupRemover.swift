@@ -75,7 +75,7 @@ enum CleanupRemover {
         }
 
         if !VolumeResolver.isOnHomeVolume(url) {
-            let volume = VolumeResolver.volumeName(of: url) ?? "outro volume"
+            let volume = VolumeResolver.volumeName(of: url) ?? L("another volume")
             return L("The real content is on %@, not on the Mac's disk", volume)
         }
 
@@ -94,7 +94,7 @@ enum CleanupRemover {
             return L("Invalid path")
         }
 
-        // Bloqueia as pastas de topo inteiras
+        // Blocks whole top-level folders
         let protectedTopLevel: Set<String> = [
             "Documents", "Desktop", "Downloads", "Library", "Pictures",
             "Movies", "Music", "Public", "Applications", ".Trash", "Developer"
