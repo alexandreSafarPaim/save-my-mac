@@ -1,0 +1,7 @@
+# Every path in the repository requires review from the owner.
+#
+# This file only has teeth when combined with the branch ruleset on `main`:
+# "Require a pull request before merging" + "Require review from Code Owners".
+# With both on, no PR merges without an approval from the account below —
+# including PRs opened by collaborators with write access.
+* @alexandreSafarPaim
