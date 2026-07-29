@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The app version shown in Finder and in the About panel follows the tag,
       # so nobody ships a v1.2 DMG whose Info.plist still says 1.0.
