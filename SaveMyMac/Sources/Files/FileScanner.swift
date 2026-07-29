@@ -199,6 +199,15 @@ struct FileScanResult {
     var duplicates: [DuplicateGroup] = []
     var scannedFiles: Int = 0
 
+    /// Files actually visited by the walk.
+    ///
+    /// Kept separate from `scannedFiles` because the screen was reporting one and
+    /// calling it the other. `scannedFiles` counts candidates — entries above the
+    /// 2 MB duplicate threshold. Saying "the scan walked 7 files" when it had
+    /// visited thousands and found 7 candidates is a number that invites exactly
+    /// the wrong conclusion.
+    var visitedFiles: Int = 0
+
     /// Directories the walk could not read.
     ///
     /// This field exists because of a bug that produced a perfect silent failure.
@@ -219,10 +228,11 @@ struct FileScanResult {
 
     /// Did the walk see so little that permission is the likely explanation?
     ///
-    /// A real home folder has thousands of files over 2 MB. Fewer than 20 visited
-    /// entries alongside at least one denial is not a tidy Mac, it is a blocked
-    /// scan.
-    var looksBlocked: Bool { deniedDirectories > 0 && scannedFiles < 20 }
+    /// Uses `visitedFiles`, not `scannedFiles`. A tidy Mac can legitimately have
+    /// few candidates over 2 MB; no home folder has fewer than a few hundred
+    /// files in total. Judging by the candidate count would call a clean machine
+    /// blocked.
+    var looksBlocked: Bool { deniedDirectories > 0 && visitedFiles < 200 }
 
     var largeTotal: Int64 { largeFiles.reduce(0) { $0 + $1.size } }
     var duplicateTotal: Int64 { duplicates.reduce(0) { $0 + $1.reclaimable } }
@@ -239,8 +249,25 @@ final class FileScanner: @unchecked Sendable {
     private let largeThreshold: Int64 = 500 * 1024 * 1024
     private let duplicateThreshold: Int64 = 2 * 1024 * 1024
 
+    /// Folders never descended into.
+    ///
+    /// `~/Library` used to be on this list and is deliberately **not** any more.
+    ///
+    /// The reason it was excluded — leave Library to the Cleanup and Offload tabs
+    /// — sounded tidy and made this screen useless. Measured on a real Mac: five
+    /// files over 500 MB in the entire home folder, all five inside `~/Library`
+    /// (a Chrome on-device model, Claude's VM images, a Google updater cache).
+    /// Files visible to the scanner: zero. The screen was correct and worthless.
+    ///
+    /// On modern macOS that is the normal case, not an unlucky one. Application
+    /// Support is where apps put multi-gigabyte payloads. A "large files" screen
+    /// that cannot see there is not showing large files.
+    ///
+    /// It is safe here because this screen never deletes: it reveals in Finder,
+    /// copies the path, or offers to offload. Cleanup, which does delete, keeps
+    /// its own much stricter guards.
     private let excludedNames: Set<String> = [
-        "Library", ".Trash", "node_modules", ".git", ".svn",
+        ".Trash", "node_modules", ".git", ".svn",
         ".npm", ".cache", ".cargo", ".gradle", ".m2", ".pub-cache",
         "Applications", "OrbStack"
     ]
@@ -276,6 +303,7 @@ final class FileScanner: @unchecked Sendable {
         }
         let entries = walk.entries
         result.scannedFiles = entries.count
+        result.visitedFiles = walk.visited
         result.deniedDirectories = walk.denied
         result.deniedExamples = walk.examples
 
@@ -332,7 +360,7 @@ final class FileScanner: @unchecked Sendable {
     private func enumerateHome(
         isCancelled: () -> Bool,
         progress: (Int) -> Void
-    ) -> (entries: [Entry], denied: Int, examples: [String]) {
+    ) -> (entries: [Entry], denied: Int, examples: [String], visited: Int) {
 
         var entries: [Entry] = []
         var denied = 0
@@ -356,7 +384,7 @@ final class FileScanner: @unchecked Sendable {
                 }
                 return true
             }
-        ) else { return (entries, denied, deniedExamples) }
+        ) else { return (entries, denied, deniedExamples, 0) }
 
         var visited = 0
         for case let url as URL in enumerator {
@@ -389,7 +417,7 @@ final class FileScanner: @unchecked Sendable {
         }
 
         progress(visited)
-        return (entries, denied, deniedExamples)
+        return (entries, denied, deniedExamples, visited)
     }
 
     // MARK: - Duplicados

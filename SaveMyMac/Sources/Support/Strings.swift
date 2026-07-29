@@ -684,8 +684,12 @@ enum Strings {
         "%d folder(s) could not be read, including %@.": "%d pasta(s) não puderam ser lidas, entre elas %@.",
         "Without Full Disk Access, macOS blocks Desktop, Documents, Downloads, Movies, Music and Pictures — which is exactly where large files live. The numbers below are not wrong, they are incomplete.": "Sem Acesso Total ao Disco, o macOS bloqueia Mesa, Documentos, Downloads, Filmes, Música e Imagens — que é justamente onde os arquivos grandes ficam. Os números abaixo não estão errados, estão incompletos.",
         "No files over 500 MB": "Nenhum arquivo acima de 500 MB",
-        "The scan walked %d files and found nothing above the threshold.": "A varredura percorreu %d arquivos e não encontrou nada acima do limite.",
         "%d folder(s) could not be read — the result may be incomplete.": "%d pasta(s) não puderam ser lidas — o resultado pode estar incompleto.",
+
+        // ── Scan scope ──
+        "The scan visited %d files and found %d above 2 MB, none above 500 MB.": "A varredura visitou %d arquivos e encontrou %d acima de 2 MB, nenhum acima de 500 MB.",
+        "Hidden folders and developer caches are skipped here — the Cleanup tab covers those.": "Pastas ocultas e caches de desenvolvimento ficam de fora aqui — a aba Limpeza cuida delas.",
+        "Scope: your home folder, including ~/Library. Hidden folders, developer caches, symlinks and iCloud-only files are skipped. Visited %d files.": "Escopo: sua pasta pessoal, incluindo ~/Library. Pastas ocultas, caches de desenvolvimento, links simbólicos e arquivos só no iCloud ficam de fora. %d arquivos visitados.",
 
     ]
 
@@ -1330,8 +1334,12 @@ enum Strings {
         "%d folder(s) could not be read, including %@.": "No se pudo leer %d carpeta(s), entre ellas %@.",
         "Without Full Disk Access, macOS blocks Desktop, Documents, Downloads, Movies, Music and Pictures — which is exactly where large files live. The numbers below are not wrong, they are incomplete.": "Sin Acceso Total al Disco, macOS bloquea Escritorio, Documentos, Descargas, Películas, Música e Imágenes — que es justo donde viven los archivos grandes. Los números de abajo no están mal, están incompletos.",
         "No files over 500 MB": "Ningún archivo de más de 500 MB",
-        "The scan walked %d files and found nothing above the threshold.": "El análisis recorrió %d archivos y no encontró nada por encima del límite.",
         "%d folder(s) could not be read — the result may be incomplete.": "No se pudo leer %d carpeta(s) — el resultado puede estar incompleto.",
+
+        // ── Scan scope ──
+        "The scan visited %d files and found %d above 2 MB, none above 500 MB.": "El análisis visitó %d archivos y encontró %d por encima de 2 MB, ninguno por encima de 500 MB.",
+        "Hidden folders and developer caches are skipped here — the Cleanup tab covers those.": "Las carpetas ocultas y las cachés de desarrollo quedan fuera aquí — la pestaña Limpieza se encarga de ellas.",
+        "Scope: your home folder, including ~/Library. Hidden folders, developer caches, symlinks and iCloud-only files are skipped. Visited %d files.": "Alcance: tu carpeta personal, incluyendo ~/Library. Las carpetas ocultas, las cachés de desarrollo, los enlaces simbólicos y los archivos solo en iCloud quedan fuera. %d archivos visitados.",
 
     ]
 
@@ -1972,8 +1980,12 @@ enum Strings {
         "%d folder(s) could not be read, including %@.": "%d dossier(s) n'ont pas pu être lus, dont %@.",
         "Without Full Disk Access, macOS blocks Desktop, Documents, Downloads, Movies, Music and Pictures — which is exactly where large files live. The numbers below are not wrong, they are incomplete.": "Sans accès complet au disque, macOS bloque Bureau, Documents, Téléchargements, Films, Musique et Images — c'est précisément là que vivent les gros fichiers. Les chiffres ci-dessous ne sont pas faux, ils sont incomplets.",
         "No files over 500 MB": "Aucun fichier de plus de 500 MB",
-        "The scan walked %d files and found nothing above the threshold.": "L'analyse a parcouru %d fichiers et n'a rien trouvé au-dessus du seuil.",
         "%d folder(s) could not be read — the result may be incomplete.": "%d dossier(s) n'ont pas pu être lus — le résultat peut être incomplet.",
+
+        // ── Scan scope ──
+        "The scan visited %d files and found %d above 2 MB, none above 500 MB.": "L'analyse a visité %d fichiers et en a trouvé %d au-dessus de 2 MB, aucun au-dessus de 500 MB.",
+        "Hidden folders and developer caches are skipped here — the Cleanup tab covers those.": "Les dossiers cachés et les caches de développement sont exclus ici — l'onglet Nettoyage s'en occupe.",
+        "Scope: your home folder, including ~/Library. Hidden folders, developer caches, symlinks and iCloud-only files are skipped. Visited %d files.": "Périmètre : votre dossier personnel, y compris ~/Library. Les dossiers cachés, les caches de développement, les liens symboliques et les fichiers uniquement iCloud sont exclus. %d fichiers visités.",
 
     ]
 }

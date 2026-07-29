@@ -49,14 +49,16 @@ struct BigFilesView: View {
                     EmptyStateView(
                         symbol: "checkmark.circle",
                         title: L("No files over 500 MB"),
-                        message: L("The scan walked %d files and found nothing above the threshold.", state.files.scannedFiles),
+                        message: L("The scan visited %d files and found %d above 2 MB, none above 500 MB.",
+                                  state.files.visitedFiles, state.files.scannedFiles),
                         palette: palette,
                         hint: state.files.deniedDirectories > 0
                             ? L("%d folder(s) could not be read — the result may be incomplete.", state.files.deniedDirectories)
-                            : nil
+                            : L("Hidden folders and developer caches are skipped here — the Cleanup tab covers those.")
                     )
                     .frame(minHeight: 320)
                 } else if !state.files.largeFiles.isEmpty {
+                    scopeNote
                     treemap
                     if state.files.duplicateTotal > 0 {
                         duplicateTeaser
@@ -69,6 +71,19 @@ struct BigFilesView: View {
             .padding(.bottom, 34)
             .riseIn()
         }
+    }
+
+    /// What the scan looked at, stated on screen.
+    ///
+    /// A count with no scope invites the wrong conclusion. "Nothing found" read as
+    /// "your Mac is clean" when it actually meant "I did not look where your files
+    /// are" — and there was no way to tell the two apart from the interface.
+    private var scopeNote: some View {
+        Text(L("Scope: your home folder, including ~/Library. Hidden folders, developer caches, symlinks and iCloud-only files are skipped. Visited %d files.",
+               state.files.visitedFiles))
+            .font(Typo.monoTiny)
+            .foregroundStyle(palette.t3)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Header
