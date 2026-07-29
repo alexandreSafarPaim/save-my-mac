@@ -111,13 +111,16 @@ jobs:
       #
       # Compiled from the same sources as the app minus the UI layer, so it links
       # the real implementations rather than copies.
+      #
+      # The source list used to be duplicated here and in tools/e2e.sh, and the
+      # two copies drifted within a day of each other: e2e.sh started including
+      # AppState.swift when the AppSection cycle was broken, and this file kept
+      # excluding it — so CI was quietly testing less than the local run. The
+      # list now lives in one place, tests/sources.sh, and both consume it.
       - name: Behavioural tests
         working-directory: SaveMyMac
         run: |
-          SOURCES=$(find Sources -name '*.swift' \
-            ! -path 'Sources/Views/*' \
-            ! -name 'SaveMyMacApp.swift' \
-            ! -name 'AppState.swift' | sort)
+          SOURCES=$(./tests/sources.sh)
 
           swiftc -O -swift-version 5 \
             -target "$(uname -m)-apple-macos13.0" \
