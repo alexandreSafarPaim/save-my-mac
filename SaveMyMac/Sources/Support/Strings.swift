@@ -678,6 +678,15 @@ enum Strings {
 
         "another volume": "outro volume",
 
+        // ── Permission notice ──
+        "Walking the home folder… (%d files)": "Percorrendo a pasta pessoal… (%d arquivos)",
+        "The scan was blocked": "A varredura foi bloqueada",
+        "%d folder(s) could not be read, including %@.": "%d pasta(s) não puderam ser lidas, entre elas %@.",
+        "Without Full Disk Access, macOS blocks Desktop, Documents, Downloads, Movies, Music and Pictures — which is exactly where large files live. The numbers below are not wrong, they are incomplete.": "Sem Acesso Total ao Disco, o macOS bloqueia Mesa, Documentos, Downloads, Filmes, Música e Imagens — que é justamente onde os arquivos grandes ficam. Os números abaixo não estão errados, estão incompletos.",
+        "No files over 500 MB": "Nenhum arquivo acima de 500 MB",
+        "The scan walked %d files and found nothing above the threshold.": "A varredura percorreu %d arquivos e não encontrou nada acima do limite.",
+        "%d folder(s) could not be read — the result may be incomplete.": "%d pasta(s) não puderam ser lidas — o resultado pode estar incompleto.",
+
     ]
 
     // MARK: - Español
@@ -1315,6 +1324,15 @@ enum Strings {
 
         "another volume": "otro volumen",
 
+        // ── Permission notice ──
+        "Walking the home folder… (%d files)": "Recorriendo la carpeta personal… (%d archivos)",
+        "The scan was blocked": "El análisis fue bloqueado",
+        "%d folder(s) could not be read, including %@.": "No se pudo leer %d carpeta(s), entre ellas %@.",
+        "Without Full Disk Access, macOS blocks Desktop, Documents, Downloads, Movies, Music and Pictures — which is exactly where large files live. The numbers below are not wrong, they are incomplete.": "Sin Acceso Total al Disco, macOS bloquea Escritorio, Documentos, Descargas, Películas, Música e Imágenes — que es justo donde viven los archivos grandes. Los números de abajo no están mal, están incompletos.",
+        "No files over 500 MB": "Ningún archivo de más de 500 MB",
+        "The scan walked %d files and found nothing above the threshold.": "El análisis recorrió %d archivos y no encontró nada por encima del límite.",
+        "%d folder(s) could not be read — the result may be incomplete.": "No se pudo leer %d carpeta(s) — el resultado puede estar incompleto.",
+
     ]
 
     // MARK: - French
@@ -1947,6 +1965,15 @@ enum Strings {
         "%@ still taking up the Mac's disk": "%@ occupant encore le disque du Mac",
 
         "another volume": "un autre volume",
+
+        // ── Permission notice ──
+        "Walking the home folder… (%d files)": "Parcours du dossier personnel… (%d fichiers)",
+        "The scan was blocked": "L'analyse a été bloquée",
+        "%d folder(s) could not be read, including %@.": "%d dossier(s) n'ont pas pu être lus, dont %@.",
+        "Without Full Disk Access, macOS blocks Desktop, Documents, Downloads, Movies, Music and Pictures — which is exactly where large files live. The numbers below are not wrong, they are incomplete.": "Sans accès complet au disque, macOS bloque Bureau, Documents, Téléchargements, Films, Musique et Images — c'est précisément là que vivent les gros fichiers. Les chiffres ci-dessous ne sont pas faux, ils sont incomplets.",
+        "No files over 500 MB": "Aucun fichier de plus de 500 MB",
+        "The scan walked %d files and found nothing above the threshold.": "L'analyse a parcouru %d fichiers et n'a rien trouvé au-dessus du seuil.",
+        "%d folder(s) could not be read — the result may be incomplete.": "%d dossier(s) n'ont pas pu être lus — le résultat peut être incomplet.",
 
     ]
 }

@@ -199,6 +199,31 @@ struct FileScanResult {
     var duplicates: [DuplicateGroup] = []
     var scannedFiles: Int = 0
 
+    /// Directories the walk could not read.
+    ///
+    /// This field exists because of a bug that produced a perfect silent failure.
+    /// The enumerator's error handler was `{ _, _ in true }` — continue, discard
+    /// the error. Without Full Disk Access, macOS denies `~/Desktop`,
+    /// `~/Documents`, `~/Downloads`, `~/Movies`, `~/Music` and `~/Pictures`, and
+    /// `~/Library` is skipped by this scanner on purpose. What remains is almost
+    /// nothing, so the scan finished in under a second, found zero files, and the
+    /// screen said "Nothing scanned yet" — indistinguishable from a Mac with no
+    /// large files at all.
+    ///
+    /// The error handler was throwing away the one piece of information that
+    /// explained the result. Now it counts, and the interface can say why.
+    var deniedDirectories: Int = 0
+
+    /// Folders that were denied, for showing the user which ones.
+    var deniedExamples: [String] = []
+
+    /// Did the walk see so little that permission is the likely explanation?
+    ///
+    /// A real home folder has thousands of files over 2 MB. Fewer than 20 visited
+    /// entries alongside at least one denial is not a tidy Mac, it is a blocked
+    /// scan.
+    var looksBlocked: Bool { deniedDirectories > 0 && scannedFiles < 20 }
+
     var largeTotal: Int64 { largeFiles.reduce(0) { $0 + $1.size } }
     var duplicateTotal: Int64 { duplicates.reduce(0) { $0 + $1.reclaimable } }
     var isEmpty: Bool { largeFiles.isEmpty && duplicates.isEmpty }
@@ -245,11 +270,14 @@ final class FileScanner: @unchecked Sendable {
         var result = FileScanResult()
 
         progress(L("Walking the home folder…"), 0.03)
-        let entries = enumerateHome(isCancelled: isCancelled) { visited in
-            progress("Percorrendo a pasta pessoal… (\(visited) arquivos)",
+        let walk = enumerateHome(isCancelled: isCancelled) { visited in
+            progress(L("Walking the home folder… (%d files)", visited),
                      0.03 + min(0.52, Double(visited) / 250_000.0 * 0.52))
         }
+        let entries = walk.entries
         result.scannedFiles = entries.count
+        result.deniedDirectories = walk.denied
+        result.deniedExamples = walk.examples
 
         guard !isCancelled() else { return result }
 
@@ -304,9 +332,11 @@ final class FileScanner: @unchecked Sendable {
     private func enumerateHome(
         isCancelled: () -> Bool,
         progress: (Int) -> Void
-    ) -> [Entry] {
+    ) -> (entries: [Entry], denied: Int, examples: [String]) {
 
         var entries: [Entry] = []
+        var denied = 0
+        var deniedExamples: [String] = []
         let keys: [URLResourceKey] = [
             .isRegularFileKey, .fileSizeKey, .totalFileAllocatedSizeKey,
             .contentModificationDateKey, .isSymbolicLinkKey, .isUbiquitousItemKey
@@ -316,8 +346,17 @@ final class FileScanner: @unchecked Sendable {
             at: home,
             includingPropertiesForKeys: keys,
             options: [.skipsHiddenFiles, .skipsPackageDescendants],
-            errorHandler: { _, _ in true }
-        ) else { return entries }
+            // Still returns `true` — one unreadable folder must not abort the
+            // walk. But the error is counted now instead of vanishing. Silently
+            // continuing was right; silently forgetting was not.
+            errorHandler: { url, _ in
+                denied += 1
+                if deniedExamples.count < 6 {
+                    deniedExamples.append(url.lastPathComponent)
+                }
+                return true
+            }
+        ) else { return (entries, denied, deniedExamples) }
 
         var visited = 0
         for case let url as URL in enumerator {
@@ -350,7 +389,7 @@ final class FileScanner: @unchecked Sendable {
         }
 
         progress(visited)
-        return entries
+        return (entries, denied, deniedExamples)
     }
 
     // MARK: - Duplicados

@@ -25,13 +25,35 @@ struct BigFilesView: View {
                     )
                 }
 
-                if state.files.largeFiles.isEmpty && !state.isScanningFiles {
+                // A blocked scan used to land here showing "Nothing scanned yet",
+                // which is the same thing a tidy Mac shows. Three states now,
+                // not two: never scanned, blocked, and scanned-and-empty.
+                if state.files.looksBlocked && !state.isScanningFiles {
+                    PermissionNotice(
+                        palette: palette,
+                        deniedCount: state.files.deniedDirectories,
+                        examples: state.files.deniedExamples
+                    ) { state.openFullDiskAccessSettings() }
+                } else if state.files.largeFiles.isEmpty
+                            && !state.isScanningFiles
+                            && state.lastFilesScanDate == nil {
                     EmptyStateView(
                         symbol: "square.stack.3d.up",
                         title: L("Nothing scanned yet"),
                         message: L("Walks your home folder and lists anything over 500 MB, sorted by kind. The same scan finds the duplicates."),
                         palette: palette,
                         hint: L("Files that exist only in iCloud and already-offloaded content are excluded.")
+                    )
+                    .frame(minHeight: 320)
+                } else if state.files.largeFiles.isEmpty && !state.isScanningFiles {
+                    EmptyStateView(
+                        symbol: "checkmark.circle",
+                        title: L("No files over 500 MB"),
+                        message: L("The scan walked %d files and found nothing above the threshold.", state.files.scannedFiles),
+                        palette: palette,
+                        hint: state.files.deniedDirectories > 0
+                            ? L("%d folder(s) could not be read — the result may be incomplete.", state.files.deniedDirectories)
+                            : nil
                     )
                     .frame(minHeight: 320)
                 } else if !state.files.largeFiles.isEmpty {

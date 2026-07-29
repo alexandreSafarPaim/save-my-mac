@@ -898,3 +898,65 @@ struct StickyActionBar<Content: View>: View {
             .shadow(color: palette.shadow, radius: 30, y: 14)
     }
 }
+
+// MARK: - Permission notice
+
+/// Shown when a scan was blocked by Full Disk Access rather than finding nothing.
+///
+/// This exists because the two states looked identical. A blocked scan finished in
+/// under a second, found zero files, and the screen showed the same "Nothing
+/// scanned yet" message a genuinely tidy Mac would show. The user clicked
+/// "Analyze", waited, and got no result and no reason.
+///
+/// The fix is not a friendlier empty state — it is telling the truth: the scan
+/// could not read N folders, here are some of them, and here is the button that
+/// fixes it.
+struct PermissionNotice: View {
+    var palette: Palette
+    var deniedCount: Int
+    var examples: [String]
+    var grant: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 9) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 15))
+                    .foregroundStyle(palette.warn)
+                Text(L("The scan was blocked"))
+                    .font(Typo.cardTitle)
+                    .foregroundStyle(palette.t1)
+            }
+
+            Text(L("%d folder(s) could not be read, including %@.",
+                   deniedCount,
+                   examples.prefix(4).joined(separator: ", ")))
+                .font(Typo.bodySmall)
+                .foregroundStyle(palette.t2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(L("Without Full Disk Access, macOS blocks Desktop, Documents, Downloads, Movies, Music and Pictures — which is exactly where large files live. The numbers below are not wrong, they are incomplete."))
+                .font(Typo.monoTiny)
+                .foregroundStyle(palette.t3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            GhostButton(
+                title: L("Grant Full Disk Access"),
+                systemImage: "lock.shield",
+                palette: palette,
+                tint: palette.cyan,
+                action: grant
+            )
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(palette.warn.opacity(0.10))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(palette.warn.opacity(0.38), lineWidth: 1)
+        )
+    }
+}

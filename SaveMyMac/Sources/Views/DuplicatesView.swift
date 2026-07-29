@@ -20,7 +20,16 @@ struct DuplicatesView: View {
                         )
                     }
 
-                    if state.files.duplicates.isEmpty && !state.isScanningFiles {
+                    // Same three states as Large Files: a blocked scan is not an
+                    // empty one, and saying "no duplicates found" when six folders
+                    // were unreadable is a claim the app cannot make.
+                    if state.files.looksBlocked && !state.isScanningFiles {
+                        PermissionNotice(
+                            palette: palette,
+                            deniedCount: state.files.deniedDirectories,
+                            examples: state.files.deniedExamples
+                        ) { state.openFullDiskAccessSettings() }
+                    } else if state.files.duplicates.isEmpty && !state.isScanningFiles {
                         EmptyStateView(
                             symbol: "square.on.square",
                             title: state.lastFilesScanDate == nil
