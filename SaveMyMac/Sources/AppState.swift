@@ -7,8 +7,8 @@ import Combine
 final class AppState: ObservableObject {
 
     init() {
-        // `GameStore` é um ObservableObject aninhado: sem repassar o sinal, as
-        // views que leem XP, nível e conquistas não recarregariam.
+        // `GameStore` is a nested ObservableObject: without forwarding the
+        // signal, views reading XP, level and achievements would not refresh.
         game.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
@@ -16,7 +16,7 @@ final class AppState: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
-    // MARK: - Métricas ao vivo
+    // MARK: - Live metrics
 
     @Published var system = SystemInfoSnapshot()
     @Published var memory = MemorySnapshot()
@@ -27,18 +27,18 @@ final class AppState: ObservableObject {
     @Published var thermal = ThermalSnapshot()
     @Published var topByCPU: [ProcessInfoRow] = []
     @Published var topByMemory: [ProcessInfoRow] = []
-    /// Motivo pelo qual a lista de processos está vazia, quando está.
+    /// Why the process list is empty, when it is.
     @Published var processFailure: String?
     @Published var memoryHistory = MemoryHistory()
     private var growth = GrowthTracker()
-    /// Processo aguardando confirmação de encerramento forçado.
+    /// Process awaiting force-quit confirmation.
     @Published var pendingForceQuit: ProcessInfoRow?
 
-    /// Aba pedida de fora (pelo painel da barra de menus). A janela consome e
-    /// zera.
+    /// Tab requested from outside (by the menu bar panel). The window consumes
+    /// it and clears it.
     @Published var requestedSection: AppSection?
 
-    // MARK: - Aparência
+    // MARK: - Appearance
 
     @Published var theme: ThemeMode = .dark {
         didSet { game.setTheme(theme) }
@@ -46,12 +46,12 @@ final class AppState: ObservableObject {
 
     var palette: Palette { Palette.of(theme) }
 
-    // MARK: - Saúde e progresso
+    // MARK: - Health and progress
 
     @Published var health = HealthReport(score: 0, factors: [])
     let game = GameStore()
 
-    // MARK: - Limpeza
+    // MARK: - Cleanup
 
     @Published var categories: [CleanupCategory] = []
     @Published var selectedItemIDs: Set<UUID> = []
@@ -67,12 +67,12 @@ final class AppState: ObservableObject {
 
     @Published var trash = TrashInfo()
     @Published var isEmptyingTrash = false
-    // Progresso próprio: compartilhar `removeProgress` com a limpeza fazia um
-    // card mostrar o status do outro.
+    // Its own progress: sharing `removeProgress` with cleanup made one card
+    // show the other's status.
     @Published var trashProgress: Double = 0
     @Published var trashStatus = ""
 
-    // MARK: - Arquivos grandes e duplicados
+    // MARK: - Large files and duplicates
 
     @Published var files = FileScanResult()
     @Published var isScanningFiles = false
@@ -81,7 +81,7 @@ final class AppState: ObservableObject {
     @Published var lastFilesScanDate: Date?
     @Published var selectedDuplicateIDs: Set<UUID> = []
 
-    // MARK: - Aplicativos
+    // MARK: - Applications
 
     @Published var appInventory = AppInventoryResult()
     @Published var isScanningApps = false
@@ -108,7 +108,7 @@ final class AppState: ObservableObject {
     @Published var migrationStatus = ""
     @Published var migrationPhase: MigrationPhase = .preflight
 
-    // MARK: - Diálogos
+    // MARK: - Dialogs
 
     @Published var celebration: Celebration?
     @Published var banner: Banner?
@@ -120,8 +120,8 @@ final class AppState: ObservableObject {
         var score: Int
         var title: String
         var unlocked: [Achievement]
-        /// Quando o destino foi a Lixeira, o espaço só volta ao esvaziá-la —
-        /// e a interface precisa dizer isso em vez de "liberados".
+        /// When the destination was the Trash, the space only comes back on
+        /// emptying it — and the interface has to say that instead of "freed".
         var wentToTrash: Bool = false
     }
 
@@ -146,12 +146,12 @@ final class AppState: ObservableObject {
         }
     }
 
-    // MARK: - Internos
+    // MARK: - Internals
 
     private let cpuMonitor = CPUMonitor()
     private var timer: Timer?
     private var tick = 0
-    // Travas de reentrância do trabalho caro — ver `refreshMetrics()`.
+    // Reentrancy guards for the expensive work — see `refreshMetrics()`.
     private var volumesBusy = false
     private var thermalBusy = false
     private var processesBusy = false
@@ -165,7 +165,7 @@ final class AppState: ObservableObject {
     private let queue = DispatchQueue(label: "br.com.pentagrama.savemymac.work", qos: .userInitiated)
     private static let destinationKey = "offloadDestinationRoot"
 
-    // MARK: - Derivados
+    // MARK: - Derived
 
     var selectedItems: [CleanupItem] {
         categories.flatMap(\.items).filter { selectedItemIDs.contains($0.id) }
@@ -221,12 +221,12 @@ final class AppState: ObservableObject {
         destinationRoot.isEmpty ? nil : URL(fileURLWithPath: destinationRoot)
     }
 
-    /// Volume de destino sugerido: o maior volume externo com espaço.
+    /// Suggested destination volume: the largest external volume with space.
     var suggestedDestinationVolume: VolumeInfo? {
         volumes.first { $0.path != "/" && $0.available > 10 * 1_073_741_824 }
     }
 
-    // MARK: - Ciclo de vida
+    // MARK: - Lifecycle
 
     func start() {
         guard timer == nil else { return }
@@ -235,9 +235,9 @@ final class AppState: ObservableObject {
         destinationRoot = UserDefaults.standard.string(forKey: AppState.destinationKey) ?? ""
         Trace.span("SystemInfo.read") { system = SystemInfo.read() }
         Trace.span("engine.loadJournal") { journal = engine.loadJournal() }
-        // Uma leitura síncrona só no lançamento, para a janela já abrir com o
-        // disco preenchido. Depois disso os volumes são sempre lidos fora da
-        // thread principal.
+        // One synchronous read at launch only, so the window opens with the
+        // disk already filled in. After that, volumes are always read off the
+        // main thread.
         Trace.span("DiskMonitor.volumes (lançamento)") { volumes = DiskMonitor.volumes() }
         refreshMetrics()
         Trace.span("refreshTrash") { refreshTrash() }
@@ -252,49 +252,47 @@ final class AppState: ObservableObject {
         timer = nil
     }
 
-    /// Liga as preferências e o alerta de espaço ao ciclo de métricas.
-    /// Feito por injeção em vez de `AppState` criar os dois, para que a cena de
-    /// Ajustes e a da barra de menus compartilhem exatamente as mesmas
-    /// instâncias.
+    /// Wires preferences and the space alert into the metrics cycle.
+    /// Done by injection rather than having `AppState` create both, so the
+    /// Settings scene and the menu bar scene share exactly the same instances.
     func attach(preferences: Preferences, spaceAlert: SpaceAlert) {
         self.preferences = preferences
         self.spaceAlert = spaceAlert
-        // A permissão NÃO é pedida aqui.
+        // Permission is NOT requested here.
         //
-        // `UNUserNotificationCenter.current()` exige um bundle registrado e
-        // assinado; num app ad-hoc rodando de um caminho qualquer ele pode
-        // lançar exceção ou bloquear. Fazer isso no caminho de lançamento
-        // significa travar antes de a janela existir. Agora só acontece quando
-        // o usuário liga a opção em Ajustes, que é quando ele está esperando
-        // um diálogo de permissão de qualquer forma.
+        // `UNUserNotificationCenter.current()` requires a registered, signed
+        // bundle; in an ad-hoc app running from an arbitrary path it can throw or
+        // block. Doing that on the launch path means hanging before the window
+        // exists. It now happens only when the user turns the option on in
+        // Settings, which is when they are expecting a permission dialog anyway.
     }
 
     func toggleTheme() {
         theme = theme.toggled
     }
 
-    // MARK: - Métricas
+    // MARK: - Metrics
 
-    /// Um tique de métricas.
+    /// One metrics tick.
     ///
-    /// Nem tudo aqui custa a mesma coisa, e antes tudo rodava na mesma cadência
-    /// de 2 segundos. As três correções:
+    /// Not everything in here costs the same, and it all used to run at the same
+    /// 2-second cadence. The three fixes:
     ///
-    /// 1. **Cadências separadas.** Memória e CPU são leituras de contador do
-    ///    kernel e podem ser lidas a 2 s. Enumerar volumes, ler sensores e
-    ///    rodar o `/bin/ps` são ordens de grandeza mais caros e não mudam nesse
-    ///    ritmo — passam a cada 6 s.
-    /// 2. **Volumes saem da thread principal.** `mountedVolumeURLs` toca todo
-    ///    disco montado. Com um SSD externo que entra em repouso, essa chamada
-    ///    bloqueia — e bloquear ali é congelar a janela.
-    /// 3. **Trabalho pesado não se acumula.** As tarefas destacadas eram
-    ///    disparadas sem nenhuma trava: se uma demorasse mais que o intervalo,
-    ///    a próxima começava por cima. Sob carga isso vira crescimento sem
-    ///    limite de threads e subprocessos. Agora cada uma tem um cadeado.
+    /// 1. **Separate cadences.** Memory and CPU are kernel counter reads and can
+    ///    be polled at 2 s. Enumerating volumes, reading sensors and running
+    ///    `/bin/ps` are orders of magnitude more expensive and don't change at
+    ///    that rate — they moved to every 6 s.
+    /// 2. **Volumes come off the main thread.** `mountedVolumeURLs` touches every
+    ///    mounted disk. With an external SSD that spins down, that call blocks —
+    ///    and blocking there means freezing the window.
+    /// 3. **Heavy work can't pile up.** The detached tasks were fired with no
+    ///    guard at all: if one took longer than the interval, the next started on
+    ///    top of it. Under load that becomes unbounded growth in threads and
+    ///    subprocesses. Each now has a lock.
     func refreshMetrics() {
         defer { tick &+= 1 }
 
-        // Barato, todo tique.
+        // Cheap, every tick.
         Trace.mark("tique \(tick)")
         memory = MemoryMonitor.read()
         swap = MemoryMonitor.readSwap()
@@ -311,7 +309,7 @@ final class AppState: ObservableObject {
         refreshProcesses()
     }
 
-    /// Intervalo do timer é 2 s; o trabalho caro roda a cada 3 tiques (6 s).
+    /// The timer's interval is 2 s; expensive work runs every 3 ticks (6 s).
     private static let heavyEvery = 3
 
     private func refreshVolumesAndBattery() {
@@ -338,10 +336,10 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Separada da leitura de processos de propósito. Estavam na mesma tarefa,
-    /// com a térmica primeiro: como ela passa por API privada da Apple via
-    /// `dlsym`, qualquer lentidão ali impedia a lista de processos de sequer
-    /// rodar — e o card "Quem está consumindo" ficava permanentemente vazio.
+    /// Deliberately separate from the process read. They used to be in the same
+    /// task, with the thermal read first: because it goes through a private Apple
+    /// API via `dlsym`, any slowness there stopped the process list from running
+    /// at all — and the "What's using resources" card stayed permanently empty.
     private func refreshThermal() {
         guard !thermalBusy else { return }
         thermalBusy = true
@@ -371,8 +369,8 @@ final class AppState: ObservableObject {
                 guard let self else { return }
                 self.processesBusy = false
                 Trace.mark("enrich (\(top.byCPU.count + top.byMemory.count) linhas, MAIN)")
-                // O crescimento é rastreado pelas linhas cruas (pid + bytes);
-                // o enriquecimento com AppKit só vale para o que vai à tela.
+                // Growth is tracked from the raw rows (pid + bytes); the AppKit
+                // enrichment is only worth it for what goes on screen.
                 self.growth.update(with: top.byMemory + top.byCPU)
                 self.topByCPU = ProcessMonitor.enrich(top.byCPU)
                 self.topByMemory = ProcessMonitor.enrich(top.byMemory)
@@ -583,7 +581,7 @@ final class AppState: ObservableObject {
         offloadStatus = "Cancelando…"
     }
 
-    // MARK: - Seleção de limpeza
+    // MARK: - Cleanup selection
 
     func isSelected(_ item: CleanupItem) -> Bool {
         selectedItemIDs.contains(item.id)
@@ -624,7 +622,7 @@ final class AppState: ObservableObject {
         selectedItemIDs = []
     }
 
-    // MARK: - Remoção da limpeza
+    // MARK: - Cleanup removal
 
     func removeSelected() {
         let items = selectedItems
@@ -695,12 +693,12 @@ final class AppState: ObservableObject {
         ProcessController.warning(for: row)
     }
 
-    /// Pedido gentil. O app pode perguntar sobre trabalho não salvo — é ele que
-    /// decide, e é assim que deve ser.
+    /// A polite request. The app may ask about unsaved work — it decides, and
+    /// that is how it should be.
     func requestQuit(_ row: ProcessInfoRow) {
         let outcome = ProcessController.requestQuit(row)
         banner = Banner(text: outcome.message, isError: outcome.isError)
-        // Dá tempo do processo sair antes de reler a lista.
+        // Gives the process time to exit before re-reading the list.
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 1_200_000_000)
             self?.refreshMetrics()
@@ -719,7 +717,7 @@ final class AppState: ObservableObject {
 
     // MARK: - Lixeira
 
-    /// Medir a Lixeira percorre pastas, então sai da thread principal.
+    /// Measuring the Trash walks folders, so it goes off the main thread.
     func refreshTrash() {
         queue.async { [weak self] in
             let info = TrashManager.inspect()
@@ -729,7 +727,7 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Esvaziar é permanente por definição — a confirmação fica na interface.
+    /// Emptying is permanent by definition — the confirmation lives in the UI.
     func emptyTrash() {
         guard !isEmptyingTrash, !isRemoving, !trash.isEmpty else { return }
 
@@ -753,9 +751,9 @@ final class AppState: ObservableObject {
                 self.trash = info
                 self.refreshMetrics()
 
-                // Sem isto, uma Lixeira já vazia ou itens travados renderiam
-                // 20 XP de piso, marcariam a semana no streak e mostrariam
-                // "Lixeira esvaziada" sem nada ter saído.
+                // Without this, an already-empty Trash or locked items would
+                // still award the 20 XP floor, mark the week in the streak, and
+                // report "Trash emptied" with nothing having left.
                 guard result.removedCount > 0 else {
                     self.banner = Banner(
                         text: result.failures.isEmpty
@@ -772,7 +770,7 @@ final class AppState: ObservableObject {
                     kind: "lixeira",
                     currentScore: self.health.score
                 )
-                // Aqui o espaço volta de verdade: não é "movido para a Lixeira".
+                // Here the space genuinely comes back: this is not "moved to the Trash".
                 self.celebrate(
                     title: L("Trash emptied"),
                     bytes: result.freedBytes,
@@ -808,9 +806,9 @@ final class AppState: ObservableObject {
         let mode = cleanupMode
 
         queue.async { [weak self] in
-            // O hash da varredura é por amostras. Antes de apagar, cada cópia é
-            // comparada integralmente com a original — apagar por engano aqui
-            // seria perda de dados silenciosa.
+            // The scan's hash is sample-based. Before deleting, every copy is
+            // compared in full against the original — deleting by mistake here
+            // would be silent data loss.
             var verified: [CleanupItem] = []
             var expected: Int64 = 0
             var mismatched = 0
@@ -899,7 +897,7 @@ final class AppState: ObservableObject {
         }
     }
 
-    // MARK: - Ações de app
+    // MARK: - App actions
 
     func clearCache(of app: InstalledApp) {
         guard !isRemoving else { return }
@@ -979,7 +977,7 @@ final class AppState: ObservableObject {
         )
     }
 
-    // MARK: - Offload: destino e migração
+    // MARK: - Offload: destination and migration
 
     func chooseDestination() {
         let panel = NSOpenPanel()
@@ -1154,7 +1152,7 @@ final class AppState: ObservableObject {
         }
     }
 
-    // MARK: - Comemoração
+    // MARK: - Celebration
 
     private func celebrate(
         title: String,
@@ -1195,15 +1193,15 @@ final class AppState: ObservableObject {
         CleanupRemover.revealInFinder(path)
     }
 
-    /// `selectFile` revelaria a pasta oculta dentro da Home; para a Lixeira o
-    /// certo é abri-la.
+    /// `selectFile` would reveal the hidden folder inside Home; for the Trash the
+    /// right thing is to open it.
     func openTrashInFinder() {
         NSWorkspace.shared.open(TrashManager.trashURL)
     }
 
-    /// Abre direto o painel de Acesso Total ao Disco. Conceder a permissão não
-    /// pode ser automatizado — é decisão do usuário, por design do macOS —, mas
-    /// levar até a tela certa evita a caça ao ajuste.
+    /// Opens the Full Disk Access pane directly. Granting the permission cannot
+    /// be automated — it is the user's decision, by macOS design — but taking
+    /// them to the right screen saves hunting for the setting.
     func openFullDiskAccessSettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")
         if let url {

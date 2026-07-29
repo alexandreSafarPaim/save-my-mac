@@ -1,17 +1,18 @@
 import SwiftUI
 import AppKit
 
-// MARK: - Fundo da janela: grade + halos radiais
+// MARK: - Window background: grid + radial glows
 
-/// Reproduz as três camadas de fundo do design: grade de 56px, halo de acento
-/// no topo à esquerda e halo ciano embaixo à direita.
+/// Reproduces the design's three background layers: a 56px grid, an accent glow
+/// at the top left and a cyan glow at the bottom right.
 struct AtmosphereBackground: View {
     var palette: Palette
 
-    // Sem `drawingGroup` de propósito. Ele rasteriza via Metal e, numa view
-    // com `ignoresSafeArea` (tamanho proposto sem limite), isso vira alocação
-    // de textura gigante. O ganho não compensa o risco — o custo real já caiu
-    // ao remover o `blur` em runtime e as animações contínuas.
+    // No `drawingGroup`, on purpose. It rasterises through Metal and, in a view
+    // with `ignoresSafeArea` (unbounded proposed size), that becomes a huge
+    // texture allocation. The gain doesn't justify the risk — the real cost
+    // already dropped when the runtime `blur` and the continuous animations went
+    // away.
     var body: some View {
         if SafeMode.isOn {
             palette.bg2.ignoresSafeArea()
@@ -83,7 +84,7 @@ struct GridPattern: View {
 
 // MARK: - Card
 
-/// Card translúcido com borda fina — a unidade visual básica do design.
+/// Translucent card with a thin border — the design's basic visual unit.
 struct Panel<Content: View>: View {
     var palette: Palette
     var cornerRadius: CGFloat = 20
@@ -95,9 +96,10 @@ struct Panel<Content: View>: View {
         content()
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // Uma camada só. Antes havia um `.ultraThinMaterial` por baixo de
-            // cada card; com dezenas de cards na tela, o custo de composição
-            // não se paga — sobre fundo escuro a diferença visual é mínima.
+            // A single layer. There used to be an `.ultraThinMaterial` under
+            // every card; with dozens of cards on screen the compositing cost
+            // doesn't pay for itself — over a dark background the visual
+            // difference is minimal.
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(palette.card2)
@@ -109,7 +111,7 @@ struct Panel<Content: View>: View {
     }
 }
 
-/// Card com o gradiente de acento no fundo — usado no hero do Painel.
+/// Card with the accent gradient behind it — used in the Dashboard's hero.
 struct HeroPanel<Content: View>: View {
     var palette: Palette
     @ViewBuilder var content: () -> Content
@@ -141,9 +143,9 @@ struct HeroPanel<Content: View>: View {
     }
 }
 
-// MARK: - Rótulos
+// MARK: - Labels
 
-/// "PAINEL DO SISTEMA" — mono, ciano, maiúsculas, muito espaçado.
+/// "SYSTEM DASHBOARD" — mono, cyan, uppercase, widely tracked.
 struct Eyebrow: View {
     var text: String
     var palette: Palette
@@ -157,7 +159,7 @@ struct Eyebrow: View {
     }
 }
 
-/// Rótulo cinza de seção na sidebar e nos cards.
+/// Grey section label used in the sidebar and in cards.
 struct MicroLabel: View {
     var text: String
     var palette: Palette
@@ -170,7 +172,7 @@ struct MicroLabel: View {
     }
 }
 
-/// Cabeçalho de tela: eyebrow + título + subtítulo opcional.
+/// Screen header: eyebrow + title + optional subtitle.
 struct ScreenHeader<Trailing: View>: View {
     var eyebrow: String
     var title: String
@@ -213,7 +215,7 @@ extension ScreenHeader where Trailing == EmptyView {
     }
 }
 
-// MARK: - Anel de progresso com gradiente
+// MARK: - Gradient progress ring
 
 struct GradientRing: View {
     var value: Double            // 0...1
@@ -237,12 +239,12 @@ struct GradientRing: View {
     }
 }
 
-/// Anel grande do score de saúde.
+/// The large health-score ring.
 ///
-/// A flutuação contínua foi removida: uma animação `repeatForever` mantém o
-/// SwiftUI redesenhando a 60 fps para sempre, e num app que fica aberto o dia
-/// todo isso é custo permanente por um detalhe que ninguém nota. O anel já
-/// anima quando o valor muda, que é quando o movimento significa algo.
+/// The continuous float was removed: a `repeatForever` animation keeps SwiftUI
+/// redrawing at 60 fps forever, and in an app that stays open all day that is a
+/// permanent cost for a detail nobody notices. The ring already animates when the
+/// value changes, which is when movement means something.
 struct ScoreRing: View {
     var score: Int
     var palette: Palette
@@ -316,11 +318,11 @@ struct ScanBar: View {
     }
 }
 
-// MARK: - Gráfico de pressão
+// MARK: - Pressure chart
 
-/// Curva dos últimos minutos. Só a forma — a escala é sempre 0…1, porque
-/// pressão de memória é uma fração e reescalar esconderia justamente o que
-/// interessa (a distância até o topo).
+/// The last few minutes as a curve. Shape only — the scale is always 0…1,
+/// because memory pressure is a fraction and rescaling would hide exactly what
+/// matters (how far it is from the top).
 struct PressureChart: View {
     var values: [Double]
     var palette: Palette
@@ -336,7 +338,7 @@ struct PressureChart: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // faixas de referência: 35 % e 60 %, os mesmos cortes do rótulo
+                // reference bands: 35% and 60%, the same cutoffs as the label
                 ForEach([0.35, 0.60], id: \.self) { level in
                     Path { path in
                         let y = geo.size.height * (1 - level)
@@ -393,7 +395,7 @@ struct PressureChart: View {
     }
 }
 
-// MARK: - Linha rótulo/valor
+// MARK: - Label/value row
 
 struct StatRow: View {
     var key: String
@@ -416,7 +418,7 @@ struct StatRow: View {
     }
 }
 
-// MARK: - Card de métrica
+// MARK: - Metric card
 
 struct MetricCard: View {
     var label: String
@@ -461,7 +463,7 @@ struct MetricCard: View {
     }
 }
 
-// MARK: - Pílula de risco
+// MARK: - Risk pill
 
 struct RiskPill: View {
     var text: String
@@ -506,7 +508,7 @@ struct RiskMeter: View {
     }
 }
 
-// MARK: - Etiqueta genérica
+// MARK: - Generic tag
 
 struct Chip: View {
     var text: String
@@ -593,9 +595,9 @@ struct GradientCheckbox: View {
     }
 }
 
-// MARK: - Botões
+// MARK: - Buttons
 
-/// Botão principal com o gradiente de acento.
+/// Primary button with the accent gradient.
 struct PrimaryButton: View {
     var title: String
     var systemImage: String? = nil
@@ -635,7 +637,7 @@ struct PrimaryButton: View {
     }
 }
 
-/// Botão secundário: fundo do card, borda fina.
+/// Secondary button: card background, thin border.
 struct GhostButton: View {
     var title: String
     var systemImage: String? = nil
@@ -677,12 +679,12 @@ struct GhostButton: View {
 
 // MARK: - Ponto "ao vivo"
 
-/// Ponto "ao vivo".
+/// The "live" dot.
 ///
-/// Estático de propósito. A versão pulsante usava `repeatForever`, o que obriga
-/// o SwiftUI a redesenhar continuamente — e como este ponto vive no Painel, que
-/// é a tela padrão, o custo era permanente. O texto ao lado já diz que a
-/// atualização é a cada 2 s.
+/// Static on purpose. The pulsing version used `repeatForever`, which forces
+/// SwiftUI to redraw continuously — and since this dot lives on the Dashboard,
+/// which is the default screen, the cost was permanent. The text beside it
+/// already says the refresh is every 2 s.
 struct LiveDot: View {
     var palette: Palette
     var color: Color? = nil
@@ -813,42 +815,34 @@ struct AppIconView: View {
     }
 }
 
-// MARK: - Rodapé fixo de ação
+// MARK: - Sticky action bar
 
-/// Abre a janela de Ajustes, com o rótulo que você quiser.
+/// Opens the Settings window, with whatever label you want.
 ///
-/// Existe para a decisão de *como* abrir Ajustes ficar num lugar só. A primeira
-/// tentativa mandava `showSettingsWindow:` pela cadeia de resposta e falhava em
-/// silêncio: esse seletor pertence ao delegate interno do SwiftUI, e com
-/// `NSApplicationDelegateAdaptor` o nosso delegate ocupa aquele lugar.
+/// It exists so the decision of *how* to open Settings lives in one place, and
+/// the label is all a caller provides — which is what keeps the menu bar panel's
+/// Settings row identical to its neighbours.
 ///
-/// `SettingsLink` é a API oficial e não depende de adivinhar nome de seletor.
-/// Vale do macOS 14 em diante; abaixo, tenta os dois seletores — sem checar
-/// `responds(to:)`, que era justamente o que descartava o caminho certo.
+/// An action, **not** a `SettingsLink`.
 ///
-/// Um detalhe que só aparece no uso: `SettingsLink` é um controle próprio, não
-/// um `Button` com ação. Por isso este tipo recebe apenas o rótulo, e quem usa
-/// aplica o `.buttonStyle` por fora — é o que mantém a linha do painel da barra
-/// de menus idêntica às vizinhas.
-/// Ação, não `SettingsLink`.
+/// `SettingsLink` works from a window and **does not work from a
+/// `MenuBarExtra`**: the menu bar popover doesn't leave the app active, and
+/// opening Settings without the app active doesn't bring a window forward. From
+/// the user's side it looked like the click did nothing — you had to open the
+/// main window first for Settings to work.
 ///
-/// `SettingsLink` funciona numa janela e **não funciona a partir de um
-/// `MenuBarExtra`**: o popover da barra de menus não deixa o app ativo, e abrir
-/// Ajustes sem o app ativo não traz janela para a frente. Do lado do usuário
-/// parecia que o clique não fazia nada — era preciso abrir a janela principal
-/// primeiro para Ajustes funcionar.
-///
-/// `openSettings` é a mesma capacidade em forma de ação, e por ser ação dá para
-/// **ativar o app antes de chamar**, que era o passo que faltava.
+/// `openSettings` is the same capability in the form of an action, and being an
+/// action means we can **activate the app before calling it**, which was the
+/// missing step.
 struct SettingsOpener<Label: View>: View {
     @ViewBuilder var label: () -> Label
 
     var body: some View {
-        // `@Environment(\.openSettings)` só existe no macOS 14. Declarar a
-        // propriedade aqui quebraria a compilação para o alvo 13, mesmo dentro
-        // de um `if #available` — disponibilidade de propriedade é checada na
-        // declaração, não no uso. Por isso ela mora num tipo `@available`, que só
-        // é mencionado dentro do teste.
+        // `@Environment(\.openSettings)` only exists on macOS 14. Declaring the
+        // property here would break the build for the 13 target, even inside an
+        // `if #available` — property availability is checked at the declaration,
+        // not at the use. So it lives in an `@available` type that is only
+        // mentioned inside the test.
         if #available(macOS 14.0, *) {
             ModernSettingsOpener(label: label)
         } else {
@@ -856,10 +850,10 @@ struct SettingsOpener<Label: View>: View {
         }
     }
 
-    /// macOS 13: tenta os dois seletores, **sem** checar `responds(to:)`.
-    /// O `sendAction` já percorre a cadeia de resposta e informa se alguém
-    /// tratou; a checagem só servia para descartar o caminho certo, porque o
-    /// seletor pertence ao delegate interno do SwiftUI e não ao nosso.
+    /// macOS 13: tries both selectors, **without** checking `responds(to:)`.
+    /// `sendAction` already walks the responder chain and reports whether anyone
+    /// handled it; the check only served to discard the correct path, because the
+    /// selector belongs to SwiftUI's internal delegate and not to ours.
     private func openLegacy() {
         NSApp.activate(ignoringOtherApps: true)
         if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
@@ -875,8 +869,8 @@ private struct ModernSettingsOpener<Label: View>: View {
 
     var body: some View {
         Button {
-            // A ordem importa: ativar depois de abrir deixa a janela atrás das
-            // outras em algumas situações.
+            // Order matters: activating after opening leaves the window behind
+            // the others in some situations.
             NSApp.activate(ignoringOtherApps: true)
             openSettings()
         } label: {
