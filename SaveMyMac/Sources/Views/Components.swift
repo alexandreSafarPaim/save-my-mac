@@ -869,7 +869,13 @@ struct SettingsOpener<Label: View>: View {
 
 @available(macOS 14.0, *)
 private struct ModernSettingsOpener<Label: View>: View {
-    @Environment(\.openSettings) private var openSettings
+    // The explicit `: OpenSettingsAction` is for Swift 5.10, which fails to
+    // infer the wrapped type from `\.openSettings` here (SDK 14 gives
+    // `@Environment` a second, Observable-taking initializer, and overload
+    // resolution dies with "generic parameter 'T' could not be inferred"
+    // instead of picking the key-path one). Naming the type resolves the
+    // overload directly. Newer compilers infer it either way.
+    @Environment(\.openSettings) private var openSettings: OpenSettingsAction
     @ViewBuilder var label: () -> Label
 
     var body: some View {
