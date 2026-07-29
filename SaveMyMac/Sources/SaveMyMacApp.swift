@@ -114,13 +114,10 @@ enum AppScene {
 /// do, through `@EnvironmentObject`. The App only needs to **hold** the objects.
 /// A singleton does that and survives recreation of the App struct, which is the
 /// only reason `@StateObject` would be here.
-@MainActor
 // @MainActor is required, not decorative: everything this constructs is
-// MainActor-isolated. Newer compilers let the un-annotated version slide;
-// Swift 5.10 (the CI toolchain, and the oldest a contributor may have) rejects
-// calling those initializers from a nonisolated context. The App struct reads
-// `shared` from its stored-property defaults, which SE-0411 (in 5.10) isolates
-// to the enclosing actor — so this stays compatible in both directions.
+// MainActor-isolated, and Swift 5.10 rejects calling those initializers from a
+// nonisolated context. The App struct reads `shared` from stored-property
+// defaults, which SE-0411 (in 5.10) isolates to the enclosing actor.
 @MainActor
 final class AppRoot {
     static let shared = AppRoot()
