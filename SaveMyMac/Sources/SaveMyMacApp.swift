@@ -115,6 +115,13 @@ enum AppScene {
 /// A singleton does that and survives recreation of the App struct, which is the
 /// only reason `@StateObject` would be here.
 @MainActor
+// @MainActor is required, not decorative: everything this constructs is
+// MainActor-isolated. Newer compilers let the un-annotated version slide;
+// Swift 5.10 (the CI toolchain, and the oldest a contributor may have) rejects
+// calling those initializers from a nonisolated context. The App struct reads
+// `shared` from its stored-property defaults, which SE-0411 (in 5.10) isolates
+// to the enclosing actor — so this stays compatible in both directions.
+@MainActor
 final class AppRoot {
     static let shared = AppRoot()
     let state = AppState()
@@ -260,22 +267,29 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {}
 
+        // Every action hops to the main actor through a Task instead of calling
+        // directly. Under the macOS 14 SDK (Swift 5.10), a menu Button's action
+        // closure is a plain nonisolated `() -> Void`, so a direct call to a
+        // @MainActor method is a compile error there — newer SDKs infer the
+        // isolation, which is how the direct calls built locally and failed in
+        // CI. The hop is behaviorally identical: menu actions already arrive on
+        // the main thread; the Task only re-states that for the old compiler.
         CommandMenu(L("Actions")) {
-            Button(L("Analyze my Mac")) { state.startScan() }
+            Button(L("Analyze my Mac")) { Task { @MainActor in state.startScan() } }
                 .keyboardShortcut("r", modifiers: .command)
-            Button(L("Scan files and duplicates")) { state.startFilesScan() }
+            Button(L("Scan files and duplicates")) { Task { @MainActor in state.startFilesScan() } }
                 .keyboardShortcut("f", modifiers: [.command, .shift])
-            Button(L("Scan applications")) { state.startAppsScan() }
+            Button(L("Scan applications")) { Task { @MainActor in state.startAppsScan() } }
                 .keyboardShortcut("a", modifiers: [.command, .shift])
-            Button(L("Check offload links")) { state.startOffloadScan() }
+            Button(L("Check offload links")) { Task { @MainActor in state.startOffloadScan() } }
                 .keyboardShortcut("l", modifiers: .command)
 
             Divider()
 
-            Button(L("Refresh metrics")) { state.refreshMetrics() }
+            Button(L("Refresh metrics")) { Task { @MainActor in state.refreshMetrics() } }
                 .keyboardShortcut("u", modifiers: .command)
             // Fixed label on purpose — see the note at the top of the type.
-            Button(L("Switch between light and dark theme (⇧⌘T)")) { state.toggleTheme() }
+            Button(L("Switch between light and dark theme (⇧⌘T)")) { Task { @MainActor in state.toggleTheme() } }
                 .keyboardShortcut("t", modifiers: [.command, .shift])
         }
     }
