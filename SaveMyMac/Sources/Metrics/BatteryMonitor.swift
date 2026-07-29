@@ -38,7 +38,7 @@ enum BatteryMonitor {
         var snap = BatterySnapshot()
 
         guard let props = registryProperties(serviceName: "AppleSmartBattery") else {
-            // Desktop: verifica se está na tomada
+            // Desktop: check whether it is plugged in
             snap.isPluggedIn = true
             return snap
         }
@@ -51,14 +51,14 @@ enum BatteryMonitor {
         let maxCap = intValue(props["MaxCapacity"]) ?? 0
         let design = intValue(props["DesignCapacity"]) ?? 0
 
-        // Em Apple Silicon "CurrentCapacity" já é percentual (0-100).
+        // On Apple Silicon, "CurrentCapacity" is already a percentage (0-100).
         if maxCap == 100 || maxCap == 0 {
             snap.charge = Double(current) / 100.0
         } else {
             snap.charge = Double(current) / Double(max(1, maxCap))
         }
 
-        // Capacidade real para saúde
+        // Real capacity, for health
         let rawMax = intValue(props["AppleRawMaxCapacity"])
             ?? intValue(props["NominalChargeCapacity"])
             ?? maxCap
@@ -69,7 +69,7 @@ enum BatteryMonitor {
         snap.cycleCount = intValue(props["CycleCount"]) ?? 0
         snap.designCycleCount = intValue(props["DesignCycleCount9C"]) ?? 0
 
-        // Temperatura da bateria vem em centésimos de grau Celsius.
+        // Battery temperature comes in hundredths of a degree Celsius.
         if let raw = intValue(props["Temperature"]), raw > 0 {
             snap.temperature = Double(raw) / 100.0
         }

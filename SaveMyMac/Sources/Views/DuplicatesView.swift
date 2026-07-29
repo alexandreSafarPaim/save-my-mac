@@ -67,7 +67,7 @@ struct DuplicatesView: View {
         }
     }
 
-    // MARK: - Cabeçalho
+    // MARK: - Header
 
     private var header: some View {
         ScreenHeader(
@@ -173,7 +173,7 @@ struct DuplicatesView: View {
         )
     }
 
-    // MARK: - Rodapé
+    // MARK: - Footer
 
     private var footer: some View {
         StickyActionBar(palette: palette) {

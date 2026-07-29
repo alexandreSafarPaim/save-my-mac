@@ -14,13 +14,13 @@ struct CPUSnapshot {
     var threadCount: Int = 0
 }
 
-/// Lê o uso agregado de CPU comparando os "ticks" entre duas amostras.
+/// Reads aggregate CPU usage by comparing "ticks" between two samples.
 final class CPUMonitor {
 
     private var previousTicks: (user: UInt32, system: UInt32, idle: UInt32, nice: UInt32)?
 
     init() {
-        // Amostra inicial para que a primeira leitura já tenha uma base de comparação.
+        // An initial sample so the first read already has a baseline.
         _ = read()
     }
 

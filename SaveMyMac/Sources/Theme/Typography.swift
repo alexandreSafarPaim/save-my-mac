@@ -1,12 +1,12 @@
 import SwiftUI
 import AppKit
 
-/// Tipografia do design: Space Grotesk na interface, JetBrains Mono nos números
-/// e rótulos. As duas fontes são variáveis e vêm embutidas em
-/// `Contents/Resources/Fonts` (registradas via `ATSApplicationFontsPath`).
+/// The design's typography: Space Grotesk for the interface, JetBrains Mono for
+/// numbers and labels. Both are variable fonts, bundled in
+/// `Contents/Resources/Fonts` (registered through `ATSApplicationFontsPath`).
 ///
-/// Se por algum motivo o registro falhar, tudo cai para as fontes do sistema
-/// sem quebrar o layout.
+/// If registration fails for any reason, everything falls back to the system fonts
+/// without breaking the layout.
 enum Typo {
 
     static let uiFamily = "Space Grotesk"
@@ -28,7 +28,7 @@ enum Typo {
             : .system(size: size, weight: weight, design: .default)
     }
 
-    // MARK: - Monoespaçada
+    // MARK: - Monospaced
 
     static func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         hasMono
@@ -38,11 +38,11 @@ enum Typo {
 
     // MARK: - Estilos nomeados do design
 
-    /// Rótulo pequeno em maiúsculas com muito espaçamento (ex.: "PAINEL DO SISTEMA").
+    /// Small uppercase label with wide tracking (e.g. "SYSTEM DASHBOARD").
     static var eyebrow: Font { mono(11, .regular) }
     static var eyebrowSmall: Font { mono(9.5, .semibold) }
 
-    /// Título grande de tela (32px no Painel, 30px nas outras).
+    /// Large screen title (32px on the Dashboard, 30px elsewhere).
     static var screenTitle: Font { ui(30, .bold) }
     static var screenTitleLarge: Font { ui(32, .bold) }
 
@@ -52,7 +52,7 @@ enum Typo {
     static var bodySmall: Font { ui(12.5, .regular) }
     static var caption: Font { ui(11.5, .regular) }
 
-    /// Número enorme dos cards de métrica.
+    /// The huge number on the metric cards.
     static var metricValue: Font { mono(38, .bold) }
     static var scoreValue: Font { mono(44, .bold) }
     static var statValue: Font { mono(22, .bold) }
@@ -61,7 +61,7 @@ enum Typo {
     static var monoTiny: Font { mono(10) }
 }
 
-/// Espaçamento de letras dos rótulos em maiúsculas.
+/// Letter spacing for uppercase labels.
 enum Track {
     static let eyebrow: CGFloat = 2.4
     static let label: CGFloat = 1.9

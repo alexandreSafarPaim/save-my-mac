@@ -1,20 +1,20 @@
 import Foundation
 
-/// Move uma pasta para outro volume e deixa um link simbólico no lugar.
+/// Moves a folder to another volume and leaves a symlink in its place.
 ///
-/// A sequência é deliberadamente conservadora e cada etapa é registrada num
-/// journal em disco antes de acontecer:
+/// The sequence is deliberately conservative, and every step is recorded in an
+/// on-disk journal before it happens:
 ///
-///   1. checagens (volume aceita link? cabe? caminho é permitido?)
-///   2. copia para uma área de staging no destino, com `ditto`
-///   3. confere contagem de arquivos e bytes
-///   4. move o original para a quarentena — rename no mesmo volume, instantâneo
-///   5. publica o staging como alvo definitivo
-///   6. cria o link simbólico
-///   7. testa leitura e escrita através do link
+///   1. checks (does the volume support links? does it fit? is the path allowed?)
+///   2. copy into a staging area at the destination, with `ditto`
+///   3. verify file count and byte count
+///   4. move the original into quarantine — a rename on the same volume, instant
+///   5. publish the staging area as the final target
+///   6. create the symlink
+///   7. test reading and writing through the link
 ///
-/// O original nunca é apagado: ele fica na quarentena até você mandar liberar.
-/// Qualquer falha dispara rollback automático.
+/// The original is never deleted: it stays in quarantine until you release it.
+/// Any failure triggers an automatic rollback.
 final class MigrationEngine: @unchecked Sendable {
 
     static let journalFile = "migrations.json"
@@ -48,7 +48,7 @@ final class MigrationEngine: @unchecked Sendable {
 
     // MARK: - Checagens
 
-    /// Motivo pelo qual o destino não serve, ou `nil` se estiver tudo bem.
+    /// Why the destination is unsuitable, or `nil` if everything is fine.
     static func destinationProblem(_ destination: URL, needing bytes: Int64) -> String? {
         let fm = FileManager.default
 
@@ -66,7 +66,7 @@ final class MigrationEngine: @unchecked Sendable {
             return L("Could not read the destination volume's characteristics.")
         }
 
-        // O portão eliminatório: exFAT e FAT não têm link simbólico.
+        // The disqualifying gate: exFAT and FAT have no symlinks.
         if values.volumeSupportsSymbolicLinks == false {
             let name = values.volumeName ?? "Este volume"
             return L("%@ does not support symlinks. Format it as APFS or HFS+ to use offload.", name)
@@ -87,7 +87,7 @@ final class MigrationEngine: @unchecked Sendable {
         return nil
     }
 
-    /// Motivo pelo qual a origem não pode ser descarregada.
+    /// Why the source cannot be offloaded.
     static func sourceProblem(_ source: URL) -> String? {
         let fm = FileManager.default
         let path = source.standardizedFileURL.path
@@ -117,7 +117,7 @@ final class MigrationEngine: @unchecked Sendable {
             return L("Don't offload a whole top-level folder — pick something inside it.")
         }
 
-        // Pastas administradas por daemons do sistema: link simbólico aqui dá problema.
+        // Folders managed by system daemons: a symlink here causes trouble.
         let never: [(String, String)] = [
             ("Library/Mobile Documents", "iCloud Drive"),
             ("Library/CloudStorage", "provedores de nuvem"),
@@ -148,7 +148,7 @@ final class MigrationEngine: @unchecked Sendable {
         return nil
     }
 
-    // MARK: - Migração
+    // MARK: - Migration
 
     func migrate(
         source: URL,
@@ -202,7 +202,7 @@ final class MigrationEngine: @unchecked Sendable {
             return fail(problem)
         }
 
-        // --- 2. Cópia ---
+        // --- 2. Copy ---
         entry.phase = .copying
         write(entry)
         progress(.copying, "Copiando \(Fmt.bytes(measured.bytes))…", 0.05)
@@ -213,10 +213,10 @@ final class MigrationEngine: @unchecked Sendable {
             return fail(L("Could not create the staging area: %@", error.localizedDescription))
         }
 
-        // `ditto` é da Apple e preserva metadados, xattrs, ACLs e resource forks.
-        // Evitamos `rsync` porque a implementação mudou no macOS 14.
-        // `shell` devolve "" quando o comando falha, então o status de saída é
-        // a única forma confiável de detectar erro do ditto.
+        // `ditto` is Apple's and preserves metadata, xattrs, ACLs and resource
+        // forks. We avoid `rsync` because the implementation changed in macOS 14.
+        // `shell` returns "" when the command fails, so the exit status is the
+        // only reliable way to detect a ditto error.
         let copy = ProcessMonitor.run("/usr/bin/ditto", ["--noqtn", source.path, stagingItem.path])
         guard copy.status == 0 else {
             cleanup(staging)
@@ -228,13 +228,13 @@ final class MigrationEngine: @unchecked Sendable {
             return fail(L("Cancelled during the copy."))
         }
 
-        // --- 3. Verificação ---
+        // --- 3. Verification ---
         entry.phase = .verifying
         write(entry)
         progress(.verifying, "Conferindo \(measured.files) arquivos…", 0.62)
 
         let copied = measure(stagingItem, isCancelled: isCancelled)
-        // Tolerância de 0,5% em bytes: `ditto` pode diferir por blocos e clones.
+        // 0.5% byte tolerance: `ditto` can differ due to blocks and clones.
         let byteDelta = abs(copied.bytes - measured.bytes)
         let tolerance = Int64(Double(measured.bytes) * 0.005) + 4096
         guard copied.files == measured.files, byteDelta <= tolerance else {
@@ -255,7 +255,7 @@ final class MigrationEngine: @unchecked Sendable {
             return fail(L("Could not move the original: %@", error.localizedDescription))
         }
 
-        // --- 5. Publicação no destino ---
+        // --- 5. Publish at the destination ---
         entry.phase = .publishing
         write(entry)
         progress(.publishing, "Publicando no destino…", 0.80)
@@ -273,7 +273,7 @@ final class MigrationEngine: @unchecked Sendable {
         }
         cleanup(staging)
 
-        // --- 6. Link simbólico ---
+        // --- 6. Symlink ---
         entry.phase = .linking
         write(entry)
         progress(.linking, L("Creating the symlink…"), 0.88)
@@ -281,10 +281,10 @@ final class MigrationEngine: @unchecked Sendable {
         do {
             try fm.createSymbolicLink(at: source, withDestinationURL: target)
         } catch {
-            // O original está intacto na quarentena: devolvê-lo é um rename
-            // local e instantâneo. Trazer a cópia do volume externo de volta
-            // seria uma cópia física lenta, que poderia falhar por espaço e
-            // deixaria a quarentena órfã ocupando o disco para sempre.
+            // The original is intact in quarantine: putting it back is a local,
+            // instant rename. Bringing the copy back from the external volume
+            // would be a slow physical copy, which could fail for lack of space
+            // and would leave the quarantine orphaned on the disk forever.
             try? fm.moveItem(at: quarantineItem, to: source)
             try? fm.removeItem(at: target)
             cleanup(quarantine)
@@ -293,7 +293,7 @@ final class MigrationEngine: @unchecked Sendable {
             return fail(L("Failed to create the link, the original was restored: %@", error.localizedDescription))
         }
 
-        // --- 7. Validação através do link ---
+        // --- 7. Validate through the link ---
         entry.phase = .validating
         write(entry)
         progress(.validating, "Testando leitura e escrita pelo link…", 0.94)
@@ -322,8 +322,8 @@ final class MigrationEngine: @unchecked Sendable {
 
     // MARK: - Reverter
 
-    /// Desfaz uma migração: apaga o link, devolve o original da quarentena e
-    /// remove a cópia do destino.
+    /// Undoes a migration: deletes the link, restores the original from
+    /// quarantine and removes the copy at the destination.
     func restore(_ entry: MigrationJournalEntry) -> MigrationOutcome {
         var updated = entry
         let source = URL(fileURLWithPath: entry.sourcePath)
@@ -335,7 +335,7 @@ final class MigrationEngine: @unchecked Sendable {
                                     message: L("The original is no longer in quarantine — there is no way to undo."))
         }
 
-        // Remove o link (nunca o alvo: removeItem num symlink apaga só o link).
+        // Removes the link (never the target: removeItem on a symlink deletes only the link).
         if VolumeResolver.isSymbolicLink(source) {
             try? fm.removeItem(at: source)
         } else if fm.fileExists(atPath: source.path) {
@@ -350,7 +350,7 @@ final class MigrationEngine: @unchecked Sendable {
                                     message: L("Failed to restore the original: %@", error.localizedDescription))
         }
 
-        // A cópia no destino vira lixo — para a Lixeira, não apagada.
+        // The copy at the destination becomes junk — to the Trash, not deleted.
         if fm.fileExists(atPath: target.path) {
             try? fm.trashItem(at: target, resultingItemURL: nil)
         }
@@ -364,8 +364,8 @@ final class MigrationEngine: @unchecked Sendable {
                                 message: L("%@ is back in its original place.", updated.name))
     }
 
-    /// Libera a quarentena de uma migração concluída — é aqui que o espaço
-    /// realmente volta para o disco do Mac.
+    /// Releases the quarantine of a completed migration — this is where the
+    /// space genuinely returns to the Mac's disk.
     func releaseQuarantine(_ entry: MigrationJournalEntry) -> MigrationOutcome {
         var updated = entry
         let quarantine = URL(fileURLWithPath: entry.quarantinePath)
@@ -373,7 +373,7 @@ final class MigrationEngine: @unchecked Sendable {
         guard fm.fileExists(atPath: quarantine.path) else {
             return MigrationOutcome(entry: entry, succeeded: true, message: L("Quarantine was already empty."))
         }
-        // Confere que o link e o alvo estão de pé antes de soltar o original.
+        // Verifies the link and target are sound before letting the original go.
         guard VolumeResolver.isSymbolicLink(URL(fileURLWithPath: entry.sourcePath)),
               fm.fileExists(atPath: entry.targetPath) else {
             return MigrationOutcome(entry: entry, succeeded: false,
@@ -436,8 +436,8 @@ final class MigrationEngine: @unchecked Sendable {
         return Measurement(bytes: bytes, files: files)
     }
 
-    /// Confere que o link resolve, que a contagem bate e que dá para escrever
-    /// através dele — este último teste é o que pega volume montado só-leitura.
+    /// Verifies the link resolves, the count matches, and that writing through it
+    /// works — that last test is what catches a read-only mounted volume.
     private func validate(link: URL, expectedFiles: Int, isCancelled: () -> Bool) -> String? {
         guard VolumeResolver.isSymbolicLink(link) else {
             return L("the link was not created")

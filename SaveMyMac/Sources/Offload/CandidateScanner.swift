@@ -1,18 +1,18 @@
 import Foundation
 
-/// Sugere pastas que valem ser movidas para outro disco — e, com a mesma
-/// clareza, avisa quais **não** valem.
+/// Suggests folders worth moving to another disk — and, just as clearly, says
+/// which ones are **not** worth it.
 ///
-/// A distinção importa: não é "grande ou pequeno". É se a pasta é grande, fria
-/// e sem alternativa nativa. Cache de npm é grande e regenerável, então apagar
-/// é melhor que mover. DerivedData do Xcode em SSD externo até piora o tempo de
-/// build, e o Xcode tem ajuste próprio de localização.
+/// The distinction matters: it isn't "big or small". It is whether the folder is
+/// large, cold and without a native alternative. An npm cache is large and
+/// regenerable, so deleting beats moving. Xcode's DerivedData on an external SSD
+/// actually makes build times worse, and Xcode has its own location setting.
 final class CandidateScanner: @unchecked Sendable {
 
     private let fm = FileManager.default
     private let home = FileManager.default.homeDirectoryForCurrentUser
 
-    /// Catálogo de lugares conhecidos, com o veredito de cada um.
+    /// A catalogue of known places, each with its verdict.
     private struct Known {
         var relative: String
         var name: String
@@ -128,7 +128,7 @@ final class CandidateScanner: @unchecked Sendable {
 
             let url = home.appendingPathComponent(known.relative)
             guard fm.fileExists(atPath: url.path) else { continue }
-            // Se já está descarregado, não é candidato.
+            // If it's already offloaded, it isn't a candidate.
             guard VolumeResolver.freesSpaceOnMac(url) else { continue }
 
             let size = DiskMonitor.directorySize(at: url, isCancelled: isCancelled)
@@ -144,7 +144,7 @@ final class CandidateScanner: @unchecked Sendable {
             ))
         }
 
-        // Descobertas: pastas grandes de primeiro nível que não estão no catálogo.
+        // Discoveries: large top-level folders that aren't in the catalogue.
         if !isCancelled() {
             progress("Procurando outras pastas grandes…", 0.75)
             candidates += discoverUnknown(
@@ -167,7 +167,7 @@ final class CandidateScanner: @unchecked Sendable {
         }
     }
 
-    /// Pastas grandes que o catálogo não conhece — sugeridas com cautela.
+    /// Large folders the catalogue doesn't know — suggested with caution.
     private func discoverUnknown(
         existing: Set<String>,
         isCancelled: () -> Bool

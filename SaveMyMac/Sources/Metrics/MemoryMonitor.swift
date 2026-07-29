@@ -17,7 +17,7 @@ struct MemorySnapshot {
         total == 0 ? 0 : Double(used) / Double(total)
     }
 
-    /// Aproximação da "pressão de memória" do Monitor de Atividade.
+    /// An approximation of Activity Monitor's "memory pressure".
     var pressureFraction: Double {
         total == 0 ? 0 : Double(wired &+ compressed) / Double(total)
     }

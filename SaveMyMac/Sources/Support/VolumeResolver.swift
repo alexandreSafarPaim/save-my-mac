@@ -1,18 +1,19 @@
 import Foundation
 
-/// Descobre em qual volume um caminho realmente vive.
+/// Works out which volume a path really lives on.
 ///
-/// Isso existe por um motivo concreto: se `~/.gradle` é um link simbólico para
-/// um SSD externo, apagar aquele conteúdo **não libera nenhum byte no Mac**.
-/// Pior: apagaria dados no disco externo enquanto o app reporta espaço
-/// recuperado no interno. Todo caminho passa por aqui antes de entrar na
-/// lista de limpeza.
+/// This exists for a concrete reason: if `~/.gradle` is a symlink to an external
+/// SSD, deleting that content **frees no bytes on the Mac at all**. Worse: it
+/// would destroy data on the external disk while the app reports space recovered
+/// on the internal one. Every path goes through here before entering the cleanup
+/// list.
 enum VolumeResolver {
 
-    /// Identidade do volume onde a pasta pessoal do usuário está.
-    /// É esse — e não literalmente "/" — o volume cujo espaço interessa,
-    /// porque no macOS moderno a home fica no volume de Dados, ligado à raiz
-    /// por firmlink (que não é symlink e não aparece na resolução de caminho).
+    /// The identity of the volume the user's home folder is on.
+    /// That one — and not literally "/" — is the volume whose space matters,
+    /// because on modern macOS home lives on the Data volume, linked to the root
+    /// by a firmlink (which is not a symlink and does not show up in path
+    /// resolution).
     private static let homeVolumeIdentifier: NSObject? = {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let values = try? home.resourceValues(forKeys: [.volumeIdentifierKey])
@@ -27,23 +28,23 @@ enum VolumeResolver {
         return values?.volumeIdentifier as? NSObject
     }
 
-    /// `true` se o conteúdo real está no mesmo volume da home.
+    /// `true` if the real content is on the same volume as home.
     ///
-    /// Caminhos que não existem retornam `true` de propósito: um link quebrado
-    /// não deve ser tratado como "conteúdo externo".
+    /// Paths that don't exist return `true` on purpose: a broken link should not
+    /// be treated as "external content".
     static func isOnHomeVolume(_ url: URL) -> Bool {
         guard let home = homeVolumeIdentifier else { return true }
         guard let target = volumeIdentifier(of: url) else { return true }
         return home.isEqual(target)
     }
 
-    /// Um caminho só rende espaço no Mac se não for link e estiver no volume da home.
+    /// A path only yields space on the Mac if it isn't a link and is on the home volume.
     static func freesSpaceOnMac(_ url: URL) -> Bool {
         if isSymbolicLink(url) { return false }
         return isOnHomeVolume(url)
     }
 
-    // MARK: - Informações do volume
+    // MARK: - Volume information
 
     static func volumeName(of url: URL) -> String? {
         let resolved = url.resolvingSymlinksInPath()
@@ -77,14 +78,14 @@ enum VolumeResolver {
         return VolumeCapacity(total: total, available: max(0, available))
     }
 
-    // MARK: - Links simbólicos
+    // MARK: - Symlinks
 
     static func isSymbolicLink(_ url: URL) -> Bool {
         let values = try? url.resourceValues(forKeys: [.isSymbolicLinkKey])
         return values?.isSymbolicLink ?? false
     }
 
-    /// Alvo absoluto de um link simbólico, resolvendo alvos relativos.
+    /// A symlink's absolute target, resolving relative targets.
     static func symlinkTarget(of url: URL) -> URL? {
         guard let raw = try? FileManager.default.destinationOfSymbolicLink(atPath: url.path) else {
             return nil

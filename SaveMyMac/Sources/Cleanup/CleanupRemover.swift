@@ -3,7 +3,7 @@ import AppKit
 
 enum CleanupRemover {
 
-    /// Remove os itens selecionados. Nada é apagado sem passar por aqui.
+    /// Removes the selected items. Nothing is deleted without going through here.
     static func remove(
         items: [CleanupItem],
         mode: CleanupMode,
@@ -37,8 +37,8 @@ enum CleanupRemover {
             let url = URL(fileURLWithPath: entry.path)
             guard FileManager.default.fileExists(atPath: url.path) else { continue }
 
-            // Trava de segurança: nunca sair da home, nem tocar em caminhos do
-            // sistema, nem apagar através de um link para outro volume.
+            // Safety guard: never leave home, never touch system paths, and never
+            // delete through a link to another volume.
             if let reason = rejectionReason(for: url) {
                 result.failures.append((entry.path, reason))
                 continue
@@ -62,13 +62,13 @@ enum CleanupRemover {
         return result
     }
 
-    /// Retorna o motivo da recusa, ou `nil` se o caminho pode ser removido.
+    /// Returns the reason for refusing, or `nil` if the path may be removed.
     ///
-    /// Só permite apagar dentro da pasta pessoal do usuário, nunca as pastas de
-    /// primeiro nível (Documents, Desktop, Library…), e nunca conteúdo que viva
-    /// em outro volume — este último caso protege quem descarregou pastas para
-    /// um disco externo via link simbólico: apagar ali não devolveria espaço ao
-    /// Mac e destruiria dados no disco errado.
+    /// It only allows deletion inside the user's home folder, never the top-level
+    /// folders (Documents, Desktop, Library…), and never content that lives on
+    /// another volume — that last case protects anyone who offloaded folders to an
+    /// external disk through a symlink: deleting there would give no space back to
+    /// the Mac and would destroy data on the wrong disk.
     static func rejectionReason(for url: URL) -> String? {
         if VolumeResolver.isSymbolicLink(url) {
             return L("It's a symlink — removing it frees no space on the Mac")
@@ -103,7 +103,7 @@ enum CleanupRemover {
             return L("Protected user system folder")
         }
 
-        // Bloqueia caminhos sensíveis dentro da Library
+        // Blocks sensitive paths inside the Library
         let blockedPrefixes = [
             "Library/Keychains",
             "Library/Application Support/AddressBook",

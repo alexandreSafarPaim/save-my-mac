@@ -10,11 +10,12 @@ struct UninstallResult {
     var succeeded: Bool { !removedPaths.isEmpty }
 }
 
-/// Remove cache ou o app inteiro com todos os dados de apoio.
+/// Removes the cache, or the whole app with all its support data.
 ///
-/// Sempre pela Lixeira: nada é apagado de forma irreversível aqui, e nenhuma
-/// operação pede senha. Se o bundle estiver num lugar que exige privilégio, a
-/// falha é reportada com a instrução em vez de escalar sozinho.
+/// Always through the Trash: nothing is deleted irreversibly here, and no
+/// operation asks for a password. If the bundle sits somewhere that requires
+/// privilege, the failure is reported with instructions rather than escalating on
+/// its own.
 enum AppUninstaller {
 
     // MARK: - Apenas o cache
@@ -54,7 +55,7 @@ enum AppUninstaller {
         return result
     }
 
-    // MARK: - Núcleo
+    // MARK: - Core
 
     private static func remove(
         paths: [(String, Int64)],
@@ -92,11 +93,11 @@ enum AppUninstaller {
         return result
     }
 
-    /// Trava de segurança específica da desinstalação.
+    /// The safety guard specific to uninstallation.
     ///
-    /// É mais permissiva que a da limpeza (aqui `/Applications` é alvo legítimo)
-    /// mas continua barrando o sistema, links simbólicos e qualquer coisa cujo
-    /// conteúdo real esteja em outro volume.
+    /// It is more permissive than cleanup's (here `/Applications` is a legitimate
+    /// target) but still blocks the system, symlinks, and anything whose real
+    /// content lives on another volume.
     static func rejectionReason(for url: URL) -> String? {
         let path = url.standardizedFileURL.path
 
@@ -139,7 +140,7 @@ enum AppUninstaller {
             return nil
         }
 
-        // Fora da home só permitimos bundles .app em /Applications.
+        // Outside home we only allow .app bundles in /Applications.
         if path.hasPrefix("/Applications") && url.pathExtension == "app" {
             return nil
         }

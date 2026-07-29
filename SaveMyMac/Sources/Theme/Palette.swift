@@ -18,7 +18,7 @@ enum ThemeMode: String, CaseIterable, Codable {
     var toggled: ThemeMode { self == .dark ? .light : .dark }
 }
 
-/// Paleta do design, traduzida das variáveis CSS.
+/// The design's palette, translated from the CSS variables.
 struct Palette {
 
     var bg: Color
@@ -38,7 +38,7 @@ struct Palette {
     var grid: Color
     var shadow: Color
 
-    /// Gradiente de acento usado em anéis, botões e barras.
+    /// The accent gradient used in rings, buttons and bars.
     var gradient: LinearGradient {
         LinearGradient(
             colors: [accent, cyan],
@@ -115,8 +115,8 @@ struct Palette {
         }
     }
 
-    /// Cor da pílula de risco, seguindo a regra do design:
-    /// até 2 verde, até 5 âmbar, acima disso vermelho.
+    /// The risk pill's colour, following the design's rule:
+    /// up to 2 green, up to 5 amber, above that red.
     func riskTint(_ score: Int) -> Color {
         if score <= 2 { return ok }
         if score <= 5 { return warn }

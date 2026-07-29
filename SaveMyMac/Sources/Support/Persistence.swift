@@ -1,11 +1,11 @@
 import Foundation
 
-/// Armazenamento simples em JSON dentro de
+/// Simple JSON storage inside
 /// `~/Library/Application Support/SaveMyMac/`.
 ///
-/// Usado pela gamificação, pelo histórico de limpezas e pelo journal de
-/// migração. Escrita atômica: grava num arquivo temporário e troca, para que
-/// uma queda de energia no meio não deixe JSON corrompido.
+/// Used by the gamification, the cleanup history and the migration journal.
+/// Atomic writes: it writes to a temporary file and swaps, so a power cut halfway
+/// through doesn't leave corrupted JSON.
 enum Store {
 
     static var directory: URL {

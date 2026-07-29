@@ -1,14 +1,14 @@
 import Foundation
 
-/// Varre o disco procurando o que pode ser removido, agrupado por categoria e risco.
-/// Nada é apagado aqui — a varredura é somente leitura.
+/// Scans the disk for what can be removed, grouped by category and risk.
+/// Nothing is deleted here — the scan is read-only.
 final class CleanupScanner: @unchecked Sendable {
 
     private let fm = FileManager.default
     private let home = FileManager.default.homeDirectoryForCurrentUser
 
-    // Arquivos grandes e duplicados agora moram em `FileScanner`, cada um com
-    // sua própria tela. Aqui ficam só as categorias regeneráveis.
+    // Large files and duplicates now live in `FileScanner`, each with its own
+    // screen. Only the regenerable categories remain here.
 
     // MARK: - Entrada principal
 
@@ -46,11 +46,11 @@ final class CleanupScanner: @unchecked Sendable {
         return categories.sorted { $0.totalSize > $1.totalSize }
     }
 
-    // MARK: - 1. Caches de usuário
+    // MARK: - 1. User caches
 
     private func userCaches(_ isCancelled: () -> Bool) -> CleanupCategory? {
         let root = home.appendingPathComponent("Library/Caches")
-        // Estes têm efeitos colaterais chatos se apagados enquanto o app roda.
+        // These have annoying side effects if deleted while the app is running.
         let skip: Set<String> = [
             "com.apple.containermanagerd",
             "CloudKit",
@@ -103,7 +103,7 @@ final class CleanupScanner: @unchecked Sendable {
             minimumSize: 1024 * 1024
         )
 
-        // Relatórios de travamento
+        // Crash reports
         let crashDirs = [
             "Library/Logs/DiagnosticReports",
             "Library/Application Support/CrashReporter"
@@ -329,14 +329,14 @@ final class CleanupScanner: @unchecked Sendable {
         )
     }
 
-    // A Lixeira saiu daqui de propósito.
+    // The Trash deliberately left this file.
     //
-    // Ela virou um card próprio na aba Limpeza, com `TrashManager`. O motivo é
-    // um bug real: no modo padrão ("Mover para a Lixeira") o removedor chamava
-    // `trashItem` em algo que já estava na Lixeira — o Cocoa devolve erro ou,
-    // pior, renomeia dentro dela e o app reportava sucesso sem liberar byte.
-    // Esvaziar é sempre permanente, então não pode compartilhar o caminho das
-    // outras categorias.
+    // It became its own card on the Cleanup tab, backed by `TrashManager`. The
+    // reason is a real bug: in the default mode ("Move to Trash") the remover
+    // called `trashItem` on something already in the Trash — Cocoa either returns
+    // an error or, worse, renames it inside the Trash and the app reported success
+    // without freeing a byte. Emptying is always permanent, so it cannot share the
+    // path the other categories take.
 
     // MARK: - 8. Downloads antigos
 
@@ -437,11 +437,11 @@ final class CleanupScanner: @unchecked Sendable {
                 var name = url.lastPathComponent
                 if name.hasSuffix(".savedState") { name = String(name.dropLast(11)) }
 
-                // Apenas pastas com nome de bundle id (com pontos) e não da Apple
+                // Only folders named like a bundle id (with dots) and not Apple's
                 guard name.contains("."), !name.hasPrefix("com.apple.") else { continue }
-                // Match por prefixo: `com.foo.App.Helper` e
-                // `com.foo.App.binarycookies` pertencem a `com.foo.app` e não
-                // podem ser tratados como sobra de app desinstalado.
+                // Prefix match: `com.foo.App.Helper` and
+                // `com.foo.App.binarycookies` belong to `com.foo.app` and must not
+                // be treated as leftovers from an uninstalled app.
                 let lowerName = name.lowercased()
                 guard !installed.contains(where: { lowerName == $0 || lowerName.hasPrefix($0 + ".") })
                 else { continue }
@@ -531,7 +531,7 @@ final class CleanupScanner: @unchecked Sendable {
         }
 
         guard count > 0, let first = paths.first else { return nil }
-        // Agrupado num único item para não poluir a lista com milhares de linhas.
+        // Grouped into a single item so the list isn't polluted with thousands of rows.
         let item = CleanupItem(
             path: first,
             displayName: "\(count) arquivos .DS_Store",
@@ -551,9 +551,9 @@ final class CleanupScanner: @unchecked Sendable {
         )
     }
 
-    // MARK: - Utilitários
+    // MARK: - Utilities
 
-    /// Lista os filhos diretos de um diretório como itens de limpeza.
+    /// Lists a directory's direct children as cleanup items.
     private func childItems(
         of root: URL,
         isCancelled: () -> Bool,
@@ -593,13 +593,13 @@ final class CleanupScanner: @unchecked Sendable {
         return items.sorted { $0.size > $1.size }
     }
 
-    /// Só entra na lista de limpeza o que realmente libera espaço no Mac.
+    /// Only things that genuinely free space on the Mac enter the cleanup list.
     ///
-    /// Links simbólicos são descartados (apagar o link não devolve bytes) e
-    /// conteúdo que vive em outro volume também — é o caso de pastas já
-    /// descarregadas para um SSD externo, como `~/.gradle` apontando para
-    /// `/Volumes/CachePart`. Sem esse filtro o app contaria espaço do disco
-    /// externo como recuperável no interno e apagaria dados do lado errado.
+    /// Symlinks are discarded (deleting the link gives no bytes back) and so is
+    /// content living on another volume — the case of folders already offloaded to
+    /// an external SSD, such as `~/.gradle` pointing at `/Volumes/CachePart`.
+    /// Without this filter the app would count external-disk space as reclaimable
+    /// on the internal one, and delete data on the wrong side.
     private func freesSpace(_ url: URL) -> Bool {
         VolumeResolver.freesSpaceOnMac(url)
     }

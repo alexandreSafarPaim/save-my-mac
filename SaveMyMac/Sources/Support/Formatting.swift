@@ -36,8 +36,8 @@ enum Fmt {
         return "\(minutes)min"
     }
 
-    // Construir formatter é caro e estas funções são chamadas por célula de
-    // lista, dentro do `body`. Instância única, usada só na main thread.
+    // Building a formatter is expensive and these functions are called per list
+    // cell, inside `body`. A single instance, used on the main thread only.
     private static let relativeFormatter: RelativeDateTimeFormatter = {
         let f = RelativeDateTimeFormatter()
         f.locale = Locale(identifier: "pt_BR")
@@ -71,7 +71,7 @@ extension Double {
 }
 
 extension String {
-    /// Substitui o caminho do home por "~" para exibição.
+    /// Replaces the home path with "~" for display.
     var tildeShortened: String {
         let home = NSHomeDirectory()
         if hasPrefix(home) {

@@ -49,7 +49,7 @@ struct BigFilesView: View {
         }
     }
 
-    // MARK: - Cabeçalho
+    // MARK: - Header
 
     private var header: some View {
         ScreenHeader(

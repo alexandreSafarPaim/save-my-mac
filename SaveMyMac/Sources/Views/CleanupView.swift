@@ -26,9 +26,9 @@ struct CleanupView: View {
 
                     if !state.trash.isEmpty {
                         trashCard
-                            // Ancorado no próprio card, não num EmptyView: dois
-                            // modificadores de apresentação no mesmo nó competem
-                            // e só um abre.
+                            // Anchored on the card itself, not on an EmptyView:
+                            // two presentation modifiers on the same node compete
+                            // and only one opens.
                             .confirmationDialog(
                                 L("Empty the Trash: %d items (%@)?", state.trash.count, Fmt.bytes(state.trash.totalBytes)),
                                 isPresented: $confirmingEmptyTrash,
@@ -173,7 +173,7 @@ struct CleanupView: View {
         return text
     }
 
-    // MARK: - Cabeçalho
+    // MARK: - Header
 
     private var header: some View {
         ScreenHeader(
@@ -348,7 +348,7 @@ struct CleanupView: View {
         if expanded.contains(id) { expanded.remove(id) } else { expanded.insert(id) }
     }
 
-    // MARK: - Rodapé
+    // MARK: - Footer
 
     private var footer: some View {
         StickyActionBar(palette: palette) {

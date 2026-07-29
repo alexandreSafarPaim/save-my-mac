@@ -26,13 +26,13 @@ import Foundation
 ///   `Locale`. They don't belong in the tables.
 enum Strings {
 
-    // MARK: - Português
+    // MARK: - Portuguese
 
     static let pt: [String: String] = [
-        // Idioma
+        // Language
         "Same as macOS": "Igual ao macOS",
 
-        // Navegação
+        // Navigation
         "Dashboard": "Painel",
         "Cleanup": "Limpeza",
         "Apps": "Aplicativos",
@@ -75,14 +75,14 @@ enum Strings {
         "Settings…": "Ajustes…",
         "Quit SaveMyMac": "Encerrar o SaveMyMac",
 
-        // Ajustes — seções
+        // Settings — sections
         "Startup": "Inicialização",
         "Menu bar": "Barra de menus",
         "Low space alert": "Alerta de pouco espaço",
         "Appearance": "Aparência",
         "Language": "Idioma",
 
-        // Ajustes — inicialização
+        // Settings — startup
         "Open SaveMyMac when the Mac starts": "Abrir o SaveMyMac ao ligar o Mac",
         "Checking…": "Verificando…",
         "Hide the Dock icon": "Esconder o ícone do Dock",
@@ -100,7 +100,7 @@ enum Strings {
             "O ícone troca para um triângulo de alerta quando o espaço livre cai abaixo do limiar, independente da métrica escolhida.",
         "Turned off by the emergency switch.": "Desligada pelo interruptor de emergência.",
 
-        // Ajustes — métricas
+        // Settings — metrics
         "Free space": "Espaço livre",
         "Memory pressure": "Pressão de memória",
         "CPU usage": "Uso de CPU",
@@ -119,17 +119,17 @@ enum Strings {
         // Ajustes — idioma
         "The interface language. \"Same as macOS\" follows your system setting; anything else overrides it. Applies immediately.":
             "O idioma da interface. \"Igual ao macOS\" segue a configuração do sistema; qualquer outra opção sobrepõe. Aplica na hora.",
-        // Idioma (continuação)
+        // Language (continued)
         "Following macOS: %@": "Seguindo o macOS: %@",
         "Numbers, sizes and dates always follow your system region, not this setting.":
             "Números, tamanhos e datas seguem sempre a região do sistema, não esta configuração.",
 
-        // Barra de menus — interruptor de emergência
+        // Menu bar — emergency switch
         "The `enableMenuBar` key is false, or the app is in safe mode. To turn it back on, in Terminal:":
             "A chave `enableMenuBar` está em falso, ou o app está em modo seguro. Para religar, no Terminal:",
         "then reopen the app.": "e reabra o app.",
 
-        // Pressão de memória e estado térmico
+        // Memory pressure and thermal state
         "Moderate": "Moderada",
         "High": "Alta",
         "Warming up": "Aquecendo",
@@ -137,7 +137,7 @@ enum Strings {
         "Critical": "Crítico",
         "Unknown": "Desconhecido",
 
-        // Abrir no login
+        // Open at login
         "system Login Items": "Itens de Início do sistema",
         "user LaunchAgent": "LaunchAgent do usuário",
         "disabled": "desativado",
@@ -148,7 +148,7 @@ enum Strings {
             "Ativo por LaunchAgent — o caminho alternativo, usado porque o app é assinado ad-hoc.",
         "Disabled.": "Desativado.",
 
-        // ── Painel ──────────────────────────────────────────────────────────
+        // ── Dashboard ───────────────────────────────────────────────────────
         "System dashboard": "Painel do sistema",
         "Up for %@": "Ligado há %@",
         "Clean now": "Limpar agora",
@@ -187,7 +187,7 @@ enum Strings {
         "Nothing recorded yet. Every cleanup, removed cache or uninstalled app lands here with a date and its real size.":
             "Nada registrado ainda. Cada limpeza, cache removido ou app desinstalado entra aqui com data e tamanho real.",
 
-        // ── Nota de saúde ───────────────────────────────────────────────────
+        // ── Health score ────────────────────────────────────────────────────
         "Your Mac is asking for help.": "Seu Mac está pedindo socorro.",
         "There's a lot of room to improve.": "Dá pra melhorar bastante.",
         "Your Mac is fine — and could be better.": "Seu Mac está bem — e dá pra ficar melhor.",
@@ -202,7 +202,7 @@ enum Strings {
         "Offload links": "Links de offload",
         "All healthy": "Todos saudáveis",
 
-        // ── Limpeza ─────────────────────────────────────────────────────────
+        // ── Cleanup ─────────────────────────────────────────────────────────
         "Disk cleanup": "Limpeza de disco",
         "Last scan: %@": "Última análise: %@",
         "Nothing scanned yet": "Nada analisado ainda",
@@ -228,7 +228,7 @@ enum Strings {
         "\n\nCaution: %d items are in categories marked \"Review\" — they may be your own files.":
             "\n\nAtenção: %d itens estão em categorias marcadas como \"Revisar\" — podem ser arquivos seus.",
 
-        // ── Risco de limpeza ────────────────────────────────────────────────
+        // ── Cleanup risk ────────────────────────────────────────────────────
         "Caution": "Atenção",
         "Temporary files the system recreates automatically.":
             "Arquivos temporários que o sistema recria automaticamente.",
@@ -243,14 +243,14 @@ enum Strings {
         "Frees the space immediately, with no chance of recovery.":
             "Libera o espaço imediatamente, sem possibilidade de recuperação.",
 
-        // ── Comemoração ─────────────────────────────────────────────────────
+        // ── Celebration ─────────────────────────────────────────────────────
         "The space only comes back when you empty the Trash.":
             "O espaço só volta ao esvaziar a Lixeira.",
         "Achievement unlocked": "Conquista desbloqueada",
         "Achievements unlocked": "Conquistas desbloqueadas",
         " · health %d · ": " · saúde %d · ",
 
-        // ── Conquistas ──────────────────────────────────────────────────────
+        // ── Achievements ────────────────────────────────────────────────────
         "First cleanup": "Primeira limpeza",
         "Run your first cleanup": "Faça sua primeira limpeza",
         "Free up 50 GB in total": "Libere 50 GB no total",
@@ -273,7 +273,7 @@ enum Strings {
         "Keep 100 GB off the Mac's disk": "Mantenha 100 GB fora do disco do Mac",
         "uninstall": "desinstalação",
 
-        // ── Fechando o lote do Painel ───────────────────────────────────────
+        // ── Rest of the Dashboard batch ─────────────────────────────────────
         "%@ · %@ of RAM · %@": "%@ · %@ de RAM · %@",
         "live · 2 s": "ao vivo · 2 s",
         "%@ free of %@ (%@)": "%@ livres de %@ (%@)",
@@ -499,7 +499,7 @@ enum Strings {
         "SaveMyMac will no longer open with the Mac.": "O SaveMyMac não vai mais abrir junto com o Mac.",
         "Notifications require the app to run as a bundle (.app).": "Notificações precisam do app rodando como bundle (.app).",
 
-        // ── Mensagens com valores interpolados ──
+        // ── Messages with interpolated values ──
         "All": "Todos",
         "Heavy cache": "Cache pesado",
         "IOHID sensors": "Sensores IOHID",
@@ -581,7 +581,7 @@ enum Strings {
         "Steam has \"Library Folders\" in its preferences — more robust than a link.": "A Steam tem \"Pastas da biblioteca\" nas preferências — mais robusto que um link.",
         "Preferences → Media Cache → change the folder.": "Preferências → Media Cache → mudar a pasta.",
 
-        // ── Último lote ──
+        // ── Final batch ──
         "Achievements": "Conquistas",
         "Battery": "Bateria",
         "Fan": "Ventoinha",
@@ -783,7 +783,7 @@ enum Strings {
             "Activo mediante un LaunchAgent — la vía alternativa, usada porque la app está firmada ad-hoc.",
         "Disabled.": "Desactivado.",
 
-        // ── Panel ───────────────────────────────────────────────────────────
+        // ── Dashboard ───────────────────────────────────────────────────────
         "System dashboard": "Panel del sistema",
         "Up for %@": "Encendido hace %@",
         "Clean now": "Limpiar ahora",
@@ -824,7 +824,7 @@ enum Strings {
         "%@ · %@ of RAM · %@": "%@ · %@ de RAM · %@",
         "live · 2 s": "en vivo · 2 s",
 
-        // ── Puntuación de salud ─────────────────────────────────────────────
+        // ── Health score ────────────────────────────────────────────────────
         "Your Mac is asking for help.": "Tu Mac está pidiendo auxilio.",
         "There's a lot of room to improve.": "Hay bastante que mejorar.",
         "Your Mac is fine — and could be better.": "Tu Mac está bien — y puede estar mejor.",
@@ -843,7 +843,7 @@ enum Strings {
         "%@ in swap": "%@ en swap",
         "%d with problems": "%d con problemas",
 
-        // ── Limpieza ────────────────────────────────────────────────────────
+        // ── Cleanup ─────────────────────────────────────────────────────────
         "Disk cleanup": "Limpieza de disco",
         "Last scan: %@": "Último análisis: %@",
         "Nothing scanned yet": "Nada analizado aún",
@@ -869,7 +869,7 @@ enum Strings {
         "\n\nCaution: %d items are in categories marked \"Review\" — they may be your own files.":
             "\n\nAtención: %d ítems están en categorías marcadas como \"Revisar\" — pueden ser archivos tuyos.",
 
-        // ── Riesgo de limpieza ──────────────────────────────────────────────
+        // ── Cleanup risk ────────────────────────────────────────────────────
         "Caution": "Atención",
         "Temporary files the system recreates automatically.":
             "Archivos temporales que el sistema recrea automáticamente.",
@@ -884,7 +884,7 @@ enum Strings {
         "Frees the space immediately, with no chance of recovery.":
             "Libera el espacio de inmediato, sin posibilidad de recuperación.",
 
-        // ── Celebración ─────────────────────────────────────────────────────
+        // ── Celebration ─────────────────────────────────────────────────────
         "The space only comes back when you empty the Trash.":
             "El espacio solo vuelve al vaciar la Papelera.",
         "Achievement unlocked": "Logro desbloqueado",
@@ -893,7 +893,7 @@ enum Strings {
         "moved to the Trash": "movidos a la Papelera",
         "freed": "liberados",
 
-        // ── Logros ──────────────────────────────────────────────────────────
+        // ── Achievements ────────────────────────────────────────────────────
         "First cleanup": "Primera limpieza",
         "Run your first cleanup": "Haz tu primera limpieza",
         "Free up 50 GB in total": "Libera 50 GB en total",
@@ -1131,7 +1131,7 @@ enum Strings {
         "SaveMyMac will no longer open with the Mac.": "SaveMyMac ya no se abrirá junto con el Mac.",
         "Notifications require the app to run as a bundle (.app).": "Las notificaciones requieren que la app se ejecute como paquete (.app).",
 
-        // ── Mensagens com valores interpolados ──
+        // ── Messages with interpolated values ──
         "All": "Todos",
         "Heavy cache": "Caché pesada",
         "IOHID sensors": "Sensores IOHID",
@@ -1213,7 +1213,7 @@ enum Strings {
         "Steam has \"Library Folders\" in its preferences — more robust than a link.": "Steam tiene \"Carpetas de la biblioteca\" en sus preferencias — más robusto que un enlace.",
         "Preferences → Media Cache → change the folder.": "Preferencias → Media Cache → cambiar la carpeta.",
 
-        // ── Último lote ──
+        // ── Final batch ──
         "Achievements": "Logros",
         "Battery": "Batería",
         "Fan": "Ventilador",
@@ -1313,7 +1313,7 @@ enum Strings {
 
     ]
 
-    // MARK: - Français
+    // MARK: - French
 
     static let fr: [String: String] = [
         "Same as macOS": "Comme macOS",
@@ -1417,7 +1417,7 @@ enum Strings {
             "Actif via un LaunchAgent — la voie de secours, utilisée car l'app est signée ad-hoc.",
         "Disabled.": "Désactivé.",
 
-        // ── Tableau de bord ─────────────────────────────────────────────────
+        // ── Dashboard ───────────────────────────────────────────────────────
         "System dashboard": "Tableau de bord système",
         "Up for %@": "Allumé depuis %@",
         "Clean now": "Nettoyer",
@@ -1458,7 +1458,7 @@ enum Strings {
         "%@ · %@ of RAM · %@": "%@ · %@ de RAM · %@",
         "live · 2 s": "en direct · 2 s",
 
-        // ── Score de santé ──────────────────────────────────────────────────
+        // ── Health score ────────────────────────────────────────────────────
         "Your Mac is asking for help.": "Votre Mac appelle au secours.",
         "There's a lot of room to improve.": "Il y a de quoi améliorer.",
         "Your Mac is fine — and could be better.": "Votre Mac va bien — et peut aller mieux.",
@@ -1477,7 +1477,7 @@ enum Strings {
         "%@ in swap": "%@ en swap",
         "%d with problems": "%d en défaut",
 
-        // ── Nettoyage ───────────────────────────────────────────────────────
+        // ── Cleanup ─────────────────────────────────────────────────────────
         "Disk cleanup": "Nettoyage du disque",
         "Last scan: %@": "Dernière analyse : %@",
         "Nothing scanned yet": "Rien d'analysé",
@@ -1503,7 +1503,7 @@ enum Strings {
         "\n\nCaution: %d items are in categories marked \"Review\" — they may be your own files.":
             "\n\nPrudence : %d éléments sont dans des catégories marquées « À revoir » — ce peuvent être vos fichiers.",
 
-        // ── Risque de nettoyage ─────────────────────────────────────────────
+        // ── Cleanup risk ────────────────────────────────────────────────────
         "Caution": "Prudence",
         "Temporary files the system recreates automatically.":
             "Fichiers temporaires que le système recrée automatiquement.",
@@ -1518,7 +1518,7 @@ enum Strings {
         "Frees the space immediately, with no chance of recovery.":
             "Libère l'espace immédiatement, sans possibilité de récupération.",
 
-        // ── Célébration ─────────────────────────────────────────────────────
+        // ── Celebration ─────────────────────────────────────────────────────
         "The space only comes back when you empty the Trash.":
             "L'espace ne revient qu'au vidage de la Corbeille.",
         "Achievement unlocked": "Succès débloqué",
@@ -1527,7 +1527,7 @@ enum Strings {
         "moved to the Trash": "mis à la Corbeille",
         "freed": "libérés",
 
-        // ── Succès ──────────────────────────────────────────────────────────
+        // ── Achievements ────────────────────────────────────────────────────
         "First cleanup": "Premier nettoyage",
         "Run your first cleanup": "Faites votre premier nettoyage",
         "Free up 50 GB in total": "Libérez 50 GB au total",
@@ -1764,7 +1764,7 @@ enum Strings {
         "SaveMyMac will no longer open with the Mac.": "SaveMyMac ne s'ouvrira plus avec le Mac.",
         "Notifications require the app to run as a bundle (.app).": "Les notifications exigent que l'app tourne comme paquet (.app).",
 
-        // ── Mensagens com valores interpolados ──
+        // ── Messages with interpolated values ──
         "All": "Toutes",
         "Heavy cache": "Cache lourd",
         "IOHID sensors": "Capteurs IOHID",
@@ -1846,7 +1846,7 @@ enum Strings {
         "Steam has \"Library Folders\" in its preferences — more robust than a link.": "Steam a \"Dossiers de bibliothèque\" dans ses préférences — plus robuste qu\'un lien.",
         "Preferences → Media Cache → change the folder.": "Préférences → Media Cache → changer le dossier.",
 
-        // ── Último lote ──
+        // ── Final batch ──
         "Achievements": "Succès",
         "Battery": "Batterie",
         "Fan": "Ventilateur",

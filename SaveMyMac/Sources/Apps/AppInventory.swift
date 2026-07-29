@@ -1,13 +1,13 @@
 import Foundation
 import AppKit
 
-/// Um item de dado associado a um app (cache, preferências, container…).
+/// A data item associated with an app (cache, preferences, container…).
 struct AppResidue: Identifiable, Hashable {
     let id = UUID()
     var path: String
     var label: String
     var size: Int64
-    /// Cache é regenerável; o resto some junto com o app.
+    /// Cache is regenerable; the rest goes along with the app.
     var isCache: Bool
 }
 
@@ -50,7 +50,7 @@ struct InstalledApp: Identifiable, Hashable {
 
     var isStale: Bool { (daysSinceUse ?? 0) >= 90 }
 
-    /// Apps da Apple embutidos no sistema não devem ser desinstalados.
+    /// Apple apps built into the system shouldn't be uninstalled.
     var canUninstall: Bool { !isSystem }
 }
 
@@ -63,8 +63,8 @@ struct AppInventoryResult {
     var isEmpty: Bool { apps.isEmpty }
 }
 
-/// Lista os apps instalados com tamanho, último uso e todos os dados de apoio
-/// espalhados pela Library. Somente leitura.
+/// Lists installed apps with their size, last use and all the support data
+/// scattered around the Library. Read-only.
 final class AppInventoryScanner: @unchecked Sendable {
 
     private let fm = FileManager.default
@@ -103,8 +103,8 @@ final class AppInventoryScanner: @unchecked Sendable {
         progress(L("Querying Spotlight…"), 0.08)
         let lastUsedMap = lastUsedDates(for: bundles.map { $0.url.path }, isCancelled: isCancelled)
 
-        // Índice dos diretórios da Library, lido uma única vez, para não
-        // percorrer a árvore inteira uma vez por app.
+        // Index of the Library directories, read once, so we don't walk the whole
+        // tree once per app.
         progress(L("Indexing support data…"), 0.14)
         let libraryIndex = buildLibraryIndex()
 
@@ -158,7 +158,7 @@ final class AppInventoryScanner: @unchecked Sendable {
             }
         }
 
-        // Apps do sistema não entram: não há o que desinstalar e o tamanho é enganoso.
+        // System apps are excluded: there is nothing to uninstall and the size is misleading.
         if isSystem && bundleID.hasPrefix("com.apple.") {
             return nil
         }
@@ -188,15 +188,16 @@ final class AppInventoryScanner: @unchecked Sendable {
 
     // MARK: - Dados de apoio
 
-    /// Diretórios da Library onde apps deixam dados, com rótulo amigável e
-    /// se aquilo conta como cache (regenerável) ou não.
-    /// `var`, não `let`.
+    /// The Library directories where apps leave data, with a friendly label and
+    /// whether it counts as cache (regenerable) or not.
     ///
-    /// Um `static let` é avaliado uma única vez, na primeira leitura. Com `L()`
-    /// dentro, os rótulos ficariam congelados no idioma que estava ativo naquele
-    /// instante e não acompanhariam a troca em Ajustes — a lista voltaria em
-    /// inglês para sempre depois de mudar de idioma. Como `var` computada, é
-    /// reconstruída a cada acesso, que é barato: doze tuplas.
+    /// `var`, not `let`.
+    ///
+    /// A `static let` is evaluated exactly once, on first read. With `L()` inside,
+    /// the labels would be frozen in whatever language was active at that instant
+    /// and would not follow a switch in Settings — the list would stay English
+    /// forever after changing language. As a computed `var` it is rebuilt on every
+    /// access, which is cheap: twelve tuples.
     private static var residueLocations: [(relative: String, label: String, isCache: Bool)] {[
         ("Library/Caches", "Cache", true),
         ("Library/Application Support", L("Support data"), false),
@@ -212,7 +213,7 @@ final class AppInventoryScanner: @unchecked Sendable {
         ("Library/LaunchAgents", L("Launch agent"), false)
     ]}
 
-    /// Lê o conteúdo de cada pasta da Library uma única vez.
+    /// Reads the contents of each Library folder exactly once.
     private func buildLibraryIndex() -> [String: [URL]] {
         var index: [String: [URL]] = [:]
         for location in AppInventoryScanner.residueLocations {
@@ -251,7 +252,7 @@ final class AppInventoryScanner: @unchecked Sendable {
                     if lower == lowerID { return true }
                     if lower.hasPrefix(lowerID + ".") { return true }   // .plist, .savedState…
                     if lower.contains(lowerID) { return true }
-                    // Pasta com o nome do app, para quem não usa bundle id
+                    // A folder named after the app, for those that don't use a bundle id
                     if lower == lowerName && !lowerName.isEmpty { return true }
                     // Container de grupo do tipo "ABCDE12345.com.vendor.app"
                     if !vendor.isEmpty && lower.hasSuffix("." + lowerID) { return true }
@@ -259,7 +260,7 @@ final class AppInventoryScanner: @unchecked Sendable {
                 }()
 
                 guard matches else { continue }
-                // Nunca considerar algo que já vive em outro volume.
+                // Never consider something that already lives on another volume.
                 guard VolumeResolver.freesSpaceOnMac(url) else { continue }
 
                 let size = DiskMonitor.directorySize(at: url, isCancelled: isCancelled)
@@ -285,8 +286,8 @@ final class AppInventoryScanner: @unchecked Sendable {
 
     // MARK: - Último uso via Spotlight
 
-    /// Usa `mdls` para ler `kMDItemLastUsedDate`. Vários processos em paralelo
-    /// porque uma chamada por app seria lenta com 150 apps.
+    /// Uses `mdls` to read `kMDItemLastUsedDate`. Several processes in parallel,
+    /// because one call per app would be slow with 150 apps.
     private func lastUsedDates(for paths: [String], isCancelled: () -> Bool) -> [String: Date] {
         var result: [String: Date] = [:]
         let lock = NSLock()
@@ -296,8 +297,8 @@ final class AppInventoryScanner: @unchecked Sendable {
             if isCancelled() { return }
             let chunk = chunks[index]
             for path in chunk {
-                // LC_ALL=C para a data sair sempre no formato que
-                // `parseSpotlightDate` espera, e não no do idioma do sistema.
+                // LC_ALL=C so the date always comes out in the format
+                // `parseSpotlightDate` expects, not the system language's.
                 let outcome = ProcessMonitor.run(
                     "/usr/bin/mdls",
                     ["-name", "kMDItemLastUsedDate", "-raw", path],

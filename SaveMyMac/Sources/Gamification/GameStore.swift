@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-// MARK: - Conquistas
+// MARK: - Achievements
 
 struct Achievement: Identifiable, Hashable {
     var id: String
@@ -11,9 +11,9 @@ struct Achievement: Identifiable, Hashable {
 }
 
 enum Achievements {
-    /// `var` computada e não `static let` pelo mesmo motivo do
-    /// `residueLocations`: `L()` dentro de um `let` estático congela o idioma
-    /// da primeira leitura.
+    /// A computed `var` rather than `static let`, for the same reason as
+    /// `residueLocations`: `L()` inside a static `let` freezes the language of the
+    /// first read.
     static var all: [Achievement] {[
         .init(id: "first_clean", symbol: "sparkles", name: L("First cleanup"),
               requirement: L("Run your first cleanup")),
@@ -68,18 +68,18 @@ struct GameState: Codable {
 
     // MARK: Derivados
 
-    /// 1200 XP por nível, como no design.
+    /// 1200 XP per level, as in the design.
     static let xpPerLevel = 1200
 
     var level: Int { max(1, xp / GameState.xpPerLevel + 1) }
     var xpInLevel: Int { xp % GameState.xpPerLevel }
     var xpProgress: Double { Double(xpInLevel) / Double(GameState.xpPerLevel) }
 
-    /// Semanas consecutivas com limpeza, contando de trás para frente.
+    /// Consecutive weeks with a cleanup, counted backwards.
     var streak: Int {
         var count = 0
-        // Se a semana corrente ainda não teve limpeza, começa na anterior: o
-        // streak só se rompe quando uma semana inteira passa em branco.
+        // If the current week has had no cleanup yet, start from the previous one:
+        // the streak only breaks when a whole week goes by empty.
         var cursor = Date()
         if !activeWeeks.contains(GameState.weekKey(cursor)),
            let previous = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: cursor) {
@@ -94,7 +94,7 @@ struct GameState: Codable {
         return count
     }
 
-    /// Total liberado no mês corrente, para a meta.
+    /// Total freed in the current month, for the goal.
     var freedThisMonth: Int64 {
         let calendar = Calendar.current
         let now = Date()
@@ -118,11 +118,11 @@ struct GameState: Codable {
 
 // MARK: - Store
 
-/// Guarda o progresso em `~/Library/Application Support/SaveMyMac/game.json`.
+/// Stores progress in `~/Library/Application Support/SaveMyMac/game.json`.
 ///
-/// Isto é estado do app, não do sistema: XP, nível, streak e conquistas são
-/// invenção do SaveMyMac. O que é real é o histórico — cada registro
-/// corresponde a bytes que de fato saíram do disco.
+/// This is app state, not system state: XP, level, streak and achievements are
+/// SaveMyMac's invention. What is real is the history — every record corresponds
+/// to bytes that genuinely left the disk.
 @MainActor
 final class GameStore: ObservableObject {
 
@@ -139,15 +139,15 @@ final class GameStore: ObservableObject {
         Store.save(state, to: GameStore.fileName)
     }
 
-    // MARK: Ações
+    // MARK: Actions
 
-    /// XP proporcional ao espaço liberado, com piso de 20 — como no design.
+    /// XP proportional to the space freed, with a floor of 20 — as in the design.
     static func xpReward(forBytes bytes: Int64) -> Int {
         let gb = Double(bytes) / 1_073_741_824
         return max(20, Int((gb * 12).rounded()))
     }
 
-    /// Registra um evento que liberou espaço e devolve o XP ganho.
+    /// Records an event that freed space and returns the XP earned.
     @discardableResult
     func record(bytes: Int64, itemCount: Int, kind: String, currentScore: Int) -> Int {
         let reward = GameStore.xpReward(forBytes: bytes)
@@ -192,8 +192,8 @@ final class GameStore: ObservableObject {
         lastUnlocked = []
     }
 
-    /// Reavalia as conquistas. Pode ser chamado a qualquer momento — só
-    /// desbloqueia o que ainda não estava desbloqueado.
+    /// Re-evaluates the achievements. Safe to call at any time — it only unlocks
+    /// what wasn't unlocked already.
     func evaluateAchievements(score: Int, duplicateBytes: Int64?, offloadedBytes: Int64?) {
         let gb: (Int64) -> Double = { Double($0) / 1_073_741_824 }
         var newly: [Achievement] = []

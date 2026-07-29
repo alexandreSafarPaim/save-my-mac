@@ -1,6 +1,6 @@
 import Foundation
 
-/// Nível de risco de remover um item.
+/// How risky it is to remove an item.
 enum RiskLevel: Int, Comparable, CaseIterable {
     case safe = 0        // regenerável, nenhum impacto
     case caution = 1     // regenerável mas custa tempo/rede
@@ -30,7 +30,7 @@ enum RiskLevel: Int, Comparable, CaseIterable {
     }
 }
 
-/// Um arquivo ou pasta candidato à remoção.
+/// A file or folder that is a candidate for removal.
 struct CleanupItem: Identifiable, Hashable {
     let id = UUID()
     var path: String
@@ -40,8 +40,8 @@ struct CleanupItem: Identifiable, Hashable {
     var isDirectory: Bool
     var note: String?
 
-    /// Caminhos adicionais quando um item representa vários arquivos
-    /// (ex.: "1.243 arquivos .DS_Store").
+    /// Additional paths when one item stands for several files
+    /// (e.g. "1,243 .DS_Store files").
     var extraPaths: [String] = []
 
     var url: URL { URL(fileURLWithPath: path) }
@@ -49,15 +49,15 @@ struct CleanupItem: Identifiable, Hashable {
     var allPaths: [String] { [path] + extraPaths }
 }
 
-/// Agrupamento de itens (ex.: "Caches de usuário").
+/// A grouping of items (e.g. "User caches").
 struct CleanupCategory: Identifiable {
     let id = UUID()
     var name: String
     var subtitle: String
     var symbol: String
     var risk: RiskLevel
-    /// Nota de 1 a 10 exibida como "RISCO n/10" — mais granular que o nível,
-    /// porque "atenção" abrange desde cache de npm até simulador de iOS.
+    /// A 1-to-10 score shown as "RISK n/10" — finer-grained than the level,
+    /// because "caution" spans everything from an npm cache to an iOS simulator.
     var riskScore: Int
     var items: [CleanupItem]
 
@@ -65,7 +65,7 @@ struct CleanupCategory: Identifiable {
     var isEmpty: Bool { items.isEmpty }
 }
 
-/// Resultado de uma remoção.
+/// The result of a removal.
 struct CleanupResult {
     var removedCount: Int = 0
     var freedBytes: Int64 = 0

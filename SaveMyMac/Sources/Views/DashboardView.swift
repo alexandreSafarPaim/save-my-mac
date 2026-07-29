@@ -7,8 +7,8 @@ struct DashboardView: View {
     @State private var showFactors = false
 
     private var palette: Palette { state.palette }
-    /// 420 de mínimo: abaixo disso o hero (anel de 150 + texto + dois botões)
-    /// fica apertado, então numa janela estreita ele passa a ocupar a linha toda.
+    /// 420 minimum: below that the hero (150 ring + text + two buttons) gets
+    /// cramped, so in a narrow window it takes the whole row instead.
     private let wideColumns = [GridItem(.adaptive(minimum: 420, maximum: 700), spacing: 18)]
     private let metricColumns = [GridItem(.adaptive(minimum: 250, maximum: 460), spacing: 16)]
 
@@ -41,7 +41,7 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Cabeçalho
+    // MARK: - Header
 
     private var header: some View {
         ScreenHeader(
@@ -65,7 +65,7 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Hero: score de saúde
+    // MARK: - Hero: health score
 
     private var heroCard: some View {
         HeroPanel(palette: palette) {
@@ -161,15 +161,15 @@ struct DashboardView: View {
             return L("No scan yet. A full scan takes under a minute and deletes nothing.")
         }
         let count = state.categories.count
-        // `count` duas vezes de propósito: rotulado, escolhe singular ou plural;
-        // depois, como argumento, preenche o `%d` da frase.
+        // `count` twice on purpose: labelled, it picks singular or plural; then,
+        // as an argument, it fills the `%d` in the sentence.
         return Lp("We found %@ of reclaimable junk in %d category",
                   "We found %@ of reclaimable junk in %d categories",
                   count: count,
                   Fmt.bytes(state.totalReclaimable), count)
     }
 
-    // MARK: - Conquistas
+    // MARK: - Achievements
 
     private var achievementsCard: some View {
         Panel(palette: palette) {
@@ -228,7 +228,7 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Métricas
+    // MARK: - Metrics
 
     private var memoryCard: some View {
         Panel(palette: palette, cornerRadius: 18, padding: 18) {
@@ -266,8 +266,8 @@ struct DashboardView: View {
 
                 Divider().overlay(palette.stroke)
 
-                // A pressão ao longo do tempo responde a pergunta que o número
-                // instantâneo não responde: preciso de mais RAM ou não?
+                // Pressure over time answers the question the instantaneous
+                // number doesn't: do I need more RAM or not?
                 MicroLabel(text: L("Memory pressure"), palette: palette)
                 PressureChart(values: state.memoryHistory.pressureCurve, palette: palette)
 
@@ -556,7 +556,7 @@ struct DashboardView: View {
         .padding(.vertical, 4)
     }
 
-    // MARK: - Histórico
+    // MARK: - History
 
     private var historyCard: some View {
         Panel(palette: palette) {

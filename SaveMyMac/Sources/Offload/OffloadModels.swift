@@ -1,14 +1,14 @@
 import Foundation
 
-/// Situação de um link simbólico encontrado na pasta pessoal.
+/// The state of a symlink found in the home folder.
 enum LinkStatus: Equatable {
     /// Aponta para outro volume, montado, alvo existe. É o caso desejado.
     case offloaded
-    /// Aponta para um volume que não está montado agora.
+    /// Points at a volume that isn't mounted right now.
     case volumeMissing
-    /// O alvo não existe (link pendurado).
+    /// The target does not exist (dangling link).
     case broken
-    /// Aponta para outro lugar do próprio disco do Mac — não economiza nada.
+    /// Points somewhere else on the Mac's own disk — saves nothing.
     case sameDisk
 
     var label: String {
@@ -53,13 +53,13 @@ struct SymlinkEntry: Identifiable, Hashable {
         }
     }
 
-    /// Só conta como economia real de espaço no Mac.
+    /// Only counts as real space savings on the Mac.
     var savesSpace: Bool { status == .offloaded }
 
     var linkName: String { (linkPath as NSString).lastPathComponent }
 }
 
-/// Uma pasta no volume de destino que não é alvo de nenhum link — dado órfão.
+/// A folder on the destination volume that isn't the target of any link — orphan data.
 struct OrphanEntry: Identifiable, Hashable {
     let id = UUID()
     var path: String
@@ -94,7 +94,7 @@ struct OffloadInventory {
     var scannedDirectories: Int = 0
     var reachedLimit: Bool = false
 
-    /// Espaço que hoje não está ocupando o disco do Mac por causa dos links.
+    /// Space that today isn't taking up the Mac's disk, thanks to the links.
     var savedBytes: Int64 {
         links.filter { $0.savesSpace }.reduce(0) { $0 + $1.size }
     }

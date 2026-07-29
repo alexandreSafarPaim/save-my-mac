@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Overlay de conclusão: ondas concêntricas, tamanho liberado, XP e conquistas
-/// recém-desbloqueadas.
+/// Completion overlay: concentric ripples, the size freed, XP and any newly
+/// unlocked achievements.
 struct CelebrationOverlay: View {
     var celebration: AppState.Celebration
     var palette: Palette

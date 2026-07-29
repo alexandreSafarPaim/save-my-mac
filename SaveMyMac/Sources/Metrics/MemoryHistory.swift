@@ -1,22 +1,22 @@
 import Foundation
 
-/// Uma amostra do estado da memória num instante.
+/// A snapshot of the memory state at one instant.
 struct MemorySample: Identifiable {
     let id = UUID()
     var at: Date
     /// 0...1 — travada + comprimida sobre o total. É esta a curva que importa.
     var pressure: Double
-    /// 0...1 — memória em uso sobre o total.
+    /// 0...1 — memory in use over the total.
     var used: Double
     var swapBytes: Int64
 }
 
-/// Guarda os últimos minutos de pressão de memória.
+/// Keeps the last few minutes of memory pressure.
 ///
-/// Existe porque um número instantâneo não responde à pergunta que o usuário
-/// realmente tem. "Pressão: moderada" agora não diz nada; "verde na última meia
-/// hora" diz que mais RAM não resolveria nada hoje, e "vermelho há dez minutos"
-/// diz que alguma coisa está fora de controle.
+/// It exists because an instantaneous number doesn't answer the question the user
+/// actually has. "Pressure: moderate" right now says nothing; "green for the last
+/// half hour" says more RAM wouldn't help today, and "red for ten minutes" says
+/// something is out of control.
 struct MemoryHistory {
 
     /// 2 s por amostra × 450 = 15 minutos.
@@ -45,7 +45,7 @@ struct MemoryHistory {
 
     var peakPressure: Double { samples.map(\.pressure).max() ?? 0 }
 
-    /// Resumo em texto do período observado.
+    /// A text summary of the observed period.
     var verdict: String? {
         guard samples.count >= 10 else { return nil }
         let minutes = Int(span / 60)
@@ -63,8 +63,8 @@ struct MemoryHistory {
 
 // MARK: - Crescimento por processo
 
-/// Rastreia o consumo de cada processo ao longo da sessão para apontar quem
-/// cresce sem parar — o sintoma de vazamento que um número instantâneo esconde.
+/// Tracks each process's usage across the session to point out which one keeps
+/// growing — the leak symptom an instantaneous number hides.
 struct GrowthTracker {
 
     private struct Record {
@@ -75,8 +75,8 @@ struct GrowthTracker {
 
     private var records: [Int32: Record] = [:]
 
-    /// Precisa de tempo mínimo de observação para não acusar um app que acabou
-    /// de abrir e naturalmente cresceu enquanto carregava.
+    /// Needs a minimum observation window so it doesn't accuse an app that just
+    /// launched and naturally grew while loading.
     private let minimumObservation: TimeInterval = 150
     private let minimumGrowth: Int64 = 250 * 1024 * 1024
     private let minimumRatio: Double = 1.5
@@ -99,13 +99,13 @@ struct GrowthTracker {
             }
         }
 
-        // Processo que morreu sai do mapa, senão o dicionário cresce para sempre
-        // e um pid reciclado herdaria o histórico de outro.
+        // A dead process leaves the map, otherwise the dictionary grows forever
+        // and a recycled pid would inherit another's history.
         records = records.filter { seen.contains($0.key) }
     }
 
-    /// Quanto o processo cresceu desde que foi visto pela primeira vez, se é
-    /// crescimento relevante.
+    /// How much the process has grown since it was first seen, if the growth is
+    /// significant.
     func growth(for pid: Int32) -> Int64? {
         guard let record = records[pid] else { return nil }
         guard Date().timeIntervalSince(record.firstSeen) >= minimumObservation else { return nil }

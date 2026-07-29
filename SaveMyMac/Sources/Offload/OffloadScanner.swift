@@ -1,29 +1,29 @@
 import Foundation
 
-/// Inventaria os links simbólicos da pasta pessoal que apontam para fora do
-/// disco do Mac — o padrão de "descarregar pasta pesada para um SSD externo".
+/// Inventories the symlinks in the home folder that point off the Mac's disk —
+/// the "offload a heavy folder to an external SSD" pattern.
 ///
-/// Totalmente somente leitura: nada é criado, movido ou apagado aqui.
+/// Entirely read-only: nothing is created, moved or deleted here.
 final class OffloadScanner: @unchecked Sendable {
 
     private let fm = FileManager.default
     private let home = FileManager.default.homeDirectoryForCurrentUser
 
-    /// Profundidade máxima a partir da home. Cobre os casos reais
-    /// (`~/.gradle`, `~/Library/Android/sdk`, `~/Library/Application Support/X/y`)
-    /// sem varrer a árvore inteira.
+    /// Maximum depth from home. Covers the real cases (`~/.gradle`,
+    /// `~/Library/Android/sdk`, `~/Library/Application Support/X/y`) without
+    /// walking the entire tree.
     private let maxDepth = 4
 
-    /// Limite de diretórios visitados, para a varredura terminar sempre rápido.
+    /// Cap on visited directories, so the scan always finishes quickly.
     private let maxDirectories = 40_000
 
-    /// Nunca descer aqui: são grandes, ruidosos e não guardam links de offload.
+    /// Never descend here: these are large, noisy and hold no offload links.
     ///
-    /// `Containers` e `Group Containers` são essenciais nesta lista: todo app
-    /// sandboxado tem, dentro de `Data/`, links relativos para Desktop,
-    /// Documents, Downloads, Movies, Music e Pictures da home real. Sem o corte,
-    /// o inventário viria com centenas de links irrelevantes e o único que o
-    /// usuário criou de verdade ficaria enterrado no meio.
+    /// `Containers` and `Group Containers` are essential entries: every sandboxed
+    /// app has, inside `Data/`, relative links to the real home's Desktop,
+    /// Documents, Downloads, Movies, Music and Pictures. Without the cut, the
+    /// inventory would come back with hundreds of irrelevant links and the one the
+    /// user actually created would be buried among them.
     private let skipDescend: Set<String> = [
         "node_modules", ".git", ".svn", ".Trash", "DerivedData",
         "Mobile Documents", "CloudStorage", "Pods", ".build", ".next",
@@ -77,9 +77,9 @@ final class OffloadScanner: @unchecked Sendable {
 
             guard let entry = describe(link: linkURL, isCancelled: isCancelled) else { continue }
 
-            // Dois links aninhados no mesmo alvo (ex.: `~/.gradle` e
-            // `~/.gradle/caches`) contariam o mesmo conteúdo duas vezes e
-            // inflariam o total "fora do disco do Mac". Mantém só o de fora.
+            // Two nested links to the same target (e.g. `~/.gradle` and
+            // `~/.gradle/caches`) would count the same content twice and inflate
+            // the "off the Mac's disk" total. Keeps only the outer one.
             if entry.statusRaw == 0 {
                 let isNested = acceptedTargets.contains { entry.targetPath.hasPrefix($0 + "/") }
                 if isNested { continue }
@@ -89,7 +89,7 @@ final class OffloadScanner: @unchecked Sendable {
             entries.append(entry)
         }
 
-        // Interessa mostrar tudo, mas com os que economizam espaço primeiro.
+        // Everything is worth showing, but the space-saving ones come first.
         inventory.links = entries.sorted { lhs, rhs in
             if lhs.savesSpace != rhs.savesSpace { return lhs.savesSpace }
             return lhs.size > rhs.size
@@ -114,9 +114,9 @@ final class OffloadScanner: @unchecked Sendable {
         visited: inout Int,
         found: inout [URL],
         isCancelled: () -> Bool,
-        // `progress` recebe a contagem por parâmetro de propósito: capturar
-        // `visitedDirectories` no call site enquanto ele está passado como
-        // `inout` seria acesso sobreposto e derrubaria o app em runtime.
+        // `progress` takes the count as a parameter on purpose: capturing
+        // `visitedDirectories` at the call site while it is passed as `inout`
+        // would be overlapping access and would crash the app at runtime.
         progress: (Int) -> Void
     ) {
         if isCancelled() || depth > maxDepth || visited >= maxDirectories { return }
@@ -159,7 +159,7 @@ final class OffloadScanner: @unchecked Sendable {
         }
     }
 
-    // MARK: - Descrição de um link
+    // MARK: - Describing a link
 
     private func describe(link: URL, isCancelled: () -> Bool) -> SymlinkEntry? {
         guard let target = VolumeResolver.symlinkTarget(of: link) else { return nil }
@@ -168,8 +168,8 @@ final class OffloadScanner: @unchecked Sendable {
         let mountPoint = targetExists ? VolumeResolver.mountPoint(of: target) : nil
         let volumeName = targetExists ? VolumeResolver.volumeName(of: target) : nil
 
-        // Descobre se o destino pretendido é um volume externo mesmo estando
-        // ausente: "/Volumes/Algo/..." é a convenção do macOS.
+        // Works out whether the intended target is an external volume even when
+        // it is absent: "/Volumes/Something/..." is the macOS convention.
         let looksLikeExternal = target.path.hasPrefix("/Volumes/")
         let inferredVolumeName: String? = {
             if let volumeName { return volumeName }
@@ -247,17 +247,17 @@ final class OffloadScanner: @unchecked Sendable {
         .sorted { $0.offloadedSize > $1.offloadedSize }
     }
 
-    // MARK: - Dados órfãos no destino
+    // MARK: - Orphan data at the destination
 
-    /// Procura, nas pastas-pai dos alvos, itens que não são alvo de nenhum link.
-    /// No padrão `/Volumes/X/mac-offload/*`, isso encontra pastas que sobraram
-    /// de um link removido e continuam ocupando o disco externo.
+    /// Looks, in the targets' parent folders, for items that are not the target
+    /// of any link. In the `/Volumes/X/mac-offload/*` pattern, this finds folders
+    /// left over from a removed link that are still taking up the external disk.
     ///
-    /// A pasta-pai só é considerada se **a maioria do que está nela já é alvo de
-    /// link** — ou seja, se ela é de fato uma área dedicada a offload. Sem essa
-    /// checagem, um link apontando para uma pasta qualquer de um disco de
-    /// trabalho faria o app acusar como "órfão" todo arquivo que o usuário
-    /// guardou ali de propósito.
+    /// A parent folder is only considered if **most of what is in it is already a
+    /// link target** — that is, if it really is a dedicated offload area. Without
+    /// that check, a link pointing into some arbitrary folder on a working disk
+    /// would make the app flag as "orphan" every file the user deliberately kept
+    /// there.
     private func findOrphans(
         for links: [SymlinkEntry],
         isCancelled: () -> Bool
@@ -267,12 +267,12 @@ final class OffloadScanner: @unchecked Sendable {
             links.map { URL(fileURLWithPath: $0.targetPath).standardizedFileURL.path }
         )
 
-        // Pastas-pai distintas dos alvos que estão realmente montados.
+        // Distinct parent folders of the targets that are actually mounted.
         var parents = Set<String>()
         for link in links where link.status == .offloaded {
             let parent = URL(fileURLWithPath: link.targetPath)
                 .deletingLastPathComponent().standardizedFileURL
-            // Não sobe até a raiz do volume: só faz sentido numa pasta dedicada.
+            // Doesn't go up to the volume root: it only makes sense in a dedicated folder.
             guard parent.path != "/", parent.path.split(separator: "/").count >= 3 else { continue }
             parents.insert(parent.path)
         }
@@ -288,7 +288,7 @@ final class OffloadScanner: @unchecked Sendable {
                 options: [.skipsHiddenFiles]
             ) else { continue }
 
-            // Confirma que esta pasta é uma área dedicada a offload.
+            // Confirms this folder is a dedicated offload area.
             let known = contents.filter { knownTargets.contains($0.standardizedFileURL.path) }.count
             guard contents.count > 1, known * 2 >= contents.count else { continue }
 

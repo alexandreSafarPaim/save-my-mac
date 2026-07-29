@@ -57,7 +57,7 @@ enum SystemInfo {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Lê um inteiro respeitando o tamanho real do sysctl (4 ou 8 bytes).
+    /// Reads an integer respecting the sysctl's real width (4 or 8 bytes).
     static func sysctlInt(_ name: String) -> Int? {
         var size = 0
         guard sysctlbyname(name, nil, &size, nil, 0) == 0, size > 0 else { return nil }
@@ -98,7 +98,7 @@ enum SystemInfo {
 
     // MARK: - IORegistry
 
-    /// Nome comercial ("MacBook Pro (14-inch, 2023)"), quando o firmware o expõe.
+    /// Marketing name ("MacBook Pro (14-inch, 2023)"), when the firmware exposes it.
     static func marketingName() -> String? {
         guard let matching = IOServiceMatching("IOPlatformExpertDevice") else { return nil }
         let service = IOServiceGetMatchingService(kIOMainPortDefault, matching)

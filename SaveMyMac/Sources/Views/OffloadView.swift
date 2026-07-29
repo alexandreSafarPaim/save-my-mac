@@ -12,8 +12,8 @@ struct OffloadView: View {
             VStack(alignment: .leading, spacing: 18) {
                 header
 
-                // Agrupado em dois `Group` de propósito: o ViewBuilder clássico
-                // vai até 10 filhos, e este bloco tinha 12.
+                // Split into two `Group`s on purpose: the classic ViewBuilder
+                // takes up to 10 children, and this block had 12.
                 Group {
                     if state.isScanningOffload {
                         ScanningBanner(
@@ -49,8 +49,8 @@ struct OffloadView: View {
 
                     if !state.journal.quarantined.isEmpty {
                         quarantineCard
-                            // Ancorado no card, não num EmptyView: dois
-                            // modificadores de apresentação no mesmo nó competem.
+                            // Anchored on the card, not on an EmptyView: two
+                            // presentation modifiers on the same node compete.
                             .confirmationDialog(
                                 pendingRelease.map { L("Release the quarantine for %@?", $0.name) } ?? "",
                                 isPresented: Binding(
@@ -128,7 +128,7 @@ struct OffloadView: View {
         """
     }
 
-    // MARK: - Cabeçalho
+    // MARK: - Header
 
     private var header: some View {
         ScreenHeader(
@@ -598,7 +598,7 @@ struct OffloadView: View {
         }
     }
 
-    // MARK: - Operações interrompidas
+    // MARK: - Interrupted operations
 
     private var unfinishedWarning: some View {
         Panel(palette: palette, emphasized: true) {
@@ -631,7 +631,7 @@ struct OffloadView: View {
         }
     }
 
-    // MARK: - Órfãos
+    // MARK: - Orphans
 
     private var orphansCard: some View {
         Panel(palette: palette) {

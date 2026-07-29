@@ -1,22 +1,22 @@
 import Foundation
 
-/// Um fator que compõe o score, com o peso e a explicação em texto.
+/// A factor making up the score, with its weight and a text explanation.
 struct HealthFactor: Identifiable {
     var id: String { name }
     var name: String
     var detail: String
-    /// 0...1, onde 1 é o ideal.
+    /// 0...1, where 1 is ideal.
     var quality: Double
     var weight: Double
 
     var points: Double { quality * weight }
 }
 
-/// Score de saúde 0–100.
+/// A 0–100 health score.
 ///
-/// Não existe "score de saúde" no macOS — este é um índice do próprio app.
-/// Por isso ele é totalmente explicável: cada fator aparece na interface com o
-/// peso e o motivo da nota, para o número nunca parecer mágico.
+/// There is no "health score" in macOS — this is the app's own index. That is why
+/// it is fully explainable: every factor appears in the interface with its weight
+/// and the reason for its rating, so the number never looks like magic.
 struct HealthReport {
     var score: Int
     var factors: [HealthFactor]
@@ -30,7 +30,7 @@ struct HealthReport {
         }
     }
 
-    /// Pior fator, para sugerir a próxima ação.
+    /// The worst factor, to suggest the next action.
     var weakest: HealthFactor? {
         factors.min { $0.quality < $1.quality }
     }
@@ -50,8 +50,8 @@ enum HealthScore {
 
         var factors: [HealthFactor] = []
 
-        // 1. Espaço livre no disco de inicialização — o fator mais importante.
-        //    Abaixo de 10% livres o macOS começa a sofrer de verdade.
+        // 1. Free space on the startup disk — the most important factor.
+        //    Below 10% free, macOS genuinely starts to suffer.
         if let volume = bootVolume, volume.total > 0 {
             let freeFraction = Double(volume.available) / Double(volume.total)
             let quality = normalize(freeFraction, poor: 0.05, good: 0.25)
@@ -63,7 +63,7 @@ enum HealthScore {
             ))
         }
 
-        // 2. Pressão de memória. Travada + comprimida é o que realmente indica aperto.
+        // 2. Memory pressure. Wired + compressed is what really signals strain.
         let pressure = memory.pressureFraction
         factors.append(HealthFactor(
             name: L("Memory pressure"),
@@ -72,7 +72,7 @@ enum HealthScore {
             weight: 18
         ))
 
-        // 3. Swap em uso: sinal de que a RAM não está dando conta.
+        // 3. Swap in use: a sign the RAM isn't keeping up.
         let swapFraction = memory.total > 0 ? Double(swap.used) / Double(memory.total) : 0
         factors.append(HealthFactor(
             name: L("Swap usage"),
@@ -83,7 +83,7 @@ enum HealthScore {
             weight: 10
         ))
 
-        // 4. Estado térmico — o dado oficial da Apple, sempre disponível.
+        // 4. Thermal state — Apple's official figure, always available.
         let thermalQuality: Double
         switch thermal.thermalState {
         case .nominal: thermalQuality = 1.0
@@ -100,7 +100,7 @@ enum HealthScore {
             weight: 14
         ))
 
-        // 5. Quanto de lixo está acumulado, relativo ao tamanho do disco.
+        // 5. How much junk has piled up, relative to the disk size.
         if let volume = bootVolume, volume.total > 0 {
             let junkFraction = Double(reclaimable) / Double(volume.total)
             factors.append(HealthFactor(
@@ -113,7 +113,7 @@ enum HealthScore {
             ))
         }
 
-        // 6. Duplicados.
+        // 6. Duplicates.
         factors.append(HealthFactor(
             name: L("Duplicates"),
             detail: duplicateBytes == 0 ? L("None found") : L("%@ in identical copies", Fmt.bytes(duplicateBytes)),
@@ -121,7 +121,7 @@ enum HealthScore {
             weight: 6
         ))
 
-        // 7. Links de offload quebrados: cada um é um app que pode falhar.
+        // 7. Broken offload links: each one is an app that may fail.
         factors.append(HealthFactor(
             name: L("Offload links"),
             detail: brokenLinks == 0

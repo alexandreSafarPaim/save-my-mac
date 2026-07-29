@@ -47,7 +47,7 @@ enum DiskMonitor {
             let total = Int64(values.volumeTotalCapacity ?? 0)
             guard total > 0 else { continue }
 
-            // "ForImportantUsage" é o número que o Finder mostra (inclui espaço purgeável).
+            // "ForImportantUsage" is the number Finder shows (includes purgeable space).
             let available = values.volumeAvailableCapacityForImportantUsage
                 ?? Int64(values.volumeAvailableCapacity ?? 0)
 
@@ -88,7 +88,7 @@ enum DiskMonitor {
         )
     }
 
-    /// Tamanho recursivo de um diretório (bytes alocados em disco).
+    /// A directory's recursive size (bytes allocated on disk).
     static func directorySize(at url: URL, isCancelled: () -> Bool = { false }) -> Int64 {
         var total: Int64 = 0
         let keys: [URLResourceKey] = [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .isRegularFileKey]

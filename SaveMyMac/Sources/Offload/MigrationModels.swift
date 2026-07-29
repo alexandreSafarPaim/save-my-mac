@@ -1,10 +1,10 @@
 import Foundation
 
-/// Etapas da migração, na ordem em que acontecem.
+/// The migration phases, in the order they happen.
 ///
-/// A ordem existe para que uma falha em qualquer ponto seja reversível: o
-/// original só sai do lugar depois da cópia ter sido verificada, e só é
-/// liberado de vez depois do link ter sido testado.
+/// The order exists so a failure at any point is reversible: the original only
+/// leaves its place after the copy has been verified, and is only released for
+/// good after the link has been tested.
 enum MigrationPhase: String, Codable {
     case preflight        // checagens antes de tocar em nada
     case copying          // ditto para a área de staging no destino
@@ -33,8 +33,8 @@ enum MigrationPhase: String, Codable {
     }
 }
 
-/// Registro persistido de uma migração. É isto que permite retomar ou reverter
-/// se o cabo do SSD cair no meio da operação.
+/// The persisted record of a migration. This is what makes it possible to resume
+/// or roll back if the SSD cable comes loose mid-operation.
 struct MigrationJournalEntry: Codable, Identifiable {
     var id: UUID = UUID()
     var sourcePath: String
@@ -50,7 +50,7 @@ struct MigrationJournalEntry: Codable, Identifiable {
 
     var name: String { (sourcePath as NSString).lastPathComponent }
 
-    /// Uma entrada em quarentena ainda ocupa espaço e pode ser desfeita.
+    /// A quarantined entry still takes up space and can be undone.
     var isReversible: Bool {
         phase == .done && FileManager.default.fileExists(atPath: quarantinePath)
     }
@@ -59,7 +59,7 @@ struct MigrationJournalEntry: Codable, Identifiable {
 struct MigrationJournal: Codable {
     var entries: [MigrationJournalEntry] = []
 
-    /// Operações que ficaram no meio do caminho — precisam de atenção.
+    /// Operations left half-finished — they need attention.
     var unfinished: [MigrationJournalEntry] {
         entries.filter { $0.phase != .done && $0.phase != .rolledBack && $0.phase != .failed }
     }
@@ -73,7 +73,7 @@ struct MigrationJournal: Codable {
     }
 }
 
-/// Resultado devolvido à interface.
+/// The result handed back to the interface.
 struct MigrationOutcome {
     var entry: MigrationJournalEntry
     var succeeded: Bool
@@ -87,7 +87,7 @@ struct OffloadCandidate: Identifiable, Hashable {
     var displayName: String
     var size: Int64
     var reason: String
-    /// Nem tudo que é grande deve ser linkado.
+    /// Not everything large should be linked.
     var recommendation: OffloadRecommendation
     var nativeSettingHint: String?
 
@@ -97,9 +97,9 @@ struct OffloadCandidate: Identifiable, Hashable {
 enum OffloadRecommendation: String, Codable {
     /// Grande, frio, sem ajuste nativo — bom candidato.
     case move
-    /// Regenerável e barato: apagar é melhor que mover.
+    /// Regenerable and cheap: deleting beats moving.
     case deleteInstead
-    /// O app tem ajuste próprio de localização, melhor que um link.
+    /// The app has its own location setting, better than a link.
     case useNativeSetting
     /// Nunca linkar: daemon do sistema mexe nisso.
     case never

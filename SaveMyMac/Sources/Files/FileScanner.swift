@@ -1,12 +1,12 @@
 import Foundation
 
-/// Comparação integral de conteúdo.
+/// Full content comparison.
 ///
-/// A varredura usa hash de amostras porque precisa ser rápida em centenas de
-/// milhares de arquivos. Mas amostrar início, meio e fim pode coincidir em
-/// arquivos diferentes — dois discos de VM clonados e depois divergidos no
-/// meio, por exemplo. Como apagar duplicado é irreversível na prática, cada
-/// cópia é conferida byte a byte contra a original **antes** de sair.
+/// The scan uses a sampled hash because it has to be fast across hundreds of
+/// thousands of files. But sampling the start, middle and end can collide across
+/// different files — two VM disks cloned and later diverged in the middle, for
+/// instance. Since deleting a duplicate is irreversible in practice, every copy
+/// is checked byte by byte against the original **before** it goes.
 enum FileComparator {
 
     static func identical(_ a: URL, _ b: URL) -> Bool {
@@ -28,7 +28,7 @@ enum FileComparator {
     }
 }
 
-// MARK: - Classificação para o treemap
+// MARK: - Classification for the treemap
 
 enum FileKind: String, CaseIterable, Identifiable {
     case video
@@ -71,7 +71,7 @@ enum FileKind: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Ordem no treemap: do mais "descarregável" para o menos.
+    /// Treemap order: from most "offloadable" to least.
     var rank: Int {
         switch self {
         case .video: return 0
@@ -163,7 +163,7 @@ struct DuplicateCopy: Identifiable, Hashable {
     let id = UUID()
     var path: String
     var modified: Date?
-    /// A cópia mais antiga é a preservada.
+    /// The oldest copy is the one preserved.
     var isOriginal: Bool
 
     var directory: String {
@@ -181,7 +181,7 @@ struct DuplicateGroup: Identifiable, Hashable {
     var kind: FileKind { FileKind(rawValue: kindRaw) ?? .other }
     var copyCount: Int { copies.count }
 
-    /// Espaço recuperável: tudo menos a cópia preservada.
+    /// Reclaimable space: everything except the preserved copy.
     var reclaimable: Int64 {
         Int64(max(0, copies.count - 1)) * fileSize
     }
@@ -204,8 +204,8 @@ struct FileScanResult {
     var isEmpty: Bool { largeFiles.isEmpty && duplicates.isEmpty }
 }
 
-/// Varre a pasta pessoal uma única vez e produz, da mesma passada, a lista de
-/// arquivos grandes com o treemap e os grupos de duplicados.
+/// Walks the home folder exactly once and produces, from the same pass, the
+/// large-file list with its treemap and the duplicate groups.
 final class FileScanner: @unchecked Sendable {
 
     private let fm = FileManager.default
@@ -227,10 +227,10 @@ final class FileScanner: @unchecked Sendable {
 
     private struct Entry {
         var url: URL
-        /// Bytes ocupados em disco — é o que interessa na lista de grandes.
+        /// Bytes occupied on disk — what matters for the large-files list.
         var size: Int64
-        /// Tamanho lógico do conteúdo — é o que interessa para duplicados,
-        /// porque clones e arquivos esparsos têm alocado diferente do lógico.
+        /// Logical content size — what matters for duplicates, because clones and
+        /// sparse files have an allocated size different from the logical one.
         var logicalSize: Int64
         var modified: Date?
     }
@@ -372,7 +372,7 @@ final class FileScanner: @unchecked Sendable {
         let total = max(1, candidates.count)
         var processed = 0
 
-        // Passo 2: dentro de cada grupo de tamanho, compara amostras de conteúdo.
+        // Step 2: within each size group, compare content samples.
         for (size, group) in candidates {
             if isCancelled() { break }
             processed += 1
@@ -385,7 +385,7 @@ final class FileScanner: @unchecked Sendable {
             }
 
             for (_, matches) in byHash where matches.count > 1 {
-                // A cópia mais antiga é a preservada.
+                // The oldest copy is the one preserved.
                 let sorted = matches.sorted {
                     ($0.modified ?? .distantPast) < ($1.modified ?? .distantPast)
                 }
@@ -411,8 +411,8 @@ final class FileScanner: @unchecked Sendable {
         return groups.sorted { $0.reclaimable > $1.reclaimable }
     }
 
-    /// FNV-1a sobre três amostras de 256 KB (início, meio e fim). Combinado com
-    /// igualdade exata de tamanho, é rápido e suficiente na prática.
+    /// FNV-1a over three 256 KB samples (start, middle and end). Combined with
+    /// exact size equality, it is fast and sufficient in practice.
     private func sampleHash(of url: URL, size: Int64) -> UInt64? {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
         defer { try? handle.close() }
