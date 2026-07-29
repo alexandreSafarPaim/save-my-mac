@@ -32,9 +32,33 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCES = ROOT / "Sources"
 TABLE = SOURCES / "Support" / "Strings.swift"
 
-# Keys deliberately absent from a table because the translation equals the key.
-# The lookup already falls through to the key, so an identity entry is noise.
-IDENTITY_OK = True
+# Keys deliberately absent from a table because the word is spelled the same in
+# that language. The lookup already falls through to the key, so an identity
+# entry would be dead weight — but without this list the checker reports them as
+# untranslated forever.
+#
+# That matters more than it looks. A checker that always prints the same seven
+# warnings teaches people to skim past its output, and then a genuinely missing
+# translation scrolls by unnoticed. The list is the price of the tool staying
+# worth reading.
+#
+# Adding an entry here is a claim: "this word is identical in this language."
+# If that is wrong, the app shows English and nobody finds out from the tool.
+INTENTIONALLY_IDENTICAL = {
+    "pt": {
+        "Normal",    # same word
+        "Offload",   # kept as the English term in Brazilian tech usage
+    },
+    "es": {
+        "Normal",
+        "Audio",
+    },
+    "fr": {
+        "Normal",
+        "Audio",
+        "Navigation",
+    },
+}
 
 KEY_RE = r'"((?:[^"\\]|\\.)*)"'
 
@@ -86,8 +110,16 @@ def main() -> int:
 
     for name in languages:
         entries = table(name)
-        missing = sorted(used - set(entries))
+        identical = INTENTIONALLY_IDENTICAL.get(name, set())
+        missing = sorted(used - set(entries) - identical)
         orphans = sorted(set(entries) - used)
+
+        # An entry that duplicates its key contradicts the list above, and one
+        # of the two is wrong. Worth saying out loud rather than tolerating.
+        redundant = sorted(k for k in identical if k in entries)
+        for key in redundant:
+            print(f"       warn  listed as identical but also translated: {key[:50]}")
+            warnings += 1
 
         bad_format = []
         for key, value in entries.items():

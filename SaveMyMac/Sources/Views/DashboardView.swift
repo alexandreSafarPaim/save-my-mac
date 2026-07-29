@@ -161,9 +161,12 @@ struct DashboardView: View {
             return L("No scan yet. A full scan takes under a minute and deletes nothing.")
         }
         let count = state.categories.count
+        // `count` duas vezes de propósito: rotulado, escolhe singular ou plural;
+        // depois, como argumento, preenche o `%d` da frase.
         return Lp("We found %@ of reclaimable junk in %d category",
                   "We found %@ of reclaimable junk in %d categories",
-                  count, Fmt.bytes(state.totalReclaimable))
+                  count: count,
+                  Fmt.bytes(state.totalReclaimable), count)
     }
 
     // MARK: - Conquistas

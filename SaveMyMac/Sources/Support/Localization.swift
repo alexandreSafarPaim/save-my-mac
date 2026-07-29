@@ -151,11 +151,28 @@ func L(_ key: String, _ arguments: CVarArg...) -> String {
 /// regra: inglês, português e espanhol pluralizam a partir de 2; **o francês
 /// usa o singular também para zero** ("0 semaine", não "0 semaines"). Tratar
 /// tudo como `count == 1` produziria erro de gramática em francês.
-func Lp(_ singular: String, _ plural: String, _ count: Int) -> String {
+///
+/// O `count` é rotulado porque ele tem **dois papéis distintos**, e a primeira
+/// versão desta função confundia os dois: ele escolhe a forma gramatical, e às
+/// vezes também é um dos valores interpolados. Quando a frase tem só o número
+/// ("Série de %d semanas"), basta o `count`. Quando tem mais
+/// ("Encontramos %@ em %d categorias"), os valores vêm depois, na ordem em que
+/// aparecem na frase — e aí o `count` aparece duas vezes na chamada, uma para
+/// decidir a forma e outra como argumento. É repetitivo e é explícito, o que
+/// vale mais aqui do que economizar um parâmetro.
+func Lp(
+    _ singular: String,
+    _ plural: String,
+    count: Int,
+    _ arguments: CVarArg...
+) -> String {
     let useSingular: Bool
     switch Localization.active {
     case .fr: useSingular = count <= 1
     default: useSingular = count == 1
     }
-    return L(useSingular ? singular : plural, count)
+    let format = L(useSingular ? singular : plural)
+    return arguments.isEmpty
+        ? String(format: format, count)
+        : String(format: format, arguments: arguments)
 }

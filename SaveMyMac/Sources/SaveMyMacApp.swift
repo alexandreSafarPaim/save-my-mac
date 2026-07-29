@@ -696,7 +696,8 @@ struct LevelCard: View {
                     .foregroundStyle(palette.warn)
                 Text(game.state.streak == 0
                      ? L("No active week yet")
-                     : Lp("%d-week streak", "%d-week streak (plural)", game.state.streak))
+                     : Lp("%d-week streak", "%d-week streak (plural)",
+                          count: game.state.streak))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t2)
             }
