@@ -1,0 +1,102 @@
+name: Release
+
+# Pushing a tag like v1.0 or v1.2.3 builds the DMG and publishes it as a
+# GitHub Release. Nothing else triggers this; day-to-day pushes only run the
+# Build workflow.
+#
+#   git tag v1.0
+#   git push origin v1.0
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write   # required to create the release and upload the DMG
+
+jobs:
+  release:
+    name: Build DMG and publish
+    # Same floor as the Build workflow, deliberately: if it compiles here, it
+    # compiles on every toolchain a contributor is likely to have.
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The app version shown in Finder and in the About panel follows the tag,
+      # so nobody ships a v1.2 DMG whose Info.plist still says 1.0.
+      - name: Stamp the version from the tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" SaveMyMac/Info.plist
+          echo "version: $VERSION"
+
+      # The release gate is the same as CI's, not weaker: a tag is exactly the
+      # moment to be strict. The static checks are cheap; the behavioural tests
+      # are the only thing that actually executes the deletion guards.
+      - name: Checks
+        working-directory: SaveMyMac
+        run: |
+          python3 tools/check-translations.py
+          python3 tools/check-untranslated-ui.py
+
+      - name: Build universal DMG
+        working-directory: SaveMyMac
+        run: |
+          chmod +x build.sh tests/sources.sh
+          ./build.sh --universal --dmg
+
+      - name: Behavioural tests
+        working-directory: SaveMyMac
+        run: |
+          SOURCES=$(./tests/sources.sh)
+          swiftc -O -swift-version 5 \
+            -target "$(uname -m)-apple-macos13.0" \
+            -framework AppKit -framework ServiceManagement -framework IOKit \
+            -o build/e2e-tests \
+            $SOURCES tests/E2EMain.swift
+          ./build/e2e-tests
+
+      - name: Rename and checksum
+        working-directory: SaveMyMac/build
+        run: |
+          mv SaveMyMac.dmg "SaveMyMac-${GITHUB_REF_NAME}.dmg"
+          shasum -a 256 "SaveMyMac-${GITHUB_REF_NAME}.dmg" | tee checksum.txt
+
+      # `gh` is preinstalled on the runners and authenticates with the workflow
+      # token. --generate-notes builds the changelog from merged PRs and commits
+      # since the previous tag.
+      #
+      # The Gatekeeper paragraph is not boilerplate: the app is ad-hoc signed
+      # and not notarized (no paid developer account), so macOS will warn on
+      # first open. Saying so in the release beats letting each user discover it.
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<EOF
+          ### Installation
+
+          Download the DMG, open it, and drag **SaveMyMac** to Applications.
+
+          On first launch, macOS will say it *"could not verify this app is
+          free of malware"* — the app is ad-hoc signed, not notarized. This is
+          expected. Click **OK** (not "Move to Trash"), then either:
+
+          - **System Settings › Privacy & Security** → scroll down → **Open
+            Anyway** next to the SaveMyMac notice, or
+          - Terminal: \`xattr -d com.apple.quarantine /Applications/SaveMyMac.app\`
+
+          The old right-click → Open trick no longer offers "Open" for
+          unnotarized apps on recent macOS — the wording above replaced it
+          after a real install hit exactly that wall.
+
+          SHA-256: \`$(cut -d' ' -f1 SaveMyMac/build/checksum.txt)\`
+          EOF
+
+          gh release create "$GITHUB_REF_NAME" \
+            "SaveMyMac/build/SaveMyMac-${GITHUB_REF_NAME}.dmg" \
+            --title "SaveMyMac $GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            --generate-notes

@@ -1,0 +1,28 @@
+# Saída de compilação — reconstruída por ./SaveMyMac/build.sh
+SaveMyMac/build/
+*.app/
+*.dmg
+
+# Lixo do Finder
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Rastro de execução e relatórios de diagnóstico
+*.log
+/tmp/savemymac-*
+savemymac-diagnostics.txt
+savemymac-spindump.txt
+
+# Caches de ferramentas Python usadas em tools/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Xcode, caso o projeto ganhe um algum dia
+*.xcuserdatad
+xcuserdata/
+DerivedData/
+build/e2e-tests

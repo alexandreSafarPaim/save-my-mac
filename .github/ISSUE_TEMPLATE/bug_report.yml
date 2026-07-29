@@ -1,0 +1,89 @@
+name: Bug report
+description: Something behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Stop here if the bug involves unexpected file deletion or data loss.**
+        Report those privately — see [SECURITY.md](../blob/main/SECURITY.md).
+
+        For hangs and freezes, `SaveMyMac/tools/collect-hang-report.sh` output is what makes the report
+        actionable. There is a field for it below.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the app
+        2. Go to Cleanup
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "15.1 (24B83)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: arch
+    attributes:
+      label: Machine
+      options:
+        - Apple Silicon
+        - Intel
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or version
+      description: "`git rev-parse --short HEAD`, or the version shown in the sidebar."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: fda
+    attributes:
+      label: Full Disk Access granted?
+      description: Without it the app silently skips protected folders, which explains a whole class of "wrong numbers" reports.
+      options:
+        - "Yes"
+        - "No"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: trace
+    attributes:
+      label: Trace / diagnostics
+      description: |
+        For a hang, run `SaveMyMac/tools/collect-hang-report.sh` and paste the output.
+        Otherwise `tail -40 ~/Library/Logs/SaveMyMac-trace.log` is usually enough.
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I built from source and reproduced this on a fresh build
+          required: false
+        - label: This is not about unexpected file deletion (that goes to SECURITY.md)
+          required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 🔒 Security / unexpected file deletion
+    url: https://github.com/alexandreSafarPaim/save-my-mac/security/advisories/new
+    about: Anything involving data loss or deletion outside what the user selected. Please do not open a public issue for these.
+  - name: 💬 Question or idea (not a bug)
+    url: https://github.com/alexandreSafarPaim/save-my-mac/discussions
+    about: Usage questions and open-ended ideas.
