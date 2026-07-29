@@ -57,6 +57,7 @@ INTENTIONALLY_IDENTICAL = {
         "Normal",
         "Audio",
         "Navigation",
+        "Actions",
     },
 }
 

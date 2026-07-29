@@ -46,7 +46,7 @@ struct AppsView: View {
             .riseIn()
         }
         .confirmationDialog(
-            pendingUninstall.map { "Desinstalar \($0.name) completamente?" } ?? "",
+            pendingUninstall.map { L("Uninstall %@ completely?", $0.name) } ?? "",
             isPresented: Binding(
                 get: { pendingUninstall != nil },
                 set: { if !$0 { pendingUninstall = nil } }
@@ -62,7 +62,7 @@ struct AppsView: View {
             Button(L("Cancel"), role: .cancel) { pendingUninstall = nil }
         } message: {
             if let app = pendingUninstall {
-                Text("Vão para a Lixeira o app (\(Fmt.bytes(app.bundleSize))) e \(app.residues.count) itens de dados de apoio (\(Fmt.bytes(app.residueSize))). Total: \(Fmt.bytes(app.totalSize)).\n\nNada é apagado de forma irreversível — você pode restaurar da Lixeira.")
+                Text(L("The app (%@) and %d support data items (%@) go to the Trash. Total: %@.\n\nNothing is deleted irreversibly — you can restore from the Trash.", Fmt.bytes(app.bundleSize), app.residues.count, Fmt.bytes(app.residueSize), Fmt.bytes(app.totalSize)))
             }
         }
         .sheet(item: $detailApp) { app in
@@ -78,12 +78,12 @@ struct AppsView: View {
             eyebrow: "Aplicativos",
             title: state.appInventory.isEmpty
                 ? L("Installed apps")
-                : "\(state.appInventory.apps.count) apps · \(state.appInventory.staleCount) sem uso há 90 dias",
+                : L("%d apps · %d unused for 90 days", state.appInventory.apps.count, state.appInventory.staleCount),
             palette: palette
         ) {
             FlowLayout(spacing: 10, lineSpacing: 8) {
                 if let date = state.lastAppsScanDate {
-                    Text("Última análise: \(Fmt.shortDate(date))")
+                    Text(L("Last scan: %@", Fmt.shortDate(date)))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
@@ -217,14 +217,14 @@ struct AppsView: View {
                         Image(systemName: "shippingbox")
                             .font(.system(size: 10))
                             .foregroundStyle(palette.ok)
-                        Text("\(Fmt.bytes(app.cacheSize)) em cache")
+                        Text(L("%@ in cache", Fmt.bytes(app.cacheSize)))
                             .font(Typo.monoTiny)
                             .foregroundStyle(palette.t2)
                         Spacer()
                         Button {
                             detailApp = app
                         } label: {
-                            Text("ver \(app.residues.count) itens")
+                            Text(L("see %d items", app.residues.count))
                                 .font(Typo.monoTiny)
                                 .foregroundStyle(palette.cyan)
                         }
@@ -327,7 +327,7 @@ struct AppDetailSheet: View {
                 labelled(L("Other data"), Fmt.bytes(app.residueSize - app.cacheSize))
             }
 
-            Text("Dados de apoio encontrados (\(app.residues.count))")
+            Text(L("Support data found (%d)", app.residues.count))
                 .font(Typo.cardTitle)
                 .foregroundStyle(palette.t1)
 

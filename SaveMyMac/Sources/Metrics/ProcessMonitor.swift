@@ -71,8 +71,8 @@ enum ProcessMonitor {
 
         setFailure(
             lastError.isEmpty
-                ? "O /bin/ps respondeu, mas nenhuma linha pôde ser interpretada."
-                : "Falha ao executar /bin/ps: \(lastError)"
+                ? L("/bin/ps answered, but no line could be parsed.")
+                : L("Failed to run /bin/ps: %@", lastError)
         )
         return []
     }

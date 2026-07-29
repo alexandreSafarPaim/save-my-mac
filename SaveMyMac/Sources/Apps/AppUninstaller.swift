@@ -25,7 +25,7 @@ enum AppUninstaller {
     ) -> UninstallResult {
         let targets = app.residues.filter(\.isCache)
         return remove(paths: targets.map { ($0.path, $0.size) },
-                      label: "cache de \(app.name)",
+                      label: L("%@ cache", app.name),
                       progress: progress)
     }
 
@@ -39,7 +39,7 @@ enum AppUninstaller {
 
         guard app.canUninstall else {
             var result = UninstallResult()
-            result.failures.append((app.path, "Aplicativo do sistema — não pode ser removido"))
+            result.failures.append((app.path, L("System application — cannot be removed")))
             return result
         }
 
@@ -82,7 +82,7 @@ enum AppUninstaller {
                 result.freedBytes += entry.1
             } catch {
                 let reason = url.path.hasPrefix("/Applications")
-                    ? "Sem permissão. Arraste o app para a Lixeira manualmente."
+                    ? L("No permission. Drag the app to the Trash manually.")
                     : error.localizedDescription
                 result.failures.append((entry.0, reason))
             }
@@ -101,11 +101,11 @@ enum AppUninstaller {
         let path = url.standardizedFileURL.path
 
         if VolumeResolver.isSymbolicLink(url) {
-            return "É um link simbólico — remova pelo painel de Offload"
+            return L("It's a symlink — remove it from the Offload panel")
         }
         if !VolumeResolver.isOnHomeVolume(url) {
             let volume = VolumeResolver.volumeName(of: url) ?? "outro volume"
-            return "O conteúdo real está em \(volume)"
+            return L("The real content is on %@", volume)
         }
 
         // Caminhos protegidos pelo sistema (SIP) ou vitais.
@@ -127,14 +127,14 @@ enum AppUninstaller {
                 "Movies", "Music", "Public", "Applications", ".Trash"
             ]
             if components.count == 1 && protectedTop.contains(String(components[0])) {
-                return "Pasta protegida do usuário"
+                return L("Protected user folder")
             }
             let blocked = [
                 "Library/Keychains", "Library/Mail", "Library/CloudStorage",
                 "Library/Mobile Documents", "Library/Preferences/com.apple"
             ]
             for prefix in blocked where relative.hasPrefix(prefix) {
-                return "Caminho sensível protegido"
+                return L("Protected sensitive path")
             }
             return nil
         }
@@ -144,7 +144,7 @@ enum AppUninstaller {
             return nil
         }
         if path == "/Applications" {
-            return "Não se remove a pasta Aplicativos"
+            return L("The Applications folder is not removable")
         }
 
         return "Fora do escopo permitido"

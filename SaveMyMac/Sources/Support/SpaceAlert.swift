@@ -40,7 +40,7 @@ final class SpaceAlert: ObservableObject {
         // de devolver erro — acontece ao rodar o binário fora de um .app.
         guard Bundle.main.bundleIdentifier != nil else {
             permissionDenied = true
-            unavailableReason = "Notificações precisam do app rodando como bundle (.app)."
+            unavailableReason = L("Notifications require the app to run as a bundle (.app).")
             return
         }
 
@@ -95,7 +95,7 @@ final class SpaceAlert: ObservableObject {
     private func notify(volume: VolumeInfo, freePercent: Double) {
         guard Bundle.main.bundleIdentifier != nil else { return }
         let content = UNMutableNotificationContent()
-        content.title = "Pouco espaço em \(volume.name)"
+        content.title = L("Low space on %@", volume.name)
         content.body = "Restam \(Fmt.bytes(volume.available)) "
             + "(\(String(format: "%.0f", freePercent)) %). "
             + "Abra o SaveMyMac para ver o que pode sair."

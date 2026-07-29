@@ -52,7 +52,7 @@ struct OffloadView: View {
                             // Ancorado no card, não num EmptyView: dois
                             // modificadores de apresentação no mesmo nó competem.
                             .confirmationDialog(
-                                pendingRelease.map { "Liberar a quarentena de \($0.name)?" } ?? "",
+                                pendingRelease.map { L("Release the quarantine for %@?", $0.name) } ?? "",
                                 isPresented: Binding(
                                     get: { pendingRelease != nil },
                                     set: { if !$0 { pendingRelease = nil } }
@@ -60,14 +60,14 @@ struct OffloadView: View {
                                 titleVisibility: .visible
                             ) {
                                 if let entry = pendingRelease {
-                                    Button("Liberar \(Fmt.bytes(entry.bytes))", role: .destructive) {
+                                    Button(L("Release %@", Fmt.bytes(entry.bytes)), role: .destructive) {
                                         state.releaseQuarantine(entry)
                                         pendingRelease = nil
                                     }
                                 }
                                 Button(L("Cancel"), role: .cancel) { pendingRelease = nil }
                             } message: {
-                                Text("O original vai para a Lixeira e o espaço volta para o disco do Mac. Depois disso a migração não pode mais ser revertida com um clique.\n\nO app confere antes se o link e o destino estão íntegros.")
+                                Text(L("The original goes to the Trash and the space returns to the Mac's disk. After that the migration can no longer be undone with one click.\n\nThe app checks first that the link and the target are intact."))
                             }
                     }
 
@@ -97,7 +97,7 @@ struct OffloadView: View {
             .riseIn()
         }
         .confirmationDialog(
-            pendingMigration.map { "Mover \($0.displayName) para o disco externo?" } ?? "",
+            pendingMigration.map { L("Move %@ to the external disk?", $0.displayName) } ?? "",
             isPresented: Binding(
                 get: { pendingMigration != nil },
                 set: { if !$0 { pendingMigration = nil } }
@@ -140,7 +140,7 @@ struct OffloadView: View {
         ) {
             FlowLayout(spacing: 10, lineSpacing: 8) {
                 if let date = state.lastOffloadScanDate {
-                    Text("Última verificação: \(Fmt.shortDate(date))")
+                    Text(L("Last check: %@", Fmt.shortDate(date)))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
@@ -441,7 +441,7 @@ struct OffloadView: View {
                         HStack {
                             Text("\(Fmt.percent(group.usedFraction)) usado")
                             Spacer()
-                            Text("\(Fmt.bytes(group.capacityAvailable)) livres de \(Fmt.bytes(group.capacityTotal))")
+                            Text(L("%@ free of %@", Fmt.bytes(group.capacityAvailable), Fmt.bytes(group.capacityTotal)))
                         }
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t2)
@@ -606,7 +606,7 @@ struct OffloadView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(palette.danger)
-                    Text("\(state.journal.unfinished.count) migração(ões) interrompida(s)")
+                    Text(L("%d interrupted migration(s)", state.journal.unfinished.count))
                         .font(Typo.cardTitle)
                         .foregroundStyle(palette.t1)
                 }
@@ -616,13 +616,13 @@ struct OffloadView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 ForEach(state.journal.unfinished) { entry in
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("\(entry.name) — parou em: \(entry.phase.label)")
+                        Text(L("%@ — stopped at: %@", entry.name, entry.phase.label))
                             .font(Typo.monoCaption)
                             .foregroundStyle(palette.t1)
-                        Text("origem: \(entry.sourcePath.tildeShortened)")
+                        Text(L("source: %@", entry.sourcePath.tildeShortened))
                             .font(Typo.monoTiny)
                             .foregroundStyle(palette.t3)
-                        Text("quarentena: \(entry.quarantinePath.tildeShortened)")
+                        Text(L("quarantine: %@", entry.quarantinePath.tildeShortened))
                             .font(Typo.monoTiny)
                             .foregroundStyle(palette.t3)
                     }

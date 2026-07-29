@@ -53,7 +53,7 @@ final class MigrationEngine: @unchecked Sendable {
         let fm = FileManager.default
 
         guard fm.fileExists(atPath: destination.path) else {
-            return "A pasta de destino não existe ou o volume não está montado."
+            return L("The destination folder does not exist, or the volume is not mounted.")
         }
 
         let keys: Set<URLResourceKey> = [
@@ -63,25 +63,25 @@ final class MigrationEngine: @unchecked Sendable {
             .volumeNameKey
         ]
         guard let values = try? destination.resourceValues(forKeys: keys) else {
-            return "Não foi possível ler as características do volume de destino."
+            return L("Could not read the destination volume's characteristics.")
         }
 
         // O portão eliminatório: exFAT e FAT não têm link simbólico.
         if values.volumeSupportsSymbolicLinks == false {
             let name = values.volumeName ?? "Este volume"
-            return "\(name) não suporta links simbólicos. Formate como APFS ou HFS+ para usar offload."
+            return L("%@ does not support symlinks. Format it as APFS or HFS+ to use offload.", name)
         }
         if values.volumeIsReadOnly == true {
-            return "O volume de destino está somente para leitura."
+            return L("The destination volume is read-only.")
         }
         if !fm.isWritableFile(atPath: destination.path) {
-            return "Sem permissão de escrita na pasta de destino."
+            return L("No write permission on the destination folder.")
         }
 
         // Margem de 3% para metadados.
         let needed = Int64(Double(bytes) * 1.03)
         if let available = values.volumeAvailableCapacityForImportantUsage, available < needed {
-            return "Faltam \(Fmt.bytes(needed - available)) no destino (precisa de \(Fmt.bytes(needed)))."
+            return L("%@ short at the destination (needs %@).", Fmt.bytes(needed - available), Fmt.bytes(needed))
         }
 
         return nil
@@ -92,18 +92,18 @@ final class MigrationEngine: @unchecked Sendable {
         let fm = FileManager.default
         let path = source.standardizedFileURL.path
 
-        guard fm.fileExists(atPath: path) else { return "A pasta de origem não existe." }
+        guard fm.fileExists(atPath: path) else { return L("The source folder does not exist.") }
 
         if VolumeResolver.isSymbolicLink(source) {
-            return "Esta pasta já é um link simbólico."
+            return L("This folder is already a symlink.")
         }
         if !VolumeResolver.isOnHomeVolume(source) {
-            return "O conteúdo já está fora do disco do Mac."
+            return L("The content is already off the Mac's disk.")
         }
 
         let home = fm.homeDirectoryForCurrentUser.standardizedFileURL.path
         guard path.hasPrefix(home + "/") else {
-            return "Só é possível descarregar pastas de dentro da sua pasta pessoal."
+            return L("Only folders inside your home folder can be offloaded.")
         }
 
         let relative = String(path.dropFirst(home.count + 1))
@@ -114,7 +114,7 @@ final class MigrationEngine: @unchecked Sendable {
             "Movies", "Music", "Public", "Applications", ".Trash"
         ]
         if components.count == 1 && protectedTop.contains(String(components[0])) {
-            return "Não descarregue uma pasta de topo inteira — escolha algo dentro dela."
+            return L("Don't offload a whole top-level folder — pick something inside it.")
         }
 
         // Pastas administradas por daemons do sistema: link simbólico aqui dá problema.
@@ -126,13 +126,13 @@ final class MigrationEngine: @unchecked Sendable {
             ("Library/Messages", "o Mensagens"),
             ("Library/Group Containers", "containers de grupo"),
             ("Library/Containers", "containers de apps sandboxados"),
-            ("Library/Preferences", "as preferências")
+            ("Library/Preferences", L("its preferences"))
         ]
         for (prefix, who) in never where relative.hasPrefix(prefix) {
-            return "\(who) não lida bem com links simbólicos. Esta pasta está fora."
+            return L("%@ does not handle symlinks well. This folder is out.", who)
         }
         if source.pathExtension.lowercased() == "photoslibrary" {
-            return "A Apple não suporta link na biblioteca do Fotos. Mova a biblioteca e abra o Fotos com Option pressionado."
+            return L("Apple does not support a link on the Photos library. Move the library and open Photos holding Option.")
         }
 
         return nil
@@ -144,7 +144,7 @@ final class MigrationEngine: @unchecked Sendable {
         let t = target.standardizedFileURL.path
         if t.hasPrefix(s + "/") { return "O destino não pode estar dentro da própria origem." }
         if s.hasPrefix(t + "/") { return "A origem não pode estar dentro do destino." }
-        if s == t { return "Origem e destino são o mesmo caminho." }
+        if s == t { return L("Source and destination are the same path.") }
         return nil
     }
 
@@ -191,7 +191,7 @@ final class MigrationEngine: @unchecked Sendable {
         if let problem = MigrationEngine.sourceProblem(source) { return fail(problem) }
         if let problem = MigrationEngine.nestingProblem(source: source, target: target) { return fail(problem) }
         if fm.fileExists(atPath: target.path) {
-            return fail("Já existe \"\(name)\" no destino. Renomeie ou escolha outra pasta.")
+            return fail(L("\"%@\" already exists at the destination. Rename it or pick another folder.", name))
         }
 
         let measured = measure(source, isCancelled: isCancelled)
@@ -210,7 +210,7 @@ final class MigrationEngine: @unchecked Sendable {
         do {
             try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         } catch {
-            return fail("Não foi possível criar a área de staging: \(error.localizedDescription)")
+            return fail(L("Could not create the staging area: %@", error.localizedDescription))
         }
 
         // `ditto` é da Apple e preserva metadados, xattrs, ACLs e resource forks.
@@ -221,11 +221,11 @@ final class MigrationEngine: @unchecked Sendable {
         guard copy.status == 0 else {
             cleanup(staging)
             let detail = copy.error.trimmingCharacters(in: .whitespacesAndNewlines)
-            return fail("O ditto falhou (código \(copy.status))\(detail.isEmpty ? "" : ": \(detail)").")
+            return fail(L("ditto failed (code %d)%@.", copy.status, detail.isEmpty ? "" : ": \(detail)"))
         }
         if isCancelled() {
             cleanup(staging)
-            return fail("Cancelado durante a cópia.")
+            return fail(L("Cancelled during the copy."))
         }
 
         // --- 3. Verificação ---
@@ -239,7 +239,7 @@ final class MigrationEngine: @unchecked Sendable {
         let tolerance = Int64(Double(measured.bytes) * 0.005) + 4096
         guard copied.files == measured.files, byteDelta <= tolerance else {
             cleanup(staging)
-            return fail("A cópia não confere: \(copied.files) de \(measured.files) arquivos, \(Fmt.bytes(copied.bytes)) de \(Fmt.bytes(measured.bytes)). Nada foi movido.")
+            return fail(L("The copy does not match: %d of %d files, %@ of %@. Nothing was moved.", copied.files, measured.files, Fmt.bytes(copied.bytes), Fmt.bytes(measured.bytes)))
         }
 
         // --- 4. Quarentena do original ---
@@ -252,7 +252,7 @@ final class MigrationEngine: @unchecked Sendable {
             try fm.moveItem(at: source, to: quarantineItem)
         } catch {
             cleanup(staging)
-            return fail("Não foi possível mover o original: \(error.localizedDescription)")
+            return fail(L("Could not move the original: %@", error.localizedDescription))
         }
 
         // --- 5. Publicação no destino ---
@@ -276,7 +276,7 @@ final class MigrationEngine: @unchecked Sendable {
         // --- 6. Link simbólico ---
         entry.phase = .linking
         write(entry)
-        progress(.linking, "Criando o link simbólico…", 0.88)
+        progress(.linking, L("Creating the symlink…"), 0.88)
 
         do {
             try fm.createSymbolicLink(at: source, withDestinationURL: target)
@@ -305,7 +305,7 @@ final class MigrationEngine: @unchecked Sendable {
             cleanup(quarantine)
             entry.phase = .rolledBack
             write(entry)
-            return fail("O link não passou no teste, tudo foi devolvido: \(problem)")
+            return fail(L("The link failed the test, everything was rolled back: %@", problem))
         }
 
         entry.phase = .done
@@ -316,7 +316,7 @@ final class MigrationEngine: @unchecked Sendable {
         return MigrationOutcome(
             entry: entry,
             succeeded: true,
-            message: "\(Fmt.bytes(measured.bytes)) movidos. O original está na quarentena até você liberar."
+            message: L("%@ moved. The original stays in quarantine until you release it.", Fmt.bytes(measured.bytes))
         )
     }
 
@@ -332,7 +332,7 @@ final class MigrationEngine: @unchecked Sendable {
 
         guard fm.fileExists(atPath: quarantine.path) else {
             return MigrationOutcome(entry: entry, succeeded: false,
-                                    message: "O original não está mais na quarentena — não há como reverter.")
+                                    message: L("The original is no longer in quarantine — there is no way to undo."))
         }
 
         // Remove o link (nunca o alvo: removeItem num symlink apaga só o link).
@@ -340,7 +340,7 @@ final class MigrationEngine: @unchecked Sendable {
             try? fm.removeItem(at: source)
         } else if fm.fileExists(atPath: source.path) {
             return MigrationOutcome(entry: entry, succeeded: false,
-                                    message: "Já existe algo real em \(entry.sourcePath.tildeShortened). Resolva manualmente antes de reverter.")
+                                    message: L("Something real already exists at %@. Resolve it manually before undoing.", entry.sourcePath.tildeShortened))
         }
 
         do {
@@ -361,7 +361,7 @@ final class MigrationEngine: @unchecked Sendable {
         write(updated)
 
         return MigrationOutcome(entry: updated, succeeded: true,
-                                message: "\(updated.name) está de volta no lugar original.")
+                                message: L("%@ is back in its original place.", updated.name))
     }
 
     /// Libera a quarentena de uma migração concluída — é aqui que o espaço
@@ -371,13 +371,13 @@ final class MigrationEngine: @unchecked Sendable {
         let quarantine = URL(fileURLWithPath: entry.quarantinePath)
 
         guard fm.fileExists(atPath: quarantine.path) else {
-            return MigrationOutcome(entry: entry, succeeded: true, message: "A quarentena já estava vazia.")
+            return MigrationOutcome(entry: entry, succeeded: true, message: L("Quarantine was already empty."))
         }
         // Confere que o link e o alvo estão de pé antes de soltar o original.
         guard VolumeResolver.isSymbolicLink(URL(fileURLWithPath: entry.sourcePath)),
               fm.fileExists(atPath: entry.targetPath) else {
             return MigrationOutcome(entry: entry, succeeded: false,
-                                    message: "O link ou o destino não estão íntegros. A quarentena fica onde está.")
+                                    message: L("The link or the target is not intact. Quarantine stays where it is."))
         }
 
         do {
@@ -440,16 +440,16 @@ final class MigrationEngine: @unchecked Sendable {
     /// através dele — este último teste é o que pega volume montado só-leitura.
     private func validate(link: URL, expectedFiles: Int, isCancelled: () -> Bool) -> String? {
         guard VolumeResolver.isSymbolicLink(link) else {
-            return "o link não foi criado"
+            return L("the link was not created")
         }
         guard let target = VolumeResolver.symlinkTarget(of: link),
               fm.fileExists(atPath: target.path) else {
-            return "o link não resolve para um caminho existente"
+            return L("the link does not resolve to an existing path")
         }
 
         let through = measure(link, isCancelled: isCancelled)
         guard through.files == expectedFiles else {
-            return "lendo pelo link vêm \(through.files) arquivos em vez de \(expectedFiles)"
+            return L("reading through the link gives %d files instead of %d", through.files, expectedFiles)
         }
 
         // Escreve e apaga um arquivo de teste dentro do alvo.
@@ -463,7 +463,7 @@ final class MigrationEngine: @unchecked Sendable {
                 try Data("ok".utf8).write(to: probe)
                 try fm.removeItem(at: probe)
             } catch {
-                return "não foi possível escrever através do link (\(error.localizedDescription))"
+                return L("could not write through the link (%@)", error.localizedDescription)
             }
         }
 

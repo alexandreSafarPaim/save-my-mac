@@ -52,12 +52,12 @@ struct MemoryHistory {
         let window = minutes >= 1 ? "\(minutes) min" : "\(Int(span)) s"
 
         if peakPressure < 0.35 {
-            return "Pressão baixa nos últimos \(window) — mais RAM não mudaria nada hoje."
+            return L("Low pressure over the last %@ — more RAM would change nothing today.", window)
         }
         if peakPressure < 0.60 {
-            return "Pressão chegou a \(Fmt.percent(peakPressure)) nos últimos \(window)."
+            return L("Pressure reached %@ over the last %@.", Fmt.percent(peakPressure), window)
         }
-        return "Pressão alta (pico de \(Fmt.percent(peakPressure))) nos últimos \(window) — algo está apertando a RAM."
+        return L("High pressure (peak of %@) over the last %@ — something is squeezing the RAM.", Fmt.percent(peakPressure), window)
     }
 }
 

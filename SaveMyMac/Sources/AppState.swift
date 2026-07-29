@@ -139,9 +139,9 @@ final class AppState: ObservableObject {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .all: return "Todos"
-            case .stale: return "Sem uso há 90 d"
-            case .heavyCache: return "Cache pesado"
+            case .all: return L("All")
+            case .stale: return L("Unused for 90 d")
+            case .heavyCache: return L("Heavy cache")
             }
         }
     }
@@ -433,7 +433,7 @@ final class AppState: ObservableObject {
                 self.isScanning = false
                 self.scanProgress = 1
                 self.lastScanDate = Date()
-                self.scanStatus = flag.isCancelled ? "Cancelada" : "Concluída"
+                self.scanStatus = flag.isCancelled ? "Cancelada" : L("Done")
                 self.selectedItemIDs = Set(
                     result.filter { $0.risk == .safe }.flatMap(\.items).map(\.id)
                 )
@@ -476,7 +476,7 @@ final class AppState: ObservableObject {
                 self.isScanningFiles = false
                 self.filesProgress = 1
                 self.lastFilesScanDate = Date()
-                self.filesStatus = flag.isCancelled ? "Cancelada" : "Concluída"
+                self.filesStatus = flag.isCancelled ? "Cancelada" : L("Done")
                 self.recomputeHealth()
                 self.game.evaluateAchievements(
                     score: self.health.score,
@@ -519,7 +519,7 @@ final class AppState: ObservableObject {
                 self.isScanningApps = false
                 self.appsProgress = 1
                 self.lastAppsScanDate = Date()
-                self.appsStatus = flag.isCancelled ? "Cancelada" : "Concluída"
+                self.appsStatus = flag.isCancelled ? "Cancelada" : L("Done")
             }
         }
     }
@@ -567,7 +567,7 @@ final class AppState: ObservableObject {
                 self.isScanningOffload = false
                 self.offloadProgress = 1
                 self.lastOffloadScanDate = Date()
-                self.offloadStatus = flag.isCancelled ? "Cancelada" : "Concluída"
+                self.offloadStatus = flag.isCancelled ? "Cancelada" : L("Done")
                 self.recomputeHealth()
                 self.game.evaluateAchievements(
                     score: self.health.score,
@@ -664,7 +664,7 @@ final class AppState: ObservableObject {
                     currentScore: self.health.score
                 )
                 self.celebrate(
-                    title: "Limpeza concluída",
+                    title: L("Cleanup finished"),
                     bytes: result.freedBytes,
                     xp: xp,
                     failures: result.failures
@@ -759,8 +759,8 @@ final class AppState: ObservableObject {
                 guard result.removedCount > 0 else {
                     self.banner = Banner(
                         text: result.failures.isEmpty
-                            ? "A Lixeira já estava vazia."
-                            : "Nenhum item pôde ser removido: \(result.failures.first?.reason ?? "")",
+                            ? L("The Trash was already empty.")
+                            : L("No item could be removed: %@", result.failures.first?.reason ?? L("unknown reason")),
                         isError: !result.failures.isEmpty
                     )
                     return
@@ -804,7 +804,7 @@ final class AppState: ObservableObject {
 
         isRemoving = true
         removeProgress = 0
-        removeStatus = "Conferindo o conteúdo…"
+        removeStatus = L("Verifying content…")
         let mode = cleanupMode
 
         queue.async { [weak self] in
@@ -847,7 +847,7 @@ final class AppState: ObservableObject {
                     self.isRemoving = false
                     self.banner = Banner(
                         text: unverified > 0
-                            ? "Nenhuma cópia removida: \(unverified) não passaram na conferência byte a byte. São arquivos diferentes com o mesmo tamanho."
+                            ? L("No copy removed: %d failed the byte-by-byte check. They are different files of the same size.", unverified)
                             : "Nada a remover.",
                         isError: true
                     )
@@ -891,7 +891,7 @@ final class AppState: ObservableObject {
                 )
                 if unverified > 0 {
                     self.banner = Banner(
-                        text: "\(unverified) cópias foram preservadas: não passaram na conferência byte a byte.",
+                        text: L("%d copies were preserved: they failed the byte-by-byte check.", unverified),
                         isError: false
                     )
                 }
@@ -904,7 +904,7 @@ final class AppState: ObservableObject {
     func clearCache(of app: InstalledApp) {
         guard !isRemoving else { return }
         isRemoving = true
-        removeStatus = "Limpando cache de \(app.name)…"
+        removeStatus = L("Clearing %@ cache…", app.name)
         removeProgress = 0
 
         queue.async { [weak self] in
@@ -940,7 +940,7 @@ final class AppState: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isRemoving = false
-                self.applyAppResult(result, app: app, kind: "desinstalação", title: "\(app.name) removido")
+                self.applyAppResult(result, app: app, kind: L("uninstall"), title: "\(app.name) removido")
             }
         }
     }
@@ -988,7 +988,7 @@ final class AppState: ObservableObject {
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = "Usar esta pasta"
-        panel.message = "Escolha a pasta de destino no disco externo. Sugestão: crie uma pasta dedicada, como mac-offload."
+        panel.message = L("Choose the destination folder on the external disk. Suggestion: create a dedicated folder, such as mac-offload.")
         if let volume = suggestedDestinationVolume {
             panel.directoryURL = URL(fileURLWithPath: volume.path)
         }
@@ -1052,7 +1052,7 @@ final class AppState: ObservableObject {
                         bytes: outcome.entry.bytes,
                         xp: xp,
                         score: self.health.score,
-                        title: "Offload concluído",
+                        title: L("Offload finished"),
                         unlocked: self.game.lastUnlocked
                     )
                     self.game.clearRecentUnlocks()
@@ -1084,7 +1084,7 @@ final class AppState: ObservableObject {
     func releaseQuarantine(_ entry: MigrationJournalEntry) {
         guard !isMigrating else { return }
         isMigrating = true
-        migrationStatus = "Liberando a quarentena de \(entry.name)…"
+        migrationStatus = L("Releasing quarantine for %@…", entry.name)
 
         let engine = self.engine
         queue.async { [weak self] in
@@ -1103,7 +1103,7 @@ final class AppState: ObservableObject {
                         kind: "limpeza",
                         currentScore: self.health.score
                     )
-                    self.celebrate(title: "Espaço devolvido", bytes: entry.bytes, xp: xp, failures: [], toTrash: true)
+                    self.celebrate(title: L("Space returned"), bytes: entry.bytes, xp: xp, failures: [], toTrash: true)
                 }
             }
         }
@@ -1142,11 +1142,11 @@ final class AppState: ObservableObject {
                         kind: "limpeza",
                         currentScore: self.health.score
                     )
-                    self.celebrate(title: "Espaço devolvido", bytes: freed, xp: xp, failures: [], toTrash: true)
+                    self.celebrate(title: L("Space returned"), bytes: freed, xp: xp, failures: [], toTrash: true)
                 }
                 if failures > 0 {
                     self.banner = Banner(
-                        text: "\(failures) quarentena(s) não pôde(ram) ser liberada(s). Verifique se o link e o destino estão íntegros.",
+                        text: L("%d quarantine(s) could not be released. Check that the link and the target are intact.", failures),
                         isError: true
                     )
                 }
@@ -1175,7 +1175,7 @@ final class AppState: ObservableObject {
 
         if !failures.isEmpty {
             banner = Banner(
-                text: "\(failures.count) item(ns) não puderam ser removidos: \(failures.first?.reason ?? "")",
+                text: L("%d item(s) could not be removed: %@", failures.count, failures.first?.reason ?? L("unknown reason")),
                 isError: true
             )
         }

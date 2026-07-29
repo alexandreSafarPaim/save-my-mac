@@ -43,8 +43,8 @@ struct InstalledApp: Identifiable, Hashable {
         switch days {
         case ..<1: return L("used today")
         case 1: return L("used yesterday")
-        case ..<90: return "usado há \(days) d"
-        default: return "sem uso há \(days) d"
+        case ..<90: return L("used %d d ago", days)
+        default: return L("unused for %d d", days)
         }
     }
 

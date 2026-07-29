@@ -178,7 +178,7 @@ enum LaunchAtLogin {
                 return Result(
                     enabled: true,
                     mechanism: .serviceManagement,
-                    message: "Registrado. Aprove em Ajustes do Sistema › Geral › Itens de Início para valer.",
+                    message: L("Registered. Approve it in System Settings › General › Login Items to take effect."),
                     isError: false
                 )
             }
@@ -194,7 +194,7 @@ enum LaunchAtLogin {
                 return Result(
                     enabled: false,
                     mechanism: .none,
-                    message: "Não foi possível ativar: \(failure)",
+                    message: L("Could not enable: %@", failure),
                     isError: true
                 )
             }
@@ -233,7 +233,7 @@ enum LaunchAtLogin {
             return Result(
                 enabled: false,
                 mechanism: .none,
-                message: "O SaveMyMac não vai mais abrir junto com o Mac.",
+                message: L("SaveMyMac will no longer open with the Mac."),
                 isError: false
             )
         }

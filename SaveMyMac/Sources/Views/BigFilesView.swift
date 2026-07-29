@@ -56,12 +56,12 @@ struct BigFilesView: View {
             eyebrow: "Grandes arquivos",
             title: state.files.largeFiles.isEmpty
                 ? L("Files over 500 MB")
-                : "\(Fmt.bytes(state.files.largeTotal)) em \(state.files.largeFiles.count) arquivos gigantes",
+                : L("%@ across %d huge files", Fmt.bytes(state.files.largeTotal), state.files.largeFiles.count),
             palette: palette
         ) {
             FlowLayout(spacing: 10, lineSpacing: 8) {
                 if let date = state.lastFilesScanDate {
-                    Text("Última análise: \(Fmt.shortDate(date))")
+                    Text(L("Last scan: %@", Fmt.shortDate(date)))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
@@ -123,7 +123,7 @@ struct BigFilesView: View {
             HStack {
                 if let kindFilter {
                     HStack(spacing: 6) {
-                        Text("Filtrando por \(kindFilter.label)")
+                        Text(L("Filtering by %@", kindFilter.label))
                             .font(Typo.monoTiny)
                             .foregroundStyle(palette.cyan)
                         Button {
@@ -169,10 +169,10 @@ struct BigFilesView: View {
         HStack(spacing: 14) {
             IconTile(symbol: "square.on.square", palette: palette, size: 34, gradient: true)
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(Fmt.bytes(state.files.duplicateTotal)) em cópias idênticas")
+                Text(L("%@ in identical copies", Fmt.bytes(state.files.duplicateTotal)))
                     .font(Typo.ui(14, .semibold))
                     .foregroundStyle(palette.t1)
-                Text("A mesma varredura encontrou \(state.files.duplicates.count) grupos de duplicados.")
+                Text(L("The same scan found %d duplicate groups.", state.files.duplicates.count))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t2)
             }

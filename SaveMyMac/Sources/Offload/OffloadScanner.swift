@@ -47,7 +47,7 @@ final class OffloadScanner: @unchecked Sendable {
         var visitedDirectories = 0
         var linkURLs: [URL] = []
 
-        progress("Procurando links simbólicos…", 0.05)
+        progress(L("Looking for symlinks…"), 0.05)
         walk(
             directory: home,
             depth: 0,
@@ -55,7 +55,7 @@ final class OffloadScanner: @unchecked Sendable {
             found: &linkURLs,
             isCancelled: isCancelled,
             progress: { count in
-                progress("Procurando links simbólicos… (\(count) pastas)",
+                progress(L("Looking for symlinks… (%d folders)", count),
                          0.05 + min(0.35, Double(count) / 30_000.0 * 0.35))
             }
         )
@@ -98,7 +98,7 @@ final class OffloadScanner: @unchecked Sendable {
         inventory.groups = buildGroups(from: inventory.links)
 
         if !isCancelled() {
-            progress("Procurando dados órfãos no destino…", 0.88)
+            progress(L("Looking for orphan data at the destination…"), 0.88)
             inventory.orphans = findOrphans(for: inventory.links, isCancelled: isCancelled)
         }
 

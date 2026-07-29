@@ -60,7 +60,7 @@ enum ThermalMonitor {
             snap.cpuTemperature = bestCPU(from: hidSensors)
             snap.gpuTemperature = bestGPU(from: hidSensors)
             snap.fans = HIDSensors.readFanSpeeds()
-            snap.source = "Sensores IOHID"
+            snap.source = L("IOHID sensors")
         }
 
         // 2) Bateria — quase sempre disponível em notebooks
@@ -69,9 +69,9 @@ enum ThermalMonitor {
 
         if snap.cpuTemperature == nil {
             if snap.batteryTemperature != nil {
-                snap.source = "Sensor da bateria (CPU indisponível sem privilégios)"
+                snap.source = L("Battery sensor (CPU unavailable without privileges)")
             } else {
-                snap.source = "Apenas estado térmico do sistema"
+                snap.source = L("System thermal state only")
             }
         }
 
@@ -116,7 +116,7 @@ enum ThermalMonitor {
 
         guard found else { return nil }
         snap.sensors.sort { $0.celsius > $1.celsius }
-        snap.source = "powermetrics (administrador)"
+        snap.source = L("powermetrics (administrator)")
         return snap
     }
 

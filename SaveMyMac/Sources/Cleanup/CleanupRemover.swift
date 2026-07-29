@@ -71,12 +71,12 @@ enum CleanupRemover {
     /// Mac e destruiria dados no disco errado.
     static func rejectionReason(for url: URL) -> String? {
         if VolumeResolver.isSymbolicLink(url) {
-            return "É um link simbólico — remover não libera espaço no Mac"
+            return L("It's a symlink — removing it frees no space on the Mac")
         }
 
         if !VolumeResolver.isOnHomeVolume(url) {
             let volume = VolumeResolver.volumeName(of: url) ?? "outro volume"
-            return "O conteúdo real está em \(volume), não no disco do Mac"
+            return L("The real content is on %@, not on the Mac's disk", volume)
         }
 
         let home = FileManager.default.homeDirectoryForCurrentUser
@@ -91,7 +91,7 @@ enum CleanupRemover {
         let components = relative.split(separator: "/")
 
         guard !components.isEmpty else {
-            return "Caminho inválido"
+            return L("Invalid path")
         }
 
         // Bloqueia as pastas de topo inteiras
@@ -100,7 +100,7 @@ enum CleanupRemover {
             "Movies", "Music", "Public", "Applications", ".Trash", "Developer"
         ]
         if components.count == 1 && protectedTopLevel.contains(String(components[0])) {
-            return "Pasta de sistema do usuário protegida"
+            return L("Protected user system folder")
         }
 
         // Bloqueia caminhos sensíveis dentro da Library
@@ -116,7 +116,7 @@ enum CleanupRemover {
             "Library/Group Containers"
         ]
         for prefix in blockedPrefixes where relative.hasPrefix(prefix) {
-            return "Caminho sensível protegido"
+            return L("Protected sensitive path")
         }
 
         return nil

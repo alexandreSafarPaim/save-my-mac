@@ -142,7 +142,7 @@ struct LargeFile: Identifiable, Hashable {
         case ..<30: return "\(days) dias"
         case ..<365:
             let months = max(1, days / 30)
-            return months == 1 ? "1 mês" : "\(months) meses"
+            return months == 1 ? L("1 month") : "\(months) meses"
         default:
             let years = max(1, days / 365)
             return years == 1 ? "1 ano" : "\(years) anos"

@@ -54,7 +54,7 @@ struct DuplicatesView: View {
             }
         }
         .confirmationDialog(
-            "Remover \(state.selectedDuplicates.count) cópias (\(Fmt.bytes(state.selectedDuplicateSize)))?",
+            L("Remove %d copies (%@)?", state.selectedDuplicates.count, Fmt.bytes(state.selectedDuplicateSize)),
             isPresented: $confirming,
             titleVisibility: .visible
         ) {
@@ -63,7 +63,7 @@ struct DuplicatesView: View {
             }
             Button(L("Cancel"), role: .cancel) {}
         } message: {
-            Text("A cópia mais antiga de cada grupo é sempre preservada e nunca aparece na remoção.\n\n\(state.cleanupMode.description)")
+            Text(L("The oldest copy in each group is always preserved and never appears in the removal.\n\n%@", state.cleanupMode.description))
         }
     }
 
@@ -74,7 +74,7 @@ struct DuplicatesView: View {
             eyebrow: "Duplicados",
             title: state.files.duplicates.isEmpty
                 ? L("Duplicate files")
-                : "\(Fmt.bytes(state.files.duplicateTotal)) em cópias idênticas",
+                : L("%@ in identical copies", Fmt.bytes(state.files.duplicateTotal)),
             subtitle: L("Compared by content — name and date don't matter. The oldest copy in each group is preserved."),
             palette: palette
         ) {
@@ -115,7 +115,7 @@ struct DuplicatesView: View {
                         .foregroundStyle(palette.t1)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    Text("\(group.copyCount) cópias de \(Fmt.bytes(group.fileSize)) · mantém a mais antiga")
+                    Text(L("%d copies of %@ · keeps the oldest", group.copyCount, Fmt.bytes(group.fileSize)))
                         .font(Typo.monoTiny)
                         .foregroundStyle(palette.t3)
                 }
@@ -179,7 +179,7 @@ struct DuplicatesView: View {
         StickyActionBar(palette: palette) {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(state.selectedDuplicateIDs.count) grupos · \(state.selectedDuplicates.count) cópias")
+                    Text(L("%d groups · %d copies", state.selectedDuplicateIDs.count, state.selectedDuplicates.count))
                         .font(Typo.caption)
                         .foregroundStyle(palette.t2)
                     Text("\(Fmt.bytes(state.selectedDuplicateSize)) a liberar")

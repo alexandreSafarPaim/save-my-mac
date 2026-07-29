@@ -137,7 +137,7 @@ enum TrashManager {
         // do app, então vale a checagem.
         let rootValues = try? root.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
         guard rootValues?.isSymbolicLink != true, rootValues?.isDirectory == true else {
-            result.failures.append((root.path, "~/.Trash não é uma pasta real — nada foi removido"))
+            result.failures.append((root.path, L("~/.Trash is not a real folder — nothing was removed")))
             return result
         }
 
@@ -145,7 +145,7 @@ enum TrashManager {
         guard let contents = try? fm.contentsOfDirectory(
             at: root, includingPropertiesForKeys: keys, options: []
         ) else {
-            result.failures.append((root.path, "Não foi possível ler a Lixeira"))
+            result.failures.append((root.path, L("Could not read the Trash")))
             return result
         }
 
@@ -154,7 +154,7 @@ enum TrashManager {
             progress(url.lastPathComponent, Double(index) / Double(total))
 
             guard url.deletingLastPathComponent().standardizedFileURL.path == rootPath else {
-                result.failures.append((url.path, "Fora da Lixeira do usuário"))
+                result.failures.append((url.path, L("Outside the user's Trash")))
                 continue
             }
 
@@ -186,12 +186,12 @@ enum TrashManager {
         // confirmação nesse caso; aqui só reportamos.
         if let values = try? url.resourceValues(forKeys: [.isUserImmutableKey]),
            values.isUserImmutable == true {
-            return "Arquivo travado. Destrave no Finder (Obter Informações) e tente de novo."
+            return L("File is locked. Unlock it in Finder (Get Info) and try again.")
         }
 
         switch ns.code {
         case NSFileWriteNoPermissionError, NSFileReadNoPermissionError:
-            return "Sem permissão. Pode pertencer a outro usuário ou estar em uso."
+            return L("No permission. It may belong to another user or be in use.")
         case NSFileWriteFileExistsError:
             return "Conflito de nome dentro da Lixeira."
         default:

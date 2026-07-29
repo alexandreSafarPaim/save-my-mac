@@ -19,7 +19,7 @@ enum ProcessController {
         var message: String {
             switch self {
             case .askedToQuit(let name):
-                return "Pedido de encerramento enviado para \(name). Se houver algo não salvo, ele vai perguntar."
+                return L("Quit request sent to %@. If anything is unsaved, it will ask.", name)
             case .terminated(let name):
                 return "\(name) foi encerrado."
             case .refused(let reason):
@@ -60,20 +60,20 @@ enum ProcessController {
     /// Motivo para não encerrar, ou `nil` se pode.
     static func rejectionReason(for row: ProcessInfoRow) -> String? {
         if row.pid <= 1 {
-            return "Processo do núcleo do sistema."
+            return L("Core system process.")
         }
         if row.pid == ProcessInfo.processInfo.processIdentifier {
-            return "Este é o próprio SaveMyMac."
+            return L("This is SaveMyMac itself.")
         }
         if critical.contains(row.name) {
-            return "\(row.name) é essencial para a sessão — encerrar derrubaria a interface."
+            return L("%@ is essential to the session — quitting it would take down the interface.", row.name)
         }
         // Sem privilégio de root não há como encerrar processo de outro dono, e
         // pedir senha para isso seria trocar estabilidade por um número.
         // `bitPattern` em vez de `Int32(getuid())`: a conversão de UInt32 daria
         // trap se o uid passasse de Int32.max.
         if let uid = row.uid, uid != Int32(bitPattern: getuid()) {
-            return "\(row.name) não é seu (roda como uid \(uid)). O app não escala privilégio para isso."
+            return L("%@ is not yours (runs as uid %d). The app does not escalate privileges for that.", row.name, uid)
         }
         return nil
     }
@@ -82,7 +82,7 @@ enum ProcessController {
     /// quebra nada, só pisca a interface.
     static func warning(for row: ProcessInfoRow) -> String? {
         guard relaunches.contains(row.name) else { return nil }
-        return "O macOS relança \(row.name) automaticamente."
+        return L("macOS relaunches %@ automatically.", row.name)
     }
 
     static func canQuit(_ row: ProcessInfoRow) -> Bool {
@@ -104,14 +104,14 @@ enum ProcessController {
             let name = app.localizedName ?? row.name
             return app.terminate()
                 ? .askedToQuit(name)
-                : .failed("\(name) não aceitou o pedido de encerramento. Use forçar se precisar.")
+                : .failed(L("%@ did not accept the quit request. Use force quit if you need to.", name))
         }
 
         // Daemon ou helper sem interface: SIGTERM é o equivalente educado.
         if kill(row.pid, SIGTERM) == 0 {
             return .askedToQuit(row.name)
         }
-        return .failed("Não foi possível encerrar \(row.name): \(String(cString: strerror(errno))).")
+        return .failed(L("Could not quit %@: %@.", row.name, String(cString: strerror(errno))))
     }
 
     /// Força. Só deve ser chamado depois de confirmação explícita, porque
@@ -126,13 +126,13 @@ enum ProcessController {
             let name = app.localizedName ?? row.name
             return app.forceTerminate()
                 ? .terminated(name)
-                : .failed("Não foi possível forçar o encerramento de \(name).")
+                : .failed(L("Could not force quit %@.", name))
         }
 
         if kill(row.pid, SIGKILL) == 0 {
             return .terminated(row.name)
         }
-        return .failed("Não foi possível forçar \(row.name): \(String(cString: strerror(errno))).")
+        return .failed(L("Could not force %@: %@.", row.name, String(cString: strerror(errno))))
     }
 
     // MARK: - Informação extra

@@ -86,7 +86,7 @@ final class CleanupScanner: @unchecked Sendable {
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
             name: "Caches de aplicativos",
-            subtitle: "Dados temporários que os apps recriam sozinhos",
+            subtitle: L("Temporary data the apps recreate on their own"),
             symbol: "shippingbox",
             risk: .safe,
             riskScore: 1,
@@ -120,14 +120,14 @@ final class CleanupScanner: @unchecked Sendable {
                 size: size,
                 modified: modificationDate(url),
                 isDirectory: true,
-                note: "Relatórios de travamento antigos"
+                note: L("Old crash reports")
             ))
         }
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "Logs e relatórios de erro",
-            subtitle: "Registros de diagnóstico que não são mais consultados",
+            name: L("Logs and error reports"),
+            subtitle: L("Diagnostic records nobody reads anymore"),
             symbol: "doc.text.magnifyingglass",
             risk: .safe,
             riskScore: 1,
@@ -140,29 +140,29 @@ final class CleanupScanner: @unchecked Sendable {
     private func developerJunk(_ isCancelled: () -> Bool) -> CleanupCategory? {
         let candidates: [(String, String, String)] = [
             ("Library/Developer/Xcode/DerivedData", "Xcode — DerivedData",
-             "Builds intermediários; o Xcode reconstrói na próxima compilação"),
+             L("Intermediate builds; Xcode rebuilds them on the next compile")),
             ("Library/Developer/Xcode/Archives", "Xcode — Archives",
-             "Arquivos de distribuição antigos"),
+             L("Old distribution archives")),
             ("Library/Developer/Xcode/iOS DeviceSupport", "Xcode — iOS DeviceSupport",
-             "Símbolos de versões de iOS que você provavelmente não depura mais"),
+             L("Symbols for iOS versions you probably no longer debug")),
             ("Library/Developer/Xcode/watchOS DeviceSupport", "Xcode — watchOS DeviceSupport",
-             "Símbolos de watchOS antigos"),
+             L("Old watchOS symbols")),
             ("Library/Developer/Xcode/UserData/IB Support", "Xcode — IB Support",
              "Cache do Interface Builder"),
             ("Library/Developer/CoreSimulator/Caches", "Simuladores — Caches",
              "Cache de runtimes de simulador"),
             ("Library/Developer/CoreSimulator/Devices", "Simuladores — Dispositivos",
-             "Cada simulador criado ocupa espaço; recriáveis pelo Xcode"),
+             L("Every simulator you create takes space; Xcode can recreate them")),
             ("Library/Caches/com.apple.dt.Xcode", "Xcode — Cache geral",
-             "Cache de índice e download do Xcode"),
+             L("Xcode index and download cache")),
             ("Library/Developer/CoreSimulator/Temp", "Simuladores — Temp",
-             "Temporários de simulador"),
+             L("Simulator temporaries")),
             ("Library/Application Support/Code/Cache", "VS Code — Cache", "Cache do editor"),
             ("Library/Application Support/Code/CachedData", "VS Code — CachedData", "Cache do editor"),
-            ("Library/Caches/JetBrains", "JetBrains — Cache", "Índices das IDEs JetBrains"),
+            ("Library/Caches/JetBrains", "JetBrains — Cache", L("JetBrains IDE indexes")),
             ("Library/Android/sdk/system-images", "Android SDK — System Images",
              "Imagens de emulador Android (pesadas)"),
-            (".android/avd", "Android — Emuladores (AVD)", "Máquinas virtuais Android"),
+            (".android/avd", "Android — Emuladores (AVD)", L("Android virtual machines")),
             ("Library/Containers/com.docker.docker/Data/vms", "Docker — VMs",
              "Disco virtual do Docker Desktop")
         ]
@@ -188,7 +188,7 @@ final class CleanupScanner: @unchecked Sendable {
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
             name: "Ferramentas de desenvolvedor",
-            subtitle: "Builds, símbolos e simuladores — normalmente o maior ganho num Mac de dev",
+            subtitle: L("Builds, symbols and simulators — usually the biggest win on a dev Mac"),
             symbol: "hammer",
             risk: .caution,
             riskScore: 5,
@@ -215,7 +215,7 @@ final class CleanupScanner: @unchecked Sendable {
             (".gradle/caches", "Gradle"),
             (".m2/repository", "Maven"),
             ("Library/Caches/go-build", "Go (build)"),
-            ("go/pkg/mod/cache/download", "Go (módulos)"),
+            ("go/pkg/mod/cache/download", "Go (modules)"),
             ("Library/Caches/CocoaPods", "CocoaPods"),
             ("Library/Caches/composer", "Composer (PHP)"),
             (".nuget/packages", "NuGet"),
@@ -238,7 +238,7 @@ final class CleanupScanner: @unchecked Sendable {
                 size: size,
                 modified: modificationDate(url),
                 isDirectory: true,
-                note: "Será baixado de novo quando necessário"
+                note: L("It will be downloaded again when needed")
             ))
         }
 
@@ -290,7 +290,7 @@ final class CleanupScanner: @unchecked Sendable {
                     size: size,
                     modified: modified,
                     isDirectory: true,
-                    note: "Sem alterações desde \(Fmt.shortDate(modified)) — recuperável com npm install"
+                    note: L("No changes since %@ — recoverable with npm install", Fmt.shortDate(modified))
                 ))
                 if items.count >= 100 { break }
             }
@@ -299,7 +299,7 @@ final class CleanupScanner: @unchecked Sendable {
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
             name: "node_modules abandonados",
-            subtitle: "Projetos sem atividade há mais de 90 dias",
+            subtitle: L("Projects with no activity for over 90 days"),
             symbol: "folder.badge.minus",
             risk: .caution,
             riskScore: 4,
@@ -314,7 +314,7 @@ final class CleanupScanner: @unchecked Sendable {
         let items = childItems(of: root, isCancelled: isCancelled, minimumSize: 1024 * 1024)
             .map { item -> CleanupItem in
                 var copy = item
-                copy.note = "Backup local de iPhone/iPad — confirme que você tem backup no iCloud antes de remover"
+                copy.note = L("Local iPhone/iPad backup — confirm you have an iCloud backup before removing")
                 return copy
             }
 
@@ -358,7 +358,7 @@ final class CleanupScanner: @unchecked Sendable {
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
             name: "Downloads antigos",
-            subtitle: "Sem uso há mais de 90 dias",
+            subtitle: L("Unused for over 90 days"),
             symbol: "arrow.down.doc",
             risk: .review,
             riskScore: 6,
@@ -392,7 +392,7 @@ final class CleanupScanner: @unchecked Sendable {
                     size: size,
                     modified: modificationDate(url),
                     isDirectory: false,
-                    note: "Instalador em \(root.lastPathComponent) — o app já instalado não precisa dele"
+                    note: L("Installer in %@ — the installed app does not need it", root.lastPathComponent)
                 ))
             }
         }
@@ -400,7 +400,7 @@ final class CleanupScanner: @unchecked Sendable {
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
             name: "Instaladores (.dmg, .pkg, .iso)",
-            subtitle: "Imagens de instalação que já cumpriram seu papel",
+            subtitle: L("Installer images that already did their job"),
             symbol: "externaldrive.badge.xmark",
             risk: .caution,
             riskScore: 3,
@@ -538,12 +538,12 @@ final class CleanupScanner: @unchecked Sendable {
             size: totalSize,
             modified: nil,
             isDirectory: false,
-            note: "Metadados de visualização do Finder — recriados automaticamente",
+            note: L("Finder view metadata — recreated automatically"),
             extraPaths: Array(paths.dropFirst())
         )
         return CleanupCategory(
             name: "Arquivos .DS_Store",
-            subtitle: "Poluição do Finder espalhada pelas pastas",
+            subtitle: L("Finder clutter scattered across folders"),
             symbol: "eye.slash",
             risk: .safe,
             riskScore: 1,

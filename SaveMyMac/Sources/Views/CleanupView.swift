@@ -82,7 +82,7 @@ struct CleanupView: View {
             }
         }
         .confirmationDialog(
-            "\(state.cleanupMode.label): \(state.selectedItems.count) itens (\(Fmt.bytes(state.selectedSize)))?",
+            L("%@: %d items (%@)?", state.cleanupMode.label, state.selectedItems.count, Fmt.bytes(state.selectedSize)),
             isPresented: $confirming,
             titleVisibility: .visible
         ) {

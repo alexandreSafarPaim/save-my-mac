@@ -257,7 +257,7 @@ struct SaveMyMacApp: App {
     }
 }
 
-/// Menu "Ações" da barra de menus do sistema.
+/// Menu L("Actions") da barra de menus do sistema.
 ///
 /// `let state`, **não** `@ObservedObject`. Isso é o ponto principal deste tipo.
 ///
@@ -277,7 +277,7 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {}
 
-        CommandMenu("Ações") {
+        CommandMenu(L("Actions")) {
             Button("Analisar o Mac") { state.startScan() }
                 .keyboardShortcut("r", modifiers: .command)
             Button("Analisar arquivos e duplicados") { state.startFilesScan() }
@@ -289,7 +289,7 @@ struct AppCommands: Commands {
 
             Divider()
 
-            Button("Atualizar métricas") { state.refreshMetrics() }
+            Button(L("Refresh metrics")) { state.refreshMetrics() }
                 .keyboardShortcut("u", modifiers: .command)
             // Rótulo fixo de propósito — ver a nota no topo do tipo.
             Button(L("Switch between light and dark theme (⇧⌘T)")) { state.toggleTheme() }
@@ -362,7 +362,7 @@ struct RootView: View {
             }
         }
         .confirmationDialog(
-            state.pendingForceQuit.map { "Forçar o encerramento de \($0.name)?" } ?? "",
+            state.pendingForceQuit.map { L("Force quit %@?", $0.name) } ?? "",
             isPresented: Binding(
                 get: { state.pendingForceQuit != nil },
                 // O `!= nil` não é redundante: o SwiftUI chama este setter
@@ -374,13 +374,13 @@ struct RootView: View {
             titleVisibility: .visible
         ) {
             if let row = state.pendingForceQuit {
-                Button("Forçar encerramento", role: .destructive) {
+                Button(L("Force quit"), role: .destructive) {
                     state.forceQuit(row)
                 }
             }
             Button(L("Cancel"), role: .cancel) { state.pendingForceQuit = nil }
         } message: {
-            Text("Forçar mata o processo na hora. Tudo que não foi salvo é perdido, sem chance de o app perguntar.\n\nSe ainda não tentou, prefira \"Pedir para encerrar\".")
+            Text(L("Force quit kills the process immediately. Anything unsaved is lost, with no chance for the app to ask.\n\nIf you have not tried it yet, prefer \"Ask it to quit\"."))
         }
     }
 

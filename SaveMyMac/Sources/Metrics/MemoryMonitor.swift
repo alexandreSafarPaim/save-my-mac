@@ -3,7 +3,7 @@ import Darwin
 
 struct MemorySnapshot {
     var total: UInt64 = 0
-    var app: UInt64 = 0          // "Memória de apps" no Monitor de Atividade
+    var app: UInt64 = 0          // L("App memory") no Monitor de Atividade
     var wired: UInt64 = 0        // memória travada pelo kernel
     var compressed: UInt64 = 0   // memória comprimida
     var cached: UInt64 = 0       // arquivos em cache (liberável)
