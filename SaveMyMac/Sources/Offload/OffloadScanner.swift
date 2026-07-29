@@ -73,7 +73,7 @@ final class OffloadScanner: @unchecked Sendable {
         for (index, linkURL) in linkURLs.enumerated() {
             if isCancelled() { break }
             let fraction = 0.40 + (Double(index) / Double(totalLinks)) * 0.45
-            progress("Medindo \(linkURL.lastPathComponent)…", fraction)
+            progress(L("Measuring %@…", linkURL.lastPathComponent), fraction)
 
             guard let entry = describe(link: linkURL, isCancelled: isCancelled) else { continue }
 
@@ -197,10 +197,7 @@ final class OffloadScanner: @unchecked Sendable {
         // For loose files, directorySize returns 0 — falls back to the direct size.
         let finalSize: Int64 = {
             guard status == 0, size == 0 else { return size }
-            let values = try? target.resourceValues(
-                forKeys: [.totalFileAllocatedSizeKey, .fileSizeKey]
-            )
-            return Int64(values?.totalFileAllocatedSize ?? values?.fileSize ?? 0)
+            return target.allocatedBytes
         }()
 
         let created = (try? link.resourceValues(forKeys: [.creationDateKey]))?.creationDate

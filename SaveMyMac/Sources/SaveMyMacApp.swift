@@ -1,38 +1,8 @@
 import SwiftUI
 import AppKit
 
-enum AppSection: String, CaseIterable, Identifiable {
-    case dashboard
-    case cleanup
-    case apps
-    case files
-    case duplicates
-    case offload
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .dashboard: return L("Dashboard")
-        case .cleanup: return L("Cleanup")
-        case .apps: return L("Apps")
-        case .files: return L("Large files")
-        case .duplicates: return L("Duplicates")
-        case .offload: return L("Offload")
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .dashboard: return "circle.circle"
-        case .cleanup: return "sparkles"
-        case .apps: return "square.grid.2x2"
-        case .files: return "square.stack.3d.up"
-        case .duplicates: return "square.on.square"
-        case .offload: return "link"
-        }
-    }
-}
+// `AppSection` lived here and made `AppState` depend on the `@main` file, which
+// kept it out of the test target. It now lives in Support/AppSection.swift.
 
 /// Minimal delegate, for two behaviours plain SwiftUI does not give us.
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -69,7 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Only now is there a run loop for the watchdog to check in on.
         Trace.startWatchdog()
 
-        let hide = UserDefaults.standard.bool(forKey: "hideDockIcon")
+        let hide = UserDefaults.standard.bool(forKey: Preferences.Key.hideDockIcon)
         if hide {
             NSApp.setActivationPolicy(.accessory)
         }
@@ -91,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func checkStatusItem() {
         guard MenuBarFeature.isEnabled else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            let wanted = UserDefaults.standard.bool(forKey: "showMenuBarExtra")
+            let wanted = UserDefaults.standard.bool(forKey: Preferences.Key.showMenuBar)
             let window = NSApp.windows.first { $0.className.contains("StatusBar") }
 
             Trace.mark("menu bar — feature: on · showMenuBarExtra preference: \(wanted)")

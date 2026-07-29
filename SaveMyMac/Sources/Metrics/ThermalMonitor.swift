@@ -1,5 +1,4 @@
 import Foundation
-import AppKit
 import IOKit
 
 struct SensorReading: Identifiable, Hashable {

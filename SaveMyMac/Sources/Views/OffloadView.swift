@@ -85,7 +85,6 @@ struct OffloadView: View {
                             palette: palette,
                             hint: L("The check is read-only.")
                         )
-                        .frame(minHeight: 300)
                     }
                 }
 

@@ -580,7 +580,7 @@ struct DashboardView: View {
                     VStack(alignment: .leading, spacing: 7) {
                         ForEach(state.game.state.history.prefix(8)) { record in
                             HStack(spacing: 10) {
-                                Text(record.kind)
+                                Text(record.kind.label)
                                     .font(Typo.monoTiny)
                                     .foregroundStyle(palette.t3)
                                     .frame(width: 86, alignment: .leading)

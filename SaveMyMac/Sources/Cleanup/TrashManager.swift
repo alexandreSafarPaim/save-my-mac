@@ -97,7 +97,7 @@ enum TrashManager {
 
             let size = isDir
                 ? DiskMonitor.directorySize(at: url, isCancelled: isCancelled)
-                : Int64(values?.totalFileAllocatedSize ?? values?.fileSize ?? 0)
+                : url.allocatedBytes
 
             // `addedToDirectoryDate` is when the item entered the Trash, which is
             // what matters. Apple warns it isn't supported on every volume, hence
@@ -164,7 +164,7 @@ enum TrashManager {
             let values = try? url.resourceValues(forKeys: Set(keys))
             let size = (values?.isDirectory ?? false)
                 ? DiskMonitor.directorySize(at: url)
-                : Int64(values?.totalFileAllocatedSize ?? values?.fileSize ?? 0)
+                : url.allocatedBytes
 
             do {
                 // `removeItem` does not follow symlinks: a link inside the Trash

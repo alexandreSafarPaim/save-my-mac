@@ -62,7 +62,6 @@ struct CleanupView: View {
                             }
                             .help(L("Without that permission several folders come back empty and the numbers are underestimated."))
                         }
-                        .frame(minHeight: 320)
                     } else {
                         ForEach(state.categories) { category in
                             categoryRow(category)

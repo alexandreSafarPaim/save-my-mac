@@ -44,12 +44,57 @@ enum Achievements {
 
 // MARK: - Estado persistido
 
+/// What kind of action a history entry records.
+///
+/// This was a raw `String` compared against Portuguese literals, and it produced
+/// two real bugs at once. The Dashboard rendered the stored value verbatim, so
+/// the history showed "limpeza" and "lixeira" in every language. And one call
+/// site passed `L("uninstall")`, which meant the **persisted** value depended on
+/// the interface language at the moment of the uninstall — the XP counter
+/// `appsUninstalled` then matched it against `L("uninstall")` again, which only
+/// worked while the language never changed between write and read.
+///
+/// The raw values are the tokens already sitting in users' `game.json`, so they
+/// stay as they are — Portuguese and all. They are storage identifiers now, not
+/// display text; `label` is what reaches the screen.
+enum CleanupKind: String, Codable {
+    case cleanup = "limpeza"
+    case trash = "lixeira"
+    case appCache = "cache"
+    case uninstall = "uninstall"
+    case offload = "offload"
+
+    var label: String {
+        switch self {
+        case .cleanup: return L("cleanup")
+        case .trash: return L("trash")
+        case .appCache: return L("app cache")
+        case .uninstall: return L("uninstall")
+        case .offload: return L("offload")
+        }
+    }
+
+    /// Tolerant decoding for the values the old code persisted: `L("uninstall")`
+    /// wrote a different string per language. Anything unrecognized becomes
+    /// `.cleanup` rather than dropping the record — the bytes and date are still
+    /// real, only the category was mislabeled.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        switch raw {
+        case "uninstall", "desinstalação", "desinstalación", "désinstallation":
+            self = .uninstall
+        default:
+            self = CleanupKind(rawValue: raw) ?? .cleanup
+        }
+    }
+}
+
 struct CleanupRecord: Codable, Identifiable {
     var id: UUID = UUID()
     var date: Date
     var bytes: Int64
     var itemCount: Int
-    var kind: String        // "limpeza", "lixeira", "cache", L("uninstall"), "offload"
+    var kind: CleanupKind
 }
 
 struct GameState: Codable {
@@ -149,7 +194,7 @@ final class GameStore: ObservableObject {
 
     /// Records an event that freed space and returns the XP earned.
     @discardableResult
-    func record(bytes: Int64, itemCount: Int, kind: String, currentScore: Int) -> Int {
+    func record(bytes: Int64, itemCount: Int, kind: CleanupKind, currentScore: Int) -> Int {
         let reward = GameStore.xpReward(forBytes: bytes)
 
         state.xp += reward
@@ -162,11 +207,10 @@ final class GameStore: ObservableObject {
         state.activeWeeks.insert(GameState.weekKey(Date()))
 
         switch kind {
-        case "limpeza", "lixeira": state.cleanCount += 1
-        case L("uninstall"): state.appsUninstalled += 1
-        case "cache": state.appCachesCleared += 1
-        case "offload": state.offloadCount += 1
-        default: break
+        case .cleanup, .trash: state.cleanCount += 1
+        case .uninstall: state.appsUninstalled += 1
+        case .appCache: state.appCachesCleared += 1
+        case .offload: state.offloadCount += 1
         }
 
         evaluateAchievements(score: currentScore, duplicateBytes: nil, offloadedBytes: nil)

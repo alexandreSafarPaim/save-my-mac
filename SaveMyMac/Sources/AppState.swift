@@ -658,7 +658,7 @@ final class AppState: ObservableObject {
                 let xp = self.game.record(
                     bytes: result.freedBytes,
                     itemCount: result.removedCount,
-                    kind: "limpeza",
+                    kind: .cleanup,
                     currentScore: self.health.score
                 )
                 self.celebrate(
@@ -767,7 +767,7 @@ final class AppState: ObservableObject {
                 let xp = self.game.record(
                     bytes: result.freedBytes,
                     itemCount: result.removedCount,
-                    kind: "lixeira",
+                    kind: .trash,
                     currentScore: self.health.score
                 )
                 // Here the space genuinely comes back: this is not "moved to the Trash".
@@ -846,7 +846,7 @@ final class AppState: ObservableObject {
                     self.banner = Banner(
                         text: unverified > 0
                             ? L("No copy removed: %d failed the byte-by-byte check. They are different files of the same size.", unverified)
-                            : "Nada a remover.",
+                            : L("Nothing to remove."),
                         isError: true
                     )
                 }
@@ -878,7 +878,7 @@ final class AppState: ObservableObject {
                 let xp = self.game.record(
                     bytes: freed,
                     itemCount: result.removedCount,
-                    kind: "limpeza",
+                    kind: .cleanup,
                     currentScore: self.health.score
                 )
                 self.celebrate(
@@ -916,7 +916,7 @@ final class AppState: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isRemoving = false
-                self.applyAppResult(result, app: app, kind: "cache", title: L("Cache cleared"))
+                self.applyAppResult(result, app: app, kind: .appCache, title: L("Cache cleared"))
             }
         }
     }
@@ -938,7 +938,7 @@ final class AppState: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isRemoving = false
-                self.applyAppResult(result, app: app, kind: L("uninstall"), title: L("%@ removed", app.name))
+                self.applyAppResult(result, app: app, kind: .uninstall, title: L("%@ removed", app.name))
             }
         }
     }
@@ -946,7 +946,7 @@ final class AppState: ObservableObject {
     private func applyAppResult(
         _ result: UninstallResult,
         app: InstalledApp,
-        kind: String,
+        kind: CleanupKind,
         title: String
     ) {
         let removed = Set(result.removedPaths)
@@ -985,7 +985,7 @@ final class AppState: ObservableObject {
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Usar esta pasta"
+        panel.prompt = L("Use this folder")
         panel.message = L("Choose the destination folder on the external disk. Suggestion: create a dedicated folder, such as mac-offload.")
         if let volume = suggestedDestinationVolume {
             panel.directoryURL = URL(fileURLWithPath: volume.path)
@@ -1043,7 +1043,7 @@ final class AppState: ObservableObject {
                     let xp = self.game.record(
                         bytes: 0,   // o espaço só volta quando a quarentena é liberada
                         itemCount: 1,
-                        kind: "offload",
+                        kind: .offload,
                         currentScore: self.health.score
                     )
                     self.celebration = Celebration(
@@ -1098,7 +1098,7 @@ final class AppState: ObservableObject {
                     let xp = self.game.record(
                         bytes: entry.bytes,
                         itemCount: 1,
-                        kind: "limpeza",
+                        kind: .cleanup,
                         currentScore: self.health.score
                     )
                     self.celebrate(title: L("Space returned"), bytes: entry.bytes, xp: xp, failures: [], toTrash: true)
@@ -1137,7 +1137,7 @@ final class AppState: ObservableObject {
                     let xp = self.game.record(
                         bytes: freed,
                         itemCount: entries.count - failures,
-                        kind: "limpeza",
+                        kind: .cleanup,
                         currentScore: self.health.score
                     )
                     self.celebrate(title: L("Space returned"), bytes: freed, xp: xp, failures: [], toTrash: true)

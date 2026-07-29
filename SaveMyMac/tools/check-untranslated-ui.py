@@ -40,7 +40,12 @@ EXEMPT_FILES = {"Strings.swift", "Localization.swift", "Trace.swift"}
 # Positions where a bare literal means user-visible text.
 UI_POSITION = re.compile(
     r"(?:Text|Button|GhostButton|PrimaryButton|MicroLabel|Label|StatRow"
-    r"|action|actionRow|EmptyStateView|ScreenHeader)\s*\("
+    r"|action|actionRow|EmptyStateView|ScreenHeader"
+    # progress() and fail() carry user-visible status lines. This was the
+    # FIFTH hole in this detector: "Publicando no destino…" sat inside a
+    # progress() call for weeks while the check reported clean. Every hole has
+    # had the same shape — a UI position the position-list didn't know about.
+    r"|progress|fail|help)\s*\("
     r"|(?:title|label|eyebrow|subtitle|hint|message|caption|key|name|reason"
     r"|text|value|placeholder)\s*:"
 )

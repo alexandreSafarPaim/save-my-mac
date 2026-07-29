@@ -38,7 +38,12 @@ import AppKit
 @MainActor
 final class Preferences: ObservableObject {
 
-    private enum Key {
+    // Internal, not private: `AppDelegate` reads two of these before any
+    // Preferences instance exists (activation policy must be set before the
+    // first window shows). It used to repeat the literals — "hideDockIcon" was
+    // written in two files, which is one rename away from a silent split brain
+    // where the setter writes one key and launch reads another.
+    enum Key {
         static let showMenuBar = "showMenuBarExtra"
         static let hideDockIcon = "hideDockIcon"
         static let lowSpaceAlerts = "lowSpaceAlerts"

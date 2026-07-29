@@ -96,9 +96,8 @@ final class SpaceAlert: ObservableObject {
         guard Bundle.main.bundleIdentifier != nil else { return }
         let content = UNMutableNotificationContent()
         content.title = L("Low space on %@", volume.name)
-        content.body = "Restam \(Fmt.bytes(volume.available)) "
-            + "(\(String(format: "%.0f", freePercent)) %). "
-            + L("Open SaveMyMac to see what can go.")
+        content.body = L("%@ left (%d%%).", Fmt.bytes(volume.available), Int(freePercent))
+            + " " + L("Open SaveMyMac to see what can go.")
         content.sound = .default
 
         let request = UNNotificationRequest(

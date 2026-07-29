@@ -29,7 +29,6 @@ struct AppsView: View {
                         palette: palette,
                         hint: L("Last use comes from Spotlight. System apps are excluded.")
                     )
-                    .frame(minHeight: 320)
                 } else if !state.appInventory.isEmpty {
                     filters
                     summary

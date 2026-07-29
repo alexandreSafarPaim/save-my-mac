@@ -44,7 +44,6 @@ struct BigFilesView: View {
                         palette: palette,
                         hint: L("Files that exist only in iCloud and already-offloaded content are excluded.")
                     )
-                    .frame(minHeight: 320)
                 } else if state.files.largeFiles.isEmpty && !state.isScanningFiles {
                     EmptyStateView(
                         symbol: "checkmark.circle",
@@ -61,7 +60,6 @@ struct BigFilesView: View {
                             : L("These folders returned nothing and may be blocked: %@.",
                                 state.files.probe.namesToReport.prefix(4).joined(separator: ", "))
                     )
-                    .frame(minHeight: 320)
                 } else if !state.files.largeFiles.isEmpty {
                     scopeNote
                     treemap
@@ -151,7 +149,7 @@ struct BigFilesView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .help("\(slice.count) arquivo(s) · clique para filtrar")
+                        .help(Lp("%d file · click to filter", "%d files · click to filter", count: slice.count))
                     }
                 }
             }

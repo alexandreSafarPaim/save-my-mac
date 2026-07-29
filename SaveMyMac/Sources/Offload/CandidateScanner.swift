@@ -124,7 +124,7 @@ final class CandidateScanner: @unchecked Sendable {
 
         for (index, known) in catalog.enumerated() {
             if isCancelled() { break }
-            progress("Avaliando \(known.name)…", Double(index) / Double(total) * 0.7)
+            progress(L("Evaluating %@…", known.name), Double(index) / Double(total) * 0.7)
 
             let url = home.appendingPathComponent(known.relative)
             guard fm.fileExists(atPath: url.path) else { continue }
@@ -146,7 +146,7 @@ final class CandidateScanner: @unchecked Sendable {
 
         // Discoveries: large top-level folders that aren't in the catalogue.
         if !isCancelled() {
-            progress("Procurando outras pastas grandes…", 0.75)
+            progress(L("Looking for other large folders…"), 0.75)
             candidates += discoverUnknown(
                 existing: Set(candidates.map(\.path)),
                 isCancelled: isCancelled

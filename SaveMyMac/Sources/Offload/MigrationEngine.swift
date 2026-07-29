@@ -36,14 +36,22 @@ final class MigrationEngine: @unchecked Sendable {
         Store.load(MigrationJournal.self, from: MigrationEngine.journalFile) ?? MigrationJournal()
     }
 
-    private func write(_ entry: MigrationJournalEntry) {
+    /// Persists a journal entry, returning whether it reached the disk.
+    ///
+    /// The journal is the only record of where a quarantined original went.
+    /// Most callers can tolerate a failed write mid-flight (the next phase
+    /// writes again), but the caller that quarantines the original MUST know:
+    /// quarantining with an unwritten journal would strand the user's data at a
+    /// path only the dead process knew.
+    @discardableResult
+    private func write(_ entry: MigrationJournalEntry) -> Bool {
         var journal = loadJournal()
         if let index = journal.entries.firstIndex(where: { $0.id == entry.id }) {
             journal.entries[index] = entry
         } else {
             journal.entries.insert(entry, at: 0)
         }
-        Store.save(journal, to: MigrationEngine.journalFile)
+        return Store.save(journal, to: MigrationEngine.journalFile)
     }
 
     // MARK: - Checks
@@ -68,7 +76,7 @@ final class MigrationEngine: @unchecked Sendable {
 
         // The disqualifying gate: exFAT and FAT have no symlinks.
         if values.volumeSupportsSymbolicLinks == false {
-            let name = values.volumeName ?? "Este volume"
+            let name = values.volumeName ?? L("This volume")
             return L("%@ does not support symlinks. Format it as APFS or HFS+ to use offload.", name)
         }
         if values.volumeIsReadOnly == true {
@@ -120,12 +128,12 @@ final class MigrationEngine: @unchecked Sendable {
         // Folders managed by system daemons: a symlink here causes trouble.
         let never: [(String, String)] = [
             ("Library/Mobile Documents", "iCloud Drive"),
-            ("Library/CloudStorage", "provedores de nuvem"),
+            ("Library/CloudStorage", L("cloud providers")),
             ("Library/Keychains", L("the system keychain")),
-            ("Library/Mail", "o Mail"),
-            ("Library/Messages", "o Mensagens"),
-            ("Library/Group Containers", "containers de grupo"),
-            ("Library/Containers", "containers de apps sandboxados"),
+            ("Library/Mail", L("Mail")),
+            ("Library/Messages", L("Messages")),
+            ("Library/Group Containers", L("group containers")),
+            ("Library/Containers", L("sandboxed app containers")),
             ("Library/Preferences", L("its preferences"))
         ]
         for (prefix, who) in never where relative.hasPrefix(prefix) {
@@ -142,8 +150,8 @@ final class MigrationEngine: @unchecked Sendable {
     static func nestingProblem(source: URL, target: URL) -> String? {
         let s = source.standardizedFileURL.path
         let t = target.standardizedFileURL.path
-        if t.hasPrefix(s + "/") { return "O destino não pode estar dentro da própria origem." }
-        if s.hasPrefix(t + "/") { return "A origem não pode estar dentro do destino." }
+        if t.hasPrefix(s + "/") { return L("The destination cannot be inside the source itself.") }
+        if s.hasPrefix(t + "/") { return L("The source cannot be inside the destination.") }
         if s == t { return L("Source and destination are the same path.") }
         return nil
     }
@@ -157,7 +165,7 @@ final class MigrationEngine: @unchecked Sendable {
         isCancelled: @escaping () -> Bool
     ) -> MigrationOutcome {
 
-        progress(.preflight, "Verificando origem e destino…", 0.01)
+        progress(.preflight, L("Checking source and destination…"), 0.01)
 
         let name = source.lastPathComponent
         let target = destinationRoot.appendingPathComponent(name)
@@ -198,6 +206,16 @@ final class MigrationEngine: @unchecked Sendable {
         entry.bytes = measured.bytes
         entry.fileCount = measured.files
 
+        // Refusing here, not warning: if the measurement cannot see every file,
+        // neither can the verification, and a migration whose verification is
+        // blind is a copy the app cannot vouch for. The user can fix the
+        // permission (usually Full Disk Access) and run it again.
+        if measured.unreadable > 0 {
+            return fail(Lp("%d file could not be read in the source, so the copy could not be verified. Nothing was moved.",
+                           "%d files could not be read in the source, so the copy could not be verified. Nothing was moved.",
+                           count: measured.unreadable))
+        }
+
         if let problem = MigrationEngine.destinationProblem(destinationRoot, needing: measured.bytes) {
             return fail(problem)
         }
@@ -205,7 +223,7 @@ final class MigrationEngine: @unchecked Sendable {
         // --- 2. Copy ---
         entry.phase = .copying
         write(entry)
-        progress(.copying, "Copiando \(Fmt.bytes(measured.bytes))…", 0.05)
+        progress(.copying, L("Copying %@…", Fmt.bytes(measured.bytes)), 0.05)
 
         do {
             try fm.createDirectory(at: staging, withIntermediateDirectories: true)
@@ -231,7 +249,7 @@ final class MigrationEngine: @unchecked Sendable {
         // --- 3. Verification ---
         entry.phase = .verifying
         write(entry)
-        progress(.verifying, "Conferindo \(measured.files) arquivos…", 0.62)
+        progress(.verifying, L("Checking %d files…", measured.files), 0.62)
 
         let copied = measure(stagingItem, isCancelled: isCancelled)
         // 0.5% byte tolerance: `ditto` can differ due to blocks and clones.
@@ -244,7 +262,17 @@ final class MigrationEngine: @unchecked Sendable {
 
         // --- 4. Quarentena do original ---
         entry.phase = .quarantining
-        write(entry)
+
+        // This is the one write that MUST be confirmed before acting. From the
+        // moment the original leaves `source`, the journal is the only map back
+        // to it. Every other phase can tolerate a failed write — the next phase
+        // writes again while the data is still somewhere predictable. Moving the
+        // user's folder with the map unwritten would strand it at a path only
+        // this process knows, and this process may not survive to tell anyone.
+        guard write(entry) else {
+            cleanup(staging)
+            return fail(L("Could not write the migration journal — nothing was moved. Check the disk."))
+        }
         progress(.quarantining, L("Moving the original into quarantine…"), 0.72)
 
         do {
@@ -258,18 +286,23 @@ final class MigrationEngine: @unchecked Sendable {
         // --- 5. Publish at the destination ---
         entry.phase = .publishing
         write(entry)
-        progress(.publishing, "Publicando no destino…", 0.80)
+        progress(.publishing, L("Publishing to the destination…"), 0.80)
 
         do {
             try fm.moveItem(at: stagingItem, to: target)
         } catch {
-            // Rollback: devolve o original ao lugar.
-            try? fm.moveItem(at: quarantineItem, to: source)
-            cleanup(quarantine)
+            // Rollback: put the original back.
+            let restored = putBack(quarantineItem, at: source)
+            if restored { cleanup(quarantine) }
             cleanup(staging)
-            entry.phase = .rolledBack
+            entry.phase = restored ? .rolledBack : .failed
             write(entry)
-            return fail(L("Failed to publish to the destination, original restored: %@", error.localizedDescription))
+            // These used to be one message that always claimed "original
+            // restored" — asserting a state the code had never checked, in the
+            // one dialog where the user decides whether their data is safe.
+            return restored
+                ? fail(L("Failed to publish to the destination, original restored: %@", error.localizedDescription))
+                : fail(L("Failed to publish AND the original could not be put back. It is safe in quarantine: %@", entry.quarantinePath.tildeShortened))
         }
         cleanup(staging)
 
@@ -285,27 +318,31 @@ final class MigrationEngine: @unchecked Sendable {
             // instant rename. Bringing the copy back from the external volume
             // would be a slow physical copy, which could fail for lack of space
             // and would leave the quarantine orphaned on the disk forever.
-            try? fm.moveItem(at: quarantineItem, to: source)
+            let restored = putBack(quarantineItem, at: source)
             try? fm.removeItem(at: target)
-            cleanup(quarantine)
-            entry.phase = .rolledBack
+            if restored { cleanup(quarantine) }
+            entry.phase = restored ? .rolledBack : .failed
             write(entry)
-            return fail(L("Failed to create the link, the original was restored: %@", error.localizedDescription))
+            return restored
+                ? fail(L("Failed to create the link, the original was restored: %@", error.localizedDescription))
+                : fail(L("Failed to create the link AND the original could not be put back. It is safe in quarantine: %@", entry.quarantinePath.tildeShortened))
         }
 
         // --- 7. Validate through the link ---
         entry.phase = .validating
         write(entry)
-        progress(.validating, "Testando leitura e escrita pelo link…", 0.94)
+        progress(.validating, L("Testing reading and writing through the link…"), 0.94)
 
         if let problem = validate(link: source, expectedFiles: measured.files, isCancelled: isCancelled) {
-            try? fm.removeItem(at: source)              // remove só o link
-            try? fm.moveItem(at: quarantineItem, to: source)
+            try? fm.removeItem(at: source)              // removes only the link
+            let restored = putBack(quarantineItem, at: source)
             try? fm.removeItem(at: target)
-            cleanup(quarantine)
-            entry.phase = .rolledBack
+            if restored { cleanup(quarantine) }
+            entry.phase = restored ? .rolledBack : .failed
             write(entry)
-            return fail(L("The link failed the test, everything was rolled back: %@", problem))
+            return restored
+                ? fail(L("The link failed the test, everything was rolled back: %@", problem))
+                : fail(L("The link failed the test AND the original could not be put back. It is safe in quarantine: %@", entry.quarantinePath.tildeShortened))
         }
 
         entry.phase = .done
@@ -318,6 +355,25 @@ final class MigrationEngine: @unchecked Sendable {
             succeeded: true,
             message: L("%@ moved. The original stays in quarantine until you release it.", Fmt.bytes(measured.bytes))
         )
+    }
+
+    /// Returns the original from quarantine to its place, and says whether it
+    /// actually got there.
+    ///
+    /// Every rollback path used to do this with `try?` and then report "the
+    /// original was restored" unconditionally. If that rename failed — volume
+    /// full, permissions, the folder recreated by an app mid-migration — the
+    /// message asserted a state that was never verified, in exactly the moment
+    /// the user needs the truth most. This is the app that promises to never
+    /// lie about deletions; it cannot lie about restorations either.
+    private func putBack(_ quarantineItem: URL, at source: URL) -> Bool {
+        do {
+            try fm.moveItem(at: quarantineItem, to: source)
+            return true
+        } catch {
+            Trace.mark("putBack FAILED: \(quarantineItem.path) → \(source.path): \(error.localizedDescription)")
+            return false
+        }
     }
 
     // MARK: - Reverter
@@ -351,8 +407,16 @@ final class MigrationEngine: @unchecked Sendable {
         }
 
         // The copy at the destination becomes junk — to the Trash, not deleted.
+        // Trashing across volumes can fail (some external disks have no .Trashes
+        // the user can write to); that must not fail the restore, but it must
+        // not be silent either, or the stale copy quietly eats the external disk.
+        var leftoverNote = ""
         if fm.fileExists(atPath: target.path) {
-            try? fm.trashItem(at: target, resultingItemURL: nil)
+            do {
+                try fm.trashItem(at: target, resultingItemURL: nil)
+            } catch {
+                leftoverNote = " " + L("The old copy could not be moved to the Trash and is still at %@.", entry.targetPath.tildeShortened)
+            }
         }
         cleanup(quarantine.deletingLastPathComponent())
 
@@ -361,7 +425,7 @@ final class MigrationEngine: @unchecked Sendable {
         write(updated)
 
         return MigrationOutcome(entry: updated, succeeded: true,
-                                message: L("%@ is back in its original place.", updated.name))
+                                message: L("%@ is back in its original place.", updated.name) + leftoverNote)
     }
 
     /// Releases the quarantine of a completed migration — this is where the
@@ -398,6 +462,10 @@ final class MigrationEngine: @unchecked Sendable {
     private struct Measurement {
         var bytes: Int64
         var files: Int
+        /// Entries the walk could not read. When this is nonzero on the SOURCE,
+        /// the whole verification is standing on sand: `files` undercounts, so
+        /// an equally incomplete copy compares as equal.
+        var unreadable: Int = 0
     }
 
     /// Counts files and bytes. Used to size the job, then to verify it.
@@ -417,23 +485,37 @@ final class MigrationEngine: @unchecked Sendable {
 
         var bytes: Int64 = 0
         var files = 0
+        var unreadable = 0
 
         guard let enumerator = fm.enumerator(
             at: url,
             includingPropertiesForKeys: keys,
             options: [],
-            errorHandler: { _, _ in true }
-        ) else { return Measurement(bytes: 0, files: 0) }
+            errorHandler: { _, _ in
+                unreadable += 1
+                return true
+            }
+        ) else { return Measurement(bytes: 0, files: 0, unreadable: 1) }
 
         for case let item as URL in enumerator {
             if isCancelled() { break }
-            guard let values = try? item.resourceValues(forKeys: Set(keys)) else { continue }
+            guard let values = try? item.resourceValues(forKeys: Set(keys)) else {
+                // This `continue` used to discard the item without a trace, and
+                // that mattered more than it looks: this count is one side of
+                // the copy verification. A source with unreadable files produced
+                // a smaller `measured`, the incomplete copy then MATCHED it, and
+                // the original went to quarantine on the strength of a
+                // verification that verified nothing. Skipping is still right —
+                // counting the skip is what was missing.
+                unreadable += 1
+                continue
+            }
             guard values.isRegularFile == true else { continue }
             files += 1
             bytes += Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
         }
 
-        return Measurement(bytes: bytes, files: files)
+        return Measurement(bytes: bytes, files: files, unreadable: unreadable)
     }
 
     /// Verifies the link resolves, the count matches, and that writing through it

@@ -729,6 +729,11 @@ struct EmptyStateView: View {
         }
         .frame(maxWidth: 460)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The minimum height lives here, not at the call sites. It used to be a
+        // caller obligation repeated six times — and one caller wrote 300 where
+        // the other five wrote 320, which is what happens to every convention
+        // that relies on people retyping it.
+        .frame(minHeight: 320)
     }
 }
 

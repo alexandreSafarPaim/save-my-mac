@@ -53,7 +53,6 @@ struct DuplicatesView: View {
                                 ? L("Name and date don't matter — only content does.")
                                 : nil
                         )
-                        .frame(minHeight: 320)
                     } else {
                         ForEach(state.files.duplicates) { group in
                             groupCard(group)
@@ -171,7 +170,7 @@ struct DuplicatesView: View {
                                 .foregroundStyle(palette.t3)
                         }
                         .buttonStyle(.plain)
-                        .help("Mostrar no Finder")
+                        .help(L("Show in Finder"))
                     }
                     .contextMenu {
                         Button(L("Show in Finder")) { state.reveal(copy.path) }

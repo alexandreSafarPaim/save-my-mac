@@ -221,23 +221,24 @@ enum ProcessMonitor {
         )
     }
 
+    /// Convenience over `run` for callers that only want stdout.
+    ///
+    /// This used to be a second, independent `Process` implementation with a
+    /// single serially-drained pipe — the exact shape the comment inside `run`
+    /// forbids. It was safe only because it discarded stderr entirely, which its
+    /// one caller (`powermetrics`, the most verbose command in the app) relied
+    /// on implicitly. Thirty lines of process-launching existed twice with
+    /// different failure semantics; now there is one.
+    ///
+    /// It also swallowed every failure into the same `nil`, so "you cancelled
+    /// the password prompt" and "the tool crashed" were indistinguishable no-ops.
+    /// The stderr detail now at least reaches the trace.
     static func shell(_ launchPath: String, _ arguments: [String]) -> String? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: launchPath)
-        process.arguments = arguments
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
-
-        do {
-            try process.run()
-        } catch {
+        let result = run(launchPath, arguments)
+        guard result.status == 0 else {
+            Trace.mark("shell \(launchPath) status \(result.status): \(result.error.prefix(200))")
             return nil
         }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        return String(data: data, encoding: .utf8)
+        return result.output
     }
 }

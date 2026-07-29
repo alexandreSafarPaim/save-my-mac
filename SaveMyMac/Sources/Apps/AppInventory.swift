@@ -114,7 +114,7 @@ final class AppInventoryScanner: @unchecked Sendable {
         for (index, entry) in bundles.enumerated() {
             if isCancelled() { break }
             let fraction = 0.18 + (Double(index) / Double(total)) * 0.80
-            progress("Medindo \(entry.url.lastPathComponent)…", fraction)
+            progress(L("Measuring %@…", entry.url.lastPathComponent), fraction)
 
             guard let app = describe(
                 bundle: entry.url,
@@ -264,7 +264,7 @@ final class AppInventoryScanner: @unchecked Sendable {
                 guard VolumeResolver.freesSpaceOnMac(url) else { continue }
 
                 let size = DiskMonitor.directorySize(at: url, isCancelled: isCancelled)
-                let finalSize = size > 0 ? size : fileSize(url)
+                let finalSize = size > 0 ? size : url.allocatedBytes
                 guard finalSize > 0 else { continue }
 
                 residues.append(AppResidue(
@@ -279,10 +279,6 @@ final class AppInventoryScanner: @unchecked Sendable {
         return residues.sorted { $0.size > $1.size }
     }
 
-    private func fileSize(_ url: URL) -> Int64 {
-        let values = try? url.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileSizeKey])
-        return Int64(values?.totalFileAllocatedSize ?? values?.fileSize ?? 0)
-    }
 
     // MARK: - Last use through Spotlight
 

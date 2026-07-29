@@ -90,6 +90,27 @@ final class Localization: ObservableObject {
     /// value is a one-byte enum — there is no intermediate state for anyone to
     /// read.
     nonisolated(unsafe) fileprivate static var active: Language = .en
+
+    /// The resolved language, for callers that need to configure something by
+    /// language — formatter caches, mainly — without gaining write access to
+    /// `active`. Same thread-safety argument as `L()` itself.
+    nonisolated static var appLanguage: Language { active }
+
+    /// A `Locale` matching the app language, for date and number formatters.
+    ///
+    /// Deliberately NOT `Locale.current` for concrete languages: the app
+    /// language can differ from the system region, and a French interface with
+    /// Brazilian date order is the bug this exists to prevent. `pt` maps to
+    /// `pt_BR` because that is the Portuguese this app ships.
+    nonisolated static var appLocale: Locale {
+        switch active {
+        case .system: return Locale.current
+        case .en: return Locale(identifier: "en_US")
+        case .pt: return Locale(identifier: "pt_BR")
+        case .es: return Locale(identifier: "es_ES")
+        case .fr: return Locale(identifier: "fr_FR")
+        }
+    }
 }
 
 extension Language {

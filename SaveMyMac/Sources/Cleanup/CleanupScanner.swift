@@ -384,7 +384,7 @@ final class CleanupScanner: @unchecked Sendable {
             for url in contents {
                 guard extensions.contains(url.pathExtension.lowercased()) else { continue }
                 guard freesSpace(url) else { continue }
-                let size = fileSize(url)
+                let size = url.allocatedBytes
                 guard size > 5 * 1024 * 1024 else { continue }
                 items.append(CleanupItem(
                     path: url.path,
@@ -524,7 +524,7 @@ final class CleanupScanner: @unchecked Sendable {
             for case let url as URL in enumerator {
                 if isCancelled() { break }
                 guard url.lastPathComponent == ".DS_Store" else { continue }
-                totalSize += fileSize(url)
+                totalSize += url.allocatedBytes
                 count += 1
                 if paths.count < 5000 { paths.append(url.path) }
             }
@@ -577,7 +577,7 @@ final class CleanupScanner: @unchecked Sendable {
             let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
             let size = isDir
                 ? DiskMonitor.directorySize(at: url, isCancelled: isCancelled)
-                : fileSize(url)
+                : url.allocatedBytes
 
             guard size >= minimumSize else { continue }
 
@@ -604,10 +604,6 @@ final class CleanupScanner: @unchecked Sendable {
         VolumeResolver.freesSpaceOnMac(url)
     }
 
-    private func fileSize(_ url: URL) -> Int64 {
-        let values = try? url.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileSizeKey])
-        return Int64(values?.totalFileAllocatedSize ?? values?.fileSize ?? 0)
-    }
 
     private func modificationDate(_ url: URL) -> Date? {
         (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate

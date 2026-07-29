@@ -1,5 +1,4 @@
 import Foundation
-import AppKit
 
 struct UninstallResult {
     var removedPaths: [String] = []
@@ -115,7 +114,7 @@ enum AppUninstaller {
             "/Library/Apple", "/Library/Security"
         ]
         for prefix in forbidden where path.hasPrefix(prefix) {
-            return "Caminho protegido pelo sistema"
+            return L("Path protected by the system")
         }
 
         // Inside home, never the top-level folders.
@@ -148,6 +147,6 @@ enum AppUninstaller {
             return L("The Applications folder is not removable")
         }
 
-        return "Fora do escopo permitido"
+        return L("Outside the allowed scope")
     }
 }
