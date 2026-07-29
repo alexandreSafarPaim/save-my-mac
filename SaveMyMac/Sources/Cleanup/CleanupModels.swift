@@ -12,9 +12,9 @@ enum RiskLevel: Int, Comparable, CaseIterable {
 
     var label: String {
         switch self {
-        case .safe: return "Seguro"
+        case .safe: return L("Safe")
         case .caution: return L("Caution")
-        case .review: return "Revisar"
+        case .review: return L("Review")
         }
     }
 

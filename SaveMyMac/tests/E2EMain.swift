@@ -81,6 +81,7 @@ enum E2E {
         testProcessParsing()
         testOffloadGuards()
         testTrashReadPath()
+        testAccessProbe()
 
         print("\n────────────────────────────────────────")
         if failed.isEmpty {
@@ -347,6 +348,80 @@ enum E2E {
         } else {
             check("an unmeasured Trash is not claimed as empty", true)
         }
+    }
+
+    // MARK: - AccessProbe
+
+    /// The probe replaced a detector that could never fire. These tests exist to
+    /// keep the replacement from acquiring the same defect: the central property
+    /// is that an **empty** folder is not reported as a **denied** one.
+    static func testAccessProbe() {
+        group("AccessProbe — telling empty apart from denied")
+
+        let fm = FileManager.default
+        let root = sandbox.appendingPathComponent("probe-home")
+        try? fm.createDirectory(at: root.appendingPathComponent("Desktop"),
+                                withIntermediateDirectories: true)
+        try? fm.createDirectory(at: root.appendingPathComponent("Documents"),
+                                withIntermediateDirectories: true)
+        FileManager.default.createFile(
+            atPath: root.appendingPathComponent("Documents/a.bin").path,
+            contents: Data([1, 2, 3]))
+
+        let probe = AccessProbe.run(home: root)
+
+        let desktop = probe.folders.first { $0.name == "Desktop" }
+        let documents = probe.folders.first { $0.name == "Documents" }
+        let movies = probe.folders.first { $0.name == "Movies" }
+
+        check("an existing folder with content is readable",
+              documents?.entries == 1 && documents?.deniedOutright == false)
+
+        // The distinction the whole probe turns on. The Mac this was written on
+        // has a genuinely empty Desktop; calling that a denial would have raised
+        // a confident false alarm — the previous detector's mistake, mirrored.
+        check("an empty folder is suspicious, never denied",
+              desktop?.suspicious == true && desktop?.deniedOutright == false)
+        check("an empty folder alone is not a verdict",
+              !probe.isDefinitelyBlocked)
+
+        // A folder that does not exist is not evidence of anything. A Mac with no
+        // ~/Movies is not a blocked Mac.
+        check("a missing folder is neither denied nor suspicious",
+              movies?.exists == false && movies?.suspicious == false)
+
+        check("every protected folder is probed",
+              probe.folders.count == AccessProbe.protectedFolders.count)
+        check("the trace report has one line per folder plus the header",
+              probe.traceReport.split(separator: "\n").count
+                == AccessProbe.protectedFolders.count + 1)
+
+        // An unreadable directory must be reported as an outright denial. chmod
+        // 000 is the only denial reproducible without a TCC grant; TCC's own
+        // silent-empty behaviour is what `suspicious` covers.
+        let locked = root.appendingPathComponent("Pictures")
+        try? fm.createDirectory(at: locked, withIntermediateDirectories: true)
+        try? fm.setAttributes([.posixPermissions: 0], ofItemAtPath: locked.path)
+        let denied = AccessProbe.run(home: root)
+        let pictures = denied.folders.first { $0.name == "Pictures" }
+        if getuid() == 0 {
+            // root ignores permission bits, so the case is unreachable here.
+            check("skipped: running as root, chmod 000 is not enforced", true)
+        } else {
+            check("an unreadable folder is an outright denial",
+                  pictures?.deniedOutright == true, "entries: \(pictures?.entries ?? -1)")
+            check("one outright denial is enough for a verdict",
+                  denied.isDefinitelyBlocked)
+            check("certain denials are listed before the ambiguous ones",
+                  denied.namesToReport.first == "Pictures")
+        }
+        try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: locked.path)
+
+        // Full Disk Access is a separate question from per-folder access, and the
+        // probe must not conflate them: a sandbox home has no TCC database, so
+        // the canary must read false without dragging the folder results with it.
+        check("the Full Disk Access canary is independent of the folder results",
+              !probe.hasFullDiskAccess && documents?.entries == 1)
     }
 }
 

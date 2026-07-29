@@ -31,8 +31,8 @@ struct BigFilesView: View {
                 if state.files.looksBlocked && !state.isScanningFiles {
                     PermissionNotice(
                         palette: palette,
-                        deniedCount: state.files.deniedDirectories,
-                        examples: state.files.deniedExamples
+                        probe: state.files.probe,
+                        visitedFiles: state.files.visitedFiles
                     ) { state.openFullDiskAccessSettings() }
                 } else if state.files.largeFiles.isEmpty
                             && !state.isScanningFiles
@@ -52,9 +52,14 @@ struct BigFilesView: View {
                         message: L("The scan visited %d files and found %d above 2 MB, none above 500 MB.",
                                   state.files.visitedFiles, state.files.scannedFiles),
                         palette: palette,
-                        hint: state.files.deniedDirectories > 0
-                            ? L("%d folder(s) could not be read — the result may be incomplete.", state.files.deniedDirectories)
-                            : L("Hidden folders and developer caches are skipped here — the Cleanup tab covers those.")
+                        // Names the folders that came back empty even when the
+                        // walk was big enough not to look blocked. A clean result
+                        // that quietly skipped ~/Documents is still a claim the
+                        // app should not make without saying so.
+                        hint: state.files.probe.namesToReport.isEmpty
+                            ? L("Hidden folders and developer caches are skipped here — the Cleanup tab covers those.")
+                            : L("These folders returned nothing and may be blocked: %@.",
+                                state.files.probe.namesToReport.prefix(4).joined(separator: ", "))
                     )
                     .frame(minHeight: 320)
                 } else if !state.files.largeFiles.isEmpty {

@@ -19,16 +19,16 @@ enum MigrationPhase: String, Codable {
 
     var label: String {
         switch self {
-        case .preflight: return "Verificando"
-        case .copying: return "Copiando"
+        case .preflight: return L("Checking")
+        case .copying: return L("Copying")
         case .verifying: return L("Verifying the copy")
         case .quarantining: return L("Moving the original to quarantine")
         case .publishing: return L("Publishing to the destination")
         case .linking: return L("Creating the link")
         case .validating: return L("Testing the link")
         case .done: return L("Done")
-        case .failed: return "Falhou"
-        case .rolledBack: return "Revertido"
+        case .failed: return L("Failed")
+        case .rolledBack: return L("Rolled back")
         }
     }
 }

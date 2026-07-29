@@ -913,9 +913,16 @@ struct StickyActionBar<Content: View>: View {
 /// fixes it.
 struct PermissionNotice: View {
     var palette: Palette
-    var deniedCount: Int
-    var examples: [String]
+    var probe: AccessProbe
+    var visitedFiles: Int
     var grant: () -> Void
+
+    /// Certain denials first, then the ambiguous ones. The distinction is kept
+    /// visible rather than flattened into one number, because an empty folder and
+    /// a denied folder are not the same claim and the app cannot tell them apart.
+    private var rows: [AccessProbe.Folder] {
+        probe.denied + probe.suspicious
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -923,19 +930,51 @@ struct PermissionNotice: View {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 15))
                     .foregroundStyle(palette.warn)
-                Text(L("The scan was blocked"))
+                Text(probe.isDefinitelyBlocked
+                     ? L("The scan was blocked")
+                     : L("The scan probably did not see everything"))
                     .font(Typo.cardTitle)
                     .foregroundStyle(palette.t1)
             }
 
-            Text(L("%d folder(s) could not be read, including %@.",
-                   deniedCount,
-                   examples.prefix(4).joined(separator: ", ")))
+            Text(L("The scan walked only %d files in your whole home folder. That is far fewer than a Mac in use contains, so the result below is incomplete rather than clean.", visitedFiles))
                 .font(Typo.bodySmall)
                 .foregroundStyle(palette.t2)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(L("Without Full Disk Access, macOS blocks Desktop, Documents, Downloads, Movies, Music and Pictures — which is exactly where large files live. The numbers below are not wrong, they are incomplete."))
+            // The measurement itself, per folder. macOS denies most of these by
+            // returning an empty listing with no error, so a bare "blocked"
+            // message would be unverifiable — the reader could not tell whether
+            // the app knows or is guessing. These rows say which it is.
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(rows) { folder in
+                    HStack(spacing: 6) {
+                        Image(systemName: folder.deniedOutright
+                              ? "xmark.circle.fill" : "questionmark.circle")
+                            .font(.system(size: 9))
+                            .foregroundStyle(folder.deniedOutright ? palette.warn : palette.t3)
+                        Text("~/\(folder.name)")
+                            .foregroundStyle(palette.t2)
+                        Text(folder.deniedOutright
+                             ? L("denied by macOS")
+                             : L("came back empty — cannot tell denial from an empty folder"))
+                            .foregroundStyle(palette.t3)
+                    }
+                    .font(Typo.monoTiny)
+                }
+                if !probe.hasFullDiskAccess {
+                    HStack(spacing: 6) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(palette.warn)
+                        Text(L("Full Disk Access: not granted"))
+                            .foregroundStyle(palette.t2)
+                    }
+                    .font(Typo.monoTiny)
+                }
+            }
+
+            Text(L("Without Full Disk Access, macOS hides Desktop, Documents, Downloads, Movies, Music, Pictures and Library — which is exactly where large files live. It does this silently, returning empty folders rather than errors."))
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.t3)
                 .fixedSize(horizontal: false, vertical: true)

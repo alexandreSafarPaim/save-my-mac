@@ -64,18 +64,42 @@ for dir in Desktop Documents Downloads Movies Music Pictures Library Developer; 
 done
 
 # ── 4. Does the app have Full Disk Access? ───────────────────────────────────
+#
+# The first version of this section printed "could not read the TCC database"
+# whenever the query returned nothing — which is also what happens when the
+# database reads perfectly and SaveMyMac simply has no entry in it. Those are
+# opposite conclusions: one means "cannot tell", the other means "definitely not
+# granted, and macOS never even asked". It reported the first while the truth was
+# the second, and that ambiguity cost a full round trip.
+#
+# Same mistake as the app's own error counter, in a shell script.
 say ""
 say "═══ 4. Full Disk Access"
 say ""
-if sqlite3 "$HOME/Library/Application Support/com.apple.TCC/TCC.db" \
-     "select client, auth_value from access where service='kTCCServiceSystemPolicyAllFiles' and client like '%savemymac%';" \
-     2>/dev/null | grep -q .; then
-  sqlite3 "$HOME/Library/Application Support/com.apple.TCC/TCC.db" \
-    "select client, case auth_value when 2 then 'ALLOWED' when 0 then 'DENIED' else auth_value end from access where service='kTCCServiceSystemPolicyAllFiles' and client like '%savemymac%';" \
-    2>/dev/null | sed 's/^/  /' | tee -a "$OUT"
+TCC_DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
+
+if ! command -v sqlite3 > /dev/null 2>&1; then
+  say "  sqlite3 is not installed — cannot inspect the TCC database."
+elif ! sqlite3 "$TCC_DB" "select count(*) from access;" > /dev/null 2>&1; then
+  say "  Cannot read the TCC database, so THIS TERMINAL does not have Full Disk"
+  say "  Access either. Sections 1-3 above may therefore also be underreporting."
+  say "  Grant it: System Settings › Privacy & Security › Full Disk Access"
 else
-  say "  Could not read the TCC database (normal — it is protected)."
-  say "  Check by hand: System Settings › Privacy & Security › Full Disk Access"
+  ROWS=$(sqlite3 "$TCC_DB" \
+    "select service || ' = ' || case auth_value when 2 then 'ALLOWED' when 0 then 'DENIED' else 'value ' || auth_value end from access where client like '%savemymac%';" \
+    2>/dev/null)
+  say "  This terminal HAS Full Disk Access, so the database is readable."
+  if [ -n "$ROWS" ]; then
+    say "  SaveMyMac's entries:"
+    echo "$ROWS" | sed 's/^/    /' | tee -a "$OUT"
+  else
+    say "  SaveMyMac has NO entry at all in the TCC database."
+    say ""
+    say "  That is the finding, not a failure to read. No entry means macOS has"
+    say "  never granted it anything and never asked you — it just returns empty"
+    say "  folders. Grant it by hand: System Settings › Privacy & Security ›"
+    say "  Full Disk Access › + › /Applications/SaveMyMac.app"
+  fi
 fi
 
 # ── 5. Symlinks pointing off the Mac ────────────────────────────────────────
@@ -116,6 +140,38 @@ say ""
 say "  Sharing a size is not being a duplicate — the app then compares content,"
 say "  and only deletes after a full byte-by-byte check. If the number above is 0,"
 say "  there is genuinely nothing to find and the empty screen is correct."
+
+# ── 7. What the app itself measured ─────────────────────────────────────────
+#
+# Everything above is Terminal's view. This is the app's, written to the trace by
+# `AccessProbe` at the start of every scan. Comparing the two side by side is the
+# only way to tell "this Mac has nothing" from "this app cannot see it": if
+# section 3 shows Downloads with 11 entries and the app reports 0, the answer is
+# permission, not tidiness.
+say ""
+say "═══ 7. What SaveMyMac itself could read (from its trace)"
+say ""
+TRACE="$HOME/Library/Logs/SaveMyMac-trace.log"
+if [ ! -f "$TRACE" ]; then
+  say "  No trace file yet. Run the app and press Scan files, then run this again."
+elif ! grep -q "access probe" "$TRACE"; then
+  say "  The trace has no access probe. Either the app predates it or no scan has"
+  say "  run since. Open SaveMyMac › Large files › Scan files, then run this again."
+else
+  # Keeps only the LAST probe block: the trace accumulates across runs, and an
+  # old block from before permission was granted would be read as current.
+  # A block starts at "access probe" and continues while lines are indented
+  # continuations rather than new timestamped trace entries.
+  awk '
+    /access probe/ { count = 0; delete block; grabbing = 1; block[count++] = $0; next }
+    # Stop BEFORE recording, not after: the first version appended the line that
+    # ended the block, so the report always carried a stray "tick" at the bottom.
+    grabbing && /^[0-9. ]*\[[A-Z]+\]/ { grabbing = 0; next }
+    grabbing { block[count++] = $0 }
+    END { for (i = 0; i < count; i++) print block[i] }
+  ' "$TRACE" \
+    | sed -E 's/^[0-9. ]*\[[A-Z]+\] //' | sed 's/^/  /' | tee -a "$OUT"
+fi
 
 say ""
 say "Done: $OUT"

@@ -18,17 +18,17 @@ struct BatterySnapshot {
     var healthLabel: String {
         switch health {
         case 0: return "—"
-        case ..<0.80: return "Substituir em breve"
-        case ..<0.90: return "Boa"
-        default: return "Normal"
+        case ..<0.80: return L("Replace soon")
+        case ..<0.90: return L("Good")
+        default: return L("Normal")
         }
     }
 
     var powerLabel: String {
-        if !present { return "Sem bateria (desktop)" }
-        if isCharging { return "Carregando" }
-        if isPluggedIn { return "Na tomada" }
-        return "Na bateria"
+        if !present { return L("No battery (desktop)") }
+        if isCharging { return L("Charging") }
+        if isPluggedIn { return L("Plugged in") }
+        return L("On battery")
     }
 }
 

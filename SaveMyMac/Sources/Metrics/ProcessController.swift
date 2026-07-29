@@ -21,7 +21,7 @@ enum ProcessController {
             case .askedToQuit(let name):
                 return L("Quit request sent to %@. If anything is unsaved, it will ask.", name)
             case .terminated(let name):
-                return "\(name) foi encerrado."
+                return L("%@ was quit.", name)
             case .refused(let reason):
                 return reason
             case .failed(let reason):

@@ -15,7 +15,7 @@ enum LinkStatus: Equatable {
         switch self {
         case .offloaded: return "OK"
         case .volumeMissing: return L("Volume missing")
-        case .broken: return "Quebrado"
+        case .broken: return L("Broken")
         case .sameDisk: return L("Same disk")
         }
     }

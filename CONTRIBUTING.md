@@ -43,9 +43,9 @@ For changes in those files, expect to be asked:
 A PR that makes cleanup faster by removing a safety check will be declined, even
 if the measurement is real.
 
-## Four bugs worth not reintroducing
+## Five bugs worth not reintroducing
 
-These cost a full night of debugging between them. All four are documented in
+These cost a full night of debugging between them. All five are documented in
 the source at the point where they matter; this is the short version.
 
 **1. Never do blocking I/O in a view initializer.**
@@ -75,6 +75,36 @@ Reading stdout to EOF and *then* stderr deadlocks if the child fills the 64 KB
 stderr buffer: it blocks writing, never closes stdout, and the parent waits
 forever. Silent — nothing crashes, the thread just disappears. See
 `ProcessMonitor.run`.
+
+**5. macOS denies file access by returning nothing, not by erroring.**
+`FileManager.enumerator` does not report a TCC denial through its `errorHandler`
+— it descends, finds an empty directory, and continues. The Large Files screen
+was built on that error count and reported zero denials while walking 46 files in
+a home folder that really held 1,360 over 2 MB. It then said "no large files
+found", which is indistinguishable from a tidy Mac.
+
+A shallow `contentsOfDirectory` *does* throw where the deep enumerator stays
+quiet; that difference is what `AccessProbe` is built on. If you add a scan,
+probe access separately and state the scope on screen. Do not infer permission
+from a walk.
+
+## The failure mode behind most of the above
+
+Every one of those bugs was found late because a check measured something *near*
+the thing it claimed to measure, and the near-miss read as a pass:
+
+| The check | What it actually measured |
+|---|---|
+| menu bar item present | a window named `StatusBar` existed — SwiftUI creates it even when hidden |
+| CPU healthy (`ps -o %cpu`) | average over process lifetime, so launch cost read as 42% steady load |
+| Portuguese fully translated | presence of accented characters — missed `Text("Conquistas")`, 99 strings |
+| ditto, second attempt | lowercase accents only — missed `MARK: - Varredura`, 31 lines |
+| untranslated UI literals | literals with a UI token *on the same line* — missed `case .image: return "Imagens"` |
+| scan blocked by permission | enumerator errors, which TCC never emits |
+
+Before trusting a green check, ask what would have to be true for it to pass
+while the thing it guards is broken. A check that can pass wrongly is worse than
+no check: it hands out confidence it has not earned.
 
 ## Testing
 

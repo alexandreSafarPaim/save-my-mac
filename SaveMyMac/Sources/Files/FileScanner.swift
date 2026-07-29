@@ -48,12 +48,12 @@ enum FileKind: String, CaseIterable, Identifiable {
         case .video: return L("Videos")
         case .virtualMachine: return L("Virtual machines")
         case .diskImage: return L("Disk images")
-        case .backup: return "Backups"
+        case .backup: return L("Backups")
         case .audio: return L("Audio")
-        case .image: return "Imagens"
-        case .archive: return "Compactados"
+        case .image: return L("Images")
+        case .archive: return L("Archives")
         case .data: return L("Databases")
-        case .other: return "Outros"
+        case .other: return L("Other")
         }
     }
 
@@ -138,14 +138,10 @@ struct LargeFile: Identifiable, Hashable {
         guard let modified else { return "—" }
         let days = Calendar.current.dateComponents([.day], from: modified, to: Date()).day ?? 0
         switch days {
-        case ..<1: return "hoje"
-        case ..<30: return "\(days) dias"
-        case ..<365:
-            let months = max(1, days / 30)
-            return months == 1 ? L("1 month") : "\(months) meses"
-        default:
-            let years = max(1, days / 365)
-            return years == 1 ? "1 ano" : "\(years) anos"
+        case ..<1: return L("today")
+        case ..<30: return Lp("%d day", "%d days", count: days)
+        case ..<365: return Lp("%d month", "%d months", count: max(1, days / 30))
+        default: return Lp("%d year", "%d years", count: max(1, days / 365))
         }
     }
 }
@@ -208,31 +204,46 @@ struct FileScanResult {
     /// the wrong conclusion.
     var visitedFiles: Int = 0
 
-    /// Directories the walk could not read.
+    /// Directories the deep walk reported as errors.
     ///
-    /// This field exists because of a bug that produced a perfect silent failure.
-    /// The enumerator's error handler was `{ _, _ in true }` — continue, discard
-    /// the error. Without Full Disk Access, macOS denies `~/Desktop`,
-    /// `~/Documents`, `~/Downloads`, `~/Movies`, `~/Music` and `~/Pictures`, and
-    /// `~/Library` is skipped by this scanner on purpose. What remains is almost
-    /// nothing, so the scan finished in under a second, found zero files, and the
-    /// screen said "Nothing scanned yet" — indistinguishable from a Mac with no
-    /// large files at all.
-    ///
-    /// The error handler was throwing away the one piece of information that
-    /// explained the result. Now it counts, and the interface can say why.
+    /// Kept, but it is close to useless and should not be trusted alone.
+    /// `FileManager.enumerator` does not surface a TCC denial as an error — it
+    /// descends, finds nothing, and continues — so on a Mac where six protected
+    /// folders were unreadable this counter stayed at **zero**. That is why
+    /// `AccessProbe` exists and why `looksBlocked` no longer depends on this.
     var deniedDirectories: Int = 0
 
-    /// Folders that were denied, for showing the user which ones.
+    /// Folders the deep walk errored on, for showing the user which ones.
     var deniedExamples: [String] = []
 
-    /// Did the walk see so little that permission is the likely explanation?
+    /// What the app could actually read, measured per folder rather than
+    /// inferred from the walk. See `AccessProbe`.
+    var probe = AccessProbe()
+
+    /// Did the scan see so little that permission is the likely explanation?
     ///
-    /// Uses `visitedFiles`, not `scannedFiles`. A tidy Mac can legitimately have
-    /// few candidates over 2 MB; no home folder has fewer than a few hundred
-    /// files in total. Judging by the candidate count would call a clean machine
-    /// blocked.
-    var looksBlocked: Bool { deniedDirectories > 0 && visitedFiles < 200 }
+    /// Two independent grounds, because one is certain and one is not:
+    ///
+    ///   1. A folder that *threw* on a shallow listing. No ambiguity.
+    ///   2. A folder that came back empty **and** a walk that visited under 200
+    ///      files. An empty folder is normal; an empty folder on a Mac whose
+    ///      entire home apparently holds 46 files is not.
+    ///
+    /// The second condition uses `visitedFiles`, not `scannedFiles`. A tidy Mac
+    /// can legitimately have few candidates over 2 MB; no home folder has fewer
+    /// than a few hundred files in total. Judging by the candidate count would
+    /// call a clean machine blocked.
+    var looksBlocked: Bool {
+        if probe.isDefinitelyBlocked { return true }
+        if !probe.suspicious.isEmpty && visitedFiles < 200 { return true }
+        return deniedDirectories > 0 && visitedFiles < 200
+    }
+
+    /// Folder names to name on screen: the probe's list, falling back to the
+    /// walk's if the probe found nothing to report.
+    var blockedFolderNames: [String] {
+        probe.namesToReport.isEmpty ? deniedExamples : probe.namesToReport
+    }
 
     var largeTotal: Int64 { largeFiles.reduce(0) { $0 + $1.size } }
     var duplicateTotal: Int64 { duplicates.reduce(0) { $0 + $1.reclaimable } }
@@ -295,6 +306,12 @@ final class FileScanner: @unchecked Sendable {
     ) -> FileScanResult {
 
         var result = FileScanResult()
+
+        // Runs before the walk, so a blocked scan is diagnosed even if the walk
+        // then returns cleanly with nothing — which is exactly what it does.
+        progress(L("Checking folder access…"), 0.01)
+        result.probe = AccessProbe.run(home: home)
+        Trace.mark(result.probe.traceReport)
 
         progress(L("Walking the home folder…"), 0.03)
         let walk = enumerateHome(isCancelled: isCancelled) { visited in
@@ -433,7 +450,20 @@ final class FileScanner: @unchecked Sendable {
         for entry in entries where entry.logicalSize >= duplicateThreshold {
             bySize[entry.logicalSize, default: []].append(entry)
         }
-        let candidates = bySize.filter { $0.value.count > 1 && $0.value.count <= 60 }
+        // Every group with more than one member is a candidate.
+        //
+        // There used to be a `count <= 60` ceiling here, meant to avoid hashing a
+        // pathological group of hundreds of same-size files. What it actually did
+        // was make large groups vanish with no trace on screen — and large groups
+        // are the ones worth the most space. On the Mac this was measured on, a
+        // browser cache holds 25 files of exactly 5013504 bytes; sixty-one of them
+        // and the whole group would have disappeared silently.
+        //
+        // Cost of removing the ceiling: the hash reads three 256 KB samples per
+        // file, so even a 500-file group is a few hundred milliseconds. The
+        // ceiling was buying almost nothing and paying for it with a silent
+        // wrong answer — the same trade this project has had to undo repeatedly.
+        let candidates = bySize.filter { $0.value.count > 1 }
 
         var groups: [DuplicateGroup] = []
         let total = max(1, candidates.count)

@@ -57,12 +57,38 @@ ALLOWED = {
     # it would send the user looking for a menu that doesn't exist.
     "Docker Desktop → Settings → Resources → Disk image location.",
     # Units and symbols, identical in every language we ship.
-    "°C", "XP", "Swap", "CPU / SoC", "Score 95+",
+    "°C", "XP", "Swap", "CPU / SoC", "Score 95+", "OK",
 }
 
 # Literals that are only interpolation plus a universal unit or identifier.
 # `"pid \(pid)"`, `"\($0) rpm"`, `"+\(xp) XP"` — nothing to translate.
 UNIT_ONLY = re.compile(r"^[+\-\s]*(?:\\\([^)]*\)|pid|rpm|XP|%|/|·|—|\s)+$")
+
+# ── The second hole this check had ──────────────────────────────────────────────
+#
+# The rules above are all *line-local*: a literal counts as UI only if a UI call
+# or a labelled parameter sits on the same line. That misses the case where the
+# UI position is the **enclosing declaration**:
+#
+#     var label: String {
+#         switch self {
+#         case .image: return "Imagens"      ← no UI token on this line
+#
+# Nine Portuguese strings survived in `FileScanner.swift` this way — `Imagens`,
+# `Compactados`, `Outros`, `hoje`, `dias`, `meses`, `anos` — displayed on the
+# treemap and in every file row. The check ran clean over that file for weeks.
+#
+# Same root cause as the accent detector it replaced: the question being asked
+# was *near* the question that mattered. So this tracks the declaration a line
+# sits inside and treats `return "…"` from anything named like a label as UI.
+DECLARATION = re.compile(r"^\s*(?:@\w+\s+)*(?:public\s+|private\s+|static\s+)*"
+                         r"(?:var|func|let)\s+(\w+)")
+UI_DECLARATION = re.compile(
+    r"^(label|title|subtitle|eyebrow|name|text|caption|hint|message|summary"
+    r"|description|reason|placeholder|displayName|ageLabel|shortLabel)$"
+    r"|Label$|Title$|Text$|Description$|Message$|Name$",
+)
+RETURNS_LITERAL = re.compile(r'\breturn\s+"')
 
 
 def main() -> int:
@@ -72,13 +98,24 @@ def main() -> int:
         if path.name in EXEMPT_FILES:
             continue
 
+        declaration = ""
         for number, line in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
             if re.match(r"\s*(//|///)", line):
                 continue
+
+            found = DECLARATION.match(line)
+            if found:
+                declaration = found.group(1)
+
             # Trace and NSLog are developer diagnostics, not UI.
             if "Trace." in line or "NSLog" in line:
                 continue
-            if not UI_POSITION.search(line):
+
+            in_ui_declaration = (
+                bool(UI_DECLARATION.search(declaration))
+                and RETURNS_LITERAL.search(line) is not None
+            )
+            if not UI_POSITION.search(line) and not in_ui_declaration:
                 continue
 
             # Blank out anything already inside L(...) / Lp(...) so only bare

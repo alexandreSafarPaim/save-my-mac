@@ -26,8 +26,8 @@ struct DuplicatesView: View {
                     if state.files.looksBlocked && !state.isScanningFiles {
                         PermissionNotice(
                             palette: palette,
-                            deniedCount: state.files.deniedDirectories,
-                            examples: state.files.deniedExamples
+                            probe: state.files.probe,
+                            visitedFiles: state.files.visitedFiles
                         ) { state.openFullDiskAccessSettings() }
                     } else if state.files.duplicates.isEmpty && !state.isScanningFiles {
                         // Same reasoning as Large Files: "no duplicates" and "I did
