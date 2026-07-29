@@ -128,12 +128,10 @@ codesign --verify --deep --strict "$APP" 2>/dev/null \
 phase "3. Behavioural tests"
 
 # Compiled from the same sources minus the UI layer, so the tests link the real
-# implementations rather than copies. `AppState` used to be excluded too, because
-# it depended on `AppSection`, which lived in the excluded `SaveMyMacApp.swift`.
-# The enum moved to Support/ and the app's central object is now in the target.
-TEST_SOURCES=$(find Sources -name '*.swift' \
-  ! -path 'Sources/Views/*' \
-  ! -name 'SaveMyMacApp.swift' | sort)
+# implementations rather than copies. The list itself lives in tests/sources.sh,
+# shared with CI — the two used to carry separate copies, and they drifted
+# within a day of the first divergence.
+TEST_SOURCES=$(./tests/sources.sh)
 
 mkdir -p build
 if swiftc -O -swift-version 5 \

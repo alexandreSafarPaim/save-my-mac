@@ -843,16 +843,28 @@ struct SettingsOpener<Label: View>: View {
     @ViewBuilder var label: () -> Label
 
     var body: some View {
-        // `@Environment(\.openSettings)` only exists on macOS 14. Declaring the
-        // property here would break the build for the 13 target, even inside an
-        // `if #available` — property availability is checked at the declaration,
-        // not at the use. So it lives in an `@available` type that is only
-        // mentioned inside the test.
+        // Two different gates, because these are two different questions:
+        //
+        // `#if compiler` asks whether the SDK **building** us knows the symbol.
+        // The Swift 5.10 toolchain's SDK has no `openSettings` and no
+        // `OpenSettingsAction` at all — CI proved it twice, first as an overload
+        // -resolution failure, then as "cannot find type in scope" once the type
+        // was named explicitly. No runtime check can fix a name the compiler
+        // cannot see, so the modern path must not even be parsed there.
+        //
+        // `if #available` asks whether the machine **running** us has it.
+        //
+        // On an old toolchain the legacy selector is used everywhere, which is
+        // fine: `showSettingsWindow:` works on macOS 13–15.
+        #if compiler(>=6.0)
         if #available(macOS 14.0, *) {
             ModernSettingsOpener(label: label)
         } else {
             Button(action: openLegacy, label: label)
         }
+        #else
+        Button(action: openLegacy, label: label)
+        #endif
     }
 
     /// macOS 13: tries both selectors, **without** checking `responds(to:)`.
@@ -867,6 +879,7 @@ struct SettingsOpener<Label: View>: View {
     }
 }
 
+#if compiler(>=6.0)
 @available(macOS 14.0, *)
 private struct ModernSettingsOpener<Label: View>: View {
     @Environment(\.openSettings) private var openSettings
@@ -883,6 +896,7 @@ private struct ModernSettingsOpener<Label: View>: View {
         }
     }
 }
+#endif
 
 struct StickyActionBar<Content: View>: View {
     var palette: Palette
