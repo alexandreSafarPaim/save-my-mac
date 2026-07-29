@@ -158,7 +158,7 @@ else
   killall SaveMyMac 2>/dev/null; sleep 1
 
   open "$APP" || bad "could not launch the app"
-  echo "      running for 15 s…"
+  echo "      running for 15 s, then sampling CPU for 5 s…"
   sleep 15
 
   PID=$(pgrep -x SaveMyMac | head -1)
@@ -167,13 +167,47 @@ else
   else
     ok "still running (pid $PID)"
 
-    # An idle app should be near zero. Anything sustained means the update graph
-    # is not converging — the symptom that read 100% for hours.
-    CPU=$(ps -o %cpu= -p "$PID" | tr -d ' ')
-    if [ "$(printf '%.0f' "$CPU")" -lt 15 ]; then
-      ok "CPU at rest: ${CPU}%"
+    # CPU measured as a delta over a window, not with `ps -o %cpu`.
+    #
+    # The first version of this check used `%cpu` and reported 42% on a perfectly
+    # healthy app. On macOS that column is an average over the process lifetime,
+    # so the cost of launching — creating the window, registering the fonts,
+    # rendering the first frame — was being amortised over only 15 seconds and
+    # counted as if it were steady-state load.
+    #
+    # It failed in the direction that matters least but hurts most: a false alarm.
+    # A check that cries wolf is a check people learn to ignore, and this one sits
+    # next to the counters that catch a real 100%-CPU loop.
+    #
+    # Cumulative CPU seconds sampled twice, five seconds apart, is what
+    # steady-state actually means.
+    cpu_seconds() {
+      ps -o cputime= -p "$1" 2>/dev/null | tr -d ' ' | python3 -c '
+import sys
+raw = sys.stdin.read().strip()
+if not raw:
+    print(-1); raise SystemExit
+parts = raw.split(":")
+seconds = 0.0
+for part in parts:
+    seconds = seconds * 60 + float(part)
+print(f"{seconds:.2f}")
+'
+    }
+
+    BEFORE=$(cpu_seconds "$PID")
+    sleep 5
+    AFTER=$(cpu_seconds "$PID")
+
+    if [ "$BEFORE" = "-1" ] || [ "$AFTER" = "-1" ]; then
+      warn "could not read CPU time"
     else
-      bad "CPU at rest: ${CPU}% — suspected update loop"
+      CPU=$(python3 -c "print(f'{($AFTER - $BEFORE) / 5 * 100:.1f}')")
+      if python3 -c "import sys; sys.exit(0 if $CPU < 15 else 1)"; then
+        ok "CPU steady-state: ${CPU}% (over a 5 s window)"
+      else
+        bad "CPU steady-state: ${CPU}% — suspected update loop"
+      fi
     fi
 
     if grep -q "MAIN THREAD STALLED" "$TRACE" 2>/dev/null; then
