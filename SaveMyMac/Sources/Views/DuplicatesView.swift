@@ -30,6 +30,16 @@ struct DuplicatesView: View {
                             examples: state.files.deniedExamples
                         ) { state.openFullDiskAccessSettings() }
                     } else if state.files.duplicates.isEmpty && !state.isScanningFiles {
+                        // Same reasoning as Large Files: "no duplicates" and "I did
+                        // not look where your files are" looked identical, and the
+                        // duplicate list comes from the very same walk.
+                        if state.lastFilesScanDate != nil {
+                            Text(L("Compared %d files over 2 MB from your home folder, including ~/Library. Hidden folders, symlinks and iCloud-only files are skipped.",
+                                   state.files.scannedFiles))
+                                .font(Typo.monoTiny)
+                                .foregroundStyle(palette.t3)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         EmptyStateView(
                             symbol: "square.on.square",
                             title: state.lastFilesScanDate == nil

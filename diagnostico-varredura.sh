@@ -93,5 +93,29 @@ find "$HOME" -maxdepth 3 -type l 2>/dev/null | while read -r link; do
 done
 grep -c '→' "$OUT" > /dev/null 2>&1 || say "  (none found at depth 3)"
 
+# ── 6. Are there real duplicates at all? ─────────────────────────────────────
+# The duplicate scan comes from the same walk as the large-file list, so the
+# ~/Library exclusion blinded both identically. This is the ground truth: group
+# files over 2 MB by exact byte size, keep the groups with more than one member,
+# then confirm with a real hash. Same two-step the app uses.
+say ""
+say "═══ 6. Duplicate candidates (files over 2 MB sharing an exact size)"
+say ""
+find "$HOME" -type f -size +2000k 2>/dev/null -print0 \
+  | xargs -0 stat -f '%z %N' 2>/dev/null \
+  | sort -n \
+  | awk '{ size=$1; $1=""; paths[size] = paths[size] $0 "\n"; count[size]++ }
+         END { for (s in count) if (count[s] > 1) printf "%d bytes × %d files\n%s", s, count[s], paths[s] }' \
+  | head -60 | tee -a "$OUT"
+
+GROUPS=$(find "$HOME" -type f -size +2000k 2>/dev/null -print0 \
+  | xargs -0 stat -f '%z' 2>/dev/null | sort -n | uniq -d | wc -l | tr -d ' ')
+say ""
+say "  size groups with more than one file: $GROUPS"
+say ""
+say "  Sharing a size is not being a duplicate — the app then compares content,"
+say "  and only deletes after a full byte-by-byte check. If the number above is 0,"
+say "  there is genuinely nothing to find and the empty screen is correct."
+
 say ""
 say "Done: $OUT"

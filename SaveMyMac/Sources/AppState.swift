@@ -402,7 +402,7 @@ final class AppState: ObservableObject {
         }
     }
 
-    // MARK: - Varredura de limpeza
+    // MARK: - Cleanup scan
 
     func startScan() {
         guard !isScanning else { return }
@@ -446,7 +446,7 @@ final class AppState: ObservableObject {
         scanStatus = "Cancelando…"
     }
 
-    // MARK: - Varredura de arquivos
+    // MARK: - File scan
 
     func startFilesScan() {
         guard !isScanningFiles else { return }
@@ -490,7 +490,7 @@ final class AppState: ObservableObject {
         filesStatus = "Cancelando…"
     }
 
-    // MARK: - Varredura de apps
+    // MARK: - App scan
 
     func startAppsScan() {
         guard !isScanningApps else { return }
@@ -527,7 +527,7 @@ final class AppState: ObservableObject {
         appsStatus = "Cancelando…"
     }
 
-    // MARK: - Varredura de offload
+    // MARK: - Offload scan
 
     func startOffloadScan() {
         guard !isScanningOffload else { return }
@@ -782,7 +782,7 @@ final class AppState: ObservableObject {
         }
     }
 
-    // MARK: - Duplicados
+    // MARK: - Duplicates
 
     func toggleDuplicateGroup(_ group: DuplicateGroup) {
         if selectedDuplicateIDs.contains(group.id) {

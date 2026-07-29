@@ -22,7 +22,7 @@ enum CleanupRemover {
         for item in items {
             let paths = item.allPaths
             guard !paths.isEmpty else { continue }
-            // Divide o tamanho entre os caminhos apenas para a barra de progresso.
+            // Splits the size across the paths for the progress bar only.
             let share = item.size / Int64(paths.count)
             for path in paths {
                 targets.append(Target(path: path, size: share, label: item.displayName))

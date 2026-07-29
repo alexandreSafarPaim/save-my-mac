@@ -10,7 +10,7 @@ final class CleanupScanner: @unchecked Sendable {
     // Large files and duplicates now live in `FileScanner`, each with its own
     // screen. Only the regenerable categories remain here.
 
-    // MARK: - Entrada principal
+    // MARK: - Entry point
 
     func scan(
         progress: @escaping (String, Double) -> Void,

@@ -118,7 +118,7 @@ enum AppUninstaller {
             return "Caminho protegido pelo sistema"
         }
 
-        // Dentro da home, nunca as pastas de topo.
+        // Inside home, never the top-level folders.
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
         if path.hasPrefix(home + "/") {
             let relative = String(path.dropFirst(home.count + 1))

@@ -63,7 +63,7 @@ enum DiskMonitor {
 
         if result.isEmpty { result = [rootVolumeFallback()] }
 
-        // Volume de boot primeiro, depois por tamanho decrescente.
+        // Boot volume first, then by descending size.
         return result.sorted { lhs, rhs in
             let lhsIsRoot = lhs.path == "/"
             let rhsIsRoot = rhs.path == "/"

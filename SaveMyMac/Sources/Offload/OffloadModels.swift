@@ -2,7 +2,7 @@ import Foundation
 
 /// The state of a symlink found in the home folder.
 enum LinkStatus: Equatable {
-    /// Aponta para outro volume, montado, alvo existe. É o caso desejado.
+    /// Points to another volume, mounted, target exists. The desired case.
     case offloaded
     /// Points at a volume that isn't mounted right now.
     case volumeMissing

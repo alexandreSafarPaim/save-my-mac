@@ -112,7 +112,7 @@ final class CandidateScanner: @unchecked Sendable {
               hint: L("Move the library and open Photos holding Option to point at it."))
     ]
 
-    // MARK: - Varredura
+    // MARK: - Scan
 
     func scan(
         progress: @escaping (String, Double) -> Void,
@@ -155,7 +155,7 @@ final class CandidateScanner: @unchecked Sendable {
 
         progress(L("Done"), 1.0)
 
-        // Boas candidatas primeiro, depois por tamanho.
+        // Good candidates first, then by size.
         return candidates.sorted { lhs, rhs in
             let order: [OffloadRecommendation: Int] = [
                 .move: 0, .useNativeSetting: 1, .deleteInstead: 2, .never: 3

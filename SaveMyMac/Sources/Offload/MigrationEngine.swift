@@ -46,7 +46,7 @@ final class MigrationEngine: @unchecked Sendable {
         Store.save(journal, to: MigrationEngine.journalFile)
     }
 
-    // MARK: - Checagens
+    // MARK: - Checks
 
     /// Why the destination is unsuitable, or `nil` if everything is fine.
     static func destinationProblem(_ destination: URL, needing bytes: Int64) -> String? {
@@ -187,7 +187,7 @@ final class MigrationEngine: @unchecked Sendable {
             return MigrationOutcome(entry: entry, succeeded: false, message: message)
         }
 
-        // --- 1. Checagens ---
+        // --- 1. Checks ---
         if let problem = MigrationEngine.sourceProblem(source) { return fail(problem) }
         if let problem = MigrationEngine.nestingProblem(source: source, target: target) { return fail(problem) }
         if fm.fileExists(atPath: target.path) {
@@ -400,7 +400,7 @@ final class MigrationEngine: @unchecked Sendable {
         var files: Int
     }
 
-    /// Conta arquivos e bytes. Serve para dimensionar e depois para conferir.
+    /// Counts files and bytes. Used to size the job, then to verify it.
     private func measure(_ url: URL, isCancelled: () -> Bool) -> Measurement {
         let keys: [URLResourceKey] = [.isRegularFileKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey]
 
@@ -452,7 +452,7 @@ final class MigrationEngine: @unchecked Sendable {
             return L("reading through the link gives %d files instead of %d", through.files, expectedFiles)
         }
 
-        // Escreve e apaga um arquivo de teste dentro do alvo.
+        // Writes and deletes a test file inside the target.
         var isDirectory = false
         if let values = try? target.resourceValues(forKeys: [.isDirectoryKey]) {
             isDirectory = values.isDirectory ?? false

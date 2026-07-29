@@ -78,7 +78,7 @@ final class AppInventoryScanner: @unchecked Sendable {
         (URL(fileURLWithPath: "/System/Applications/Utilities"), true)
     ]
 
-    // MARK: - Varredura
+    // MARK: - Scan
 
     func scan(
         progress: @escaping (String, Double) -> Void,
@@ -99,7 +99,7 @@ final class AppInventoryScanner: @unchecked Sendable {
 
         guard !bundles.isEmpty else { return AppInventoryResult() }
 
-        // Último uso via Spotlight, tudo de uma vez.
+        // Last use through Spotlight, all at once.
         progress(L("Querying Spotlight…"), 0.08)
         let lastUsedMap = lastUsedDates(for: bundles.map { $0.url.path }, isCancelled: isCancelled)
 
@@ -284,7 +284,7 @@ final class AppInventoryScanner: @unchecked Sendable {
         return Int64(values?.totalFileAllocatedSize ?? values?.fileSize ?? 0)
     }
 
-    // MARK: - Último uso via Spotlight
+    // MARK: - Last use through Spotlight
 
     /// Uses `mdls` to read `kMDItemLastUsedDate`. Several processes in parallel,
     /// because one call per app would be slow with 150 apps.

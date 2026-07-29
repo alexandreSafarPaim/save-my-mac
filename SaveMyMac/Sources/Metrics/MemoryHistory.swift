@@ -4,7 +4,7 @@ import Foundation
 struct MemorySample: Identifiable {
     let id = UUID()
     var at: Date
-    /// 0...1 — travada + comprimida sobre o total. É esta a curva que importa.
+    /// 0...1 — wired + compressed over the total. This is the curve that matters.
     var pressure: Double
     /// 0...1 — memory in use over the total.
     var used: Double

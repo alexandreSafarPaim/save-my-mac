@@ -691,6 +691,8 @@ enum Strings {
         "Hidden folders and developer caches are skipped here — the Cleanup tab covers those.": "Pastas ocultas e caches de desenvolvimento ficam de fora aqui — a aba Limpeza cuida delas.",
         "Scope: your home folder, including ~/Library. Hidden folders, developer caches, symlinks and iCloud-only files are skipped. Visited %d files.": "Escopo: sua pasta pessoal, incluindo ~/Library. Pastas ocultas, caches de desenvolvimento, links simbólicos e arquivos só no iCloud ficam de fora. %d arquivos visitados.",
 
+        "Compared %d files over 2 MB from your home folder, including ~/Library. Hidden folders, symlinks and iCloud-only files are skipped.": "Comparou %d arquivos acima de 2 MB da sua pasta pessoal, incluindo ~/Library. Pastas ocultas, links simbólicos e arquivos só no iCloud ficam de fora.",
+
     ]
 
     // MARK: - Español
@@ -1341,6 +1343,8 @@ enum Strings {
         "Hidden folders and developer caches are skipped here — the Cleanup tab covers those.": "Las carpetas ocultas y las cachés de desarrollo quedan fuera aquí — la pestaña Limpieza se encarga de ellas.",
         "Scope: your home folder, including ~/Library. Hidden folders, developer caches, symlinks and iCloud-only files are skipped. Visited %d files.": "Alcance: tu carpeta personal, incluyendo ~/Library. Las carpetas ocultas, las cachés de desarrollo, los enlaces simbólicos y los archivos solo en iCloud quedan fuera. %d archivos visitados.",
 
+        "Compared %d files over 2 MB from your home folder, including ~/Library. Hidden folders, symlinks and iCloud-only files are skipped.": "Comparó %d archivos de más de 2 MB de tu carpeta personal, incluyendo ~/Library. Las carpetas ocultas, los enlaces simbólicos y los archivos solo en iCloud quedan fuera.",
+
     ]
 
     // MARK: - French
@@ -1986,6 +1990,8 @@ enum Strings {
         "The scan visited %d files and found %d above 2 MB, none above 500 MB.": "L'analyse a visité %d fichiers et en a trouvé %d au-dessus de 2 MB, aucun au-dessus de 500 MB.",
         "Hidden folders and developer caches are skipped here — the Cleanup tab covers those.": "Les dossiers cachés et les caches de développement sont exclus ici — l'onglet Nettoyage s'en occupe.",
         "Scope: your home folder, including ~/Library. Hidden folders, developer caches, symlinks and iCloud-only files are skipped. Visited %d files.": "Périmètre : votre dossier personnel, y compris ~/Library. Les dossiers cachés, les caches de développement, les liens symboliques et les fichiers uniquement iCloud sont exclus. %d fichiers visités.",
+
+        "Compared %d files over 2 MB from your home folder, including ~/Library. Hidden folders, symlinks and iCloud-only files are skipped.": "A comparé %d fichiers de plus de 2 MB de votre dossier personnel, y compris ~/Library. Les dossiers cachés, les liens symboliques et les fichiers uniquement iCloud sont exclus.",
 
     ]
 }

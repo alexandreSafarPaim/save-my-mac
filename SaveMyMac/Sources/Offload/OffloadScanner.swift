@@ -36,7 +36,7 @@ final class OffloadScanner: @unchecked Sendable {
         "tvlibrary", "aplibrary", "sparsebundle", "xcodeproj", "xcworkspace"
     ]
 
-    // MARK: - Entrada principal
+    // MARK: - Entry point
 
     func scan(
         progress: @escaping (String, Double) -> Void,
@@ -65,7 +65,7 @@ final class OffloadScanner: @unchecked Sendable {
 
         guard !isCancelled() else { return inventory }
 
-        // Resolve cada link e calcula o tamanho real do alvo.
+        // Resolves each link and computes the target's real size.
         var entries: [SymlinkEntry] = []
         var acceptedTargets: [String] = []
         let totalLinks = max(1, linkURLs.count)
@@ -106,7 +106,7 @@ final class OffloadScanner: @unchecked Sendable {
         return inventory
     }
 
-    // MARK: - Varredura
+    // MARK: - Scan
 
     private func walk(
         directory: URL,
@@ -194,7 +194,7 @@ final class OffloadScanner: @unchecked Sendable {
             ? DiskMonitor.directorySize(at: target, isCancelled: isCancelled)
             : 0
 
-        // Para arquivos soltos, directorySize retorna 0 — cai no tamanho direto.
+        // For loose files, directorySize returns 0 — falls back to the direct size.
         let finalSize: Int64 = {
             guard status == 0, size == 0 else { return size }
             let values = try? target.resourceValues(

@@ -63,8 +63,15 @@ fi
 
 # Portuguese left in comments. Two hits are expected: the quoted language names
 # in the comments explaining why language names aren't translated.
-PT=$(grep -rcE '^[[:space:]]*(//|///).*[çãõáéíóúâêôà]' Sources/ --include=*.swift 2>/dev/null \
-     | awk -F: '{ s += $2 } END { print s+0 }')
+#
+# The character class includes UPPERCASE accents, and the word list catches
+# Portuguese that carries no accent at all. The first version had only lowercase
+# accents and declared the codebase clean while 31 comment lines were still
+# Portuguese — "MARK: - Varredura", "tamanho LÓGICO", "Duplicados". Same failure
+# as the UI sweep that missed Text("Conquistas"): asking about diacritics when
+# the question is about language.
+PT=$(grep -rcE '^[[:space:]]*(//|///)([^"]*[çãõáéíóúâêôàÇÃÕÁÉÍÓÚÂÊÔÀ]|.*\b(Varredura|Duplicados|Entrada|Checagens|Limpeza|arquivos?|pastas?|tamanho|agrupa)\b)' \
+     Sources/ --include=*.swift 2>/dev/null | awk -F: '{ s += $2 } END { print s+0 }')
 if [ "$PT" -le 2 ]; then
   ok "comments in English ($PT expected quotation(s) of language names)"
 else

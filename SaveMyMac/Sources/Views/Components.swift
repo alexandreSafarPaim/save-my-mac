@@ -777,7 +777,7 @@ struct ScanningBanner: View {
     }
 }
 
-// MARK: - Ícone em tile
+// MARK: - Tiled icon
 
 /// Quadrado arredondado com um SF Symbol dentro — substitui os emojis do mockup.
 struct IconTile: View {
@@ -803,7 +803,7 @@ struct IconTile: View {
     }
 }
 
-/// Ícone real de um app, lido do bundle.
+/// An app's real icon, read from the bundle.
 struct AppIconView: View {
     var path: String
     var size: CGFloat = 42

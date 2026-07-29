@@ -157,7 +157,7 @@ struct TreemapSlice: Identifiable {
     var count: Int
 }
 
-// MARK: - Duplicados agrupados
+// MARK: - Grouped duplicates
 
 struct DuplicateCopy: Identifiable, Hashable {
     let id = UUID()
@@ -287,7 +287,7 @@ final class FileScanner: @unchecked Sendable {
         var modified: Date?
     }
 
-    // MARK: - Entrada
+    // MARK: - Entry point
 
     func scan(
         progress: @escaping (String, Double) -> Void,
@@ -355,7 +355,7 @@ final class FileScanner: @unchecked Sendable {
             }
     }
 
-    // MARK: - Varredura
+    // MARK: - Scan
 
     private func enumerateHome(
         isCancelled: () -> Bool,
@@ -420,7 +420,7 @@ final class FileScanner: @unchecked Sendable {
         return (entries, denied, deniedExamples, visited)
     }
 
-    // MARK: - Duplicados
+    // MARK: - Duplicates
 
     private func findDuplicates(
         in entries: [Entry],
@@ -428,7 +428,7 @@ final class FileScanner: @unchecked Sendable {
         progress: (Double) -> Void
     ) -> [DuplicateGroup] {
 
-        // Passo 1: agrupa por tamanho LÓGICO exato em bytes.
+        // Step 1: group by exact LOGICAL size in bytes.
         var bySize: [Int64: [Entry]] = [:]
         for entry in entries where entry.logicalSize >= duplicateThreshold {
             bySize[entry.logicalSize, default: []].append(entry)
