@@ -96,6 +96,15 @@ jobs:
         working-directory: SaveMyMac
         run: python3 tools/check-translations.py
 
+      # Catches a hardcoded UI string before it ships. This is structural, not
+      # language-based: it asks whether a literal in a UI position went through
+      # the table, not what language it looks like. The earlier accent-based
+      # sweep reported "clean" while 99 Portuguese strings were still hardcoded —
+      # every one of them accent-free.
+      - name: Check for hardcoded UI strings
+        working-directory: SaveMyMac
+        run: python3 tools/check-untranslated-ui.py
+
       - name: Upload app bundle
         if: success()
         uses: actions/upload-artifact@v4

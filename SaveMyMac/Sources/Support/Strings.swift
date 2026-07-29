@@ -1,28 +1,29 @@
 import Foundation
 
-/// Tabelas de tradução.
+/// Translation tables.
 ///
-/// **Não existe tabela `en`.** A chave já é o texto em inglês, então inglês é o
-/// caminho sem busca — e qualquer frase sem tradução cai nele. Uma tradução
-/// faltando degrada para uma frase correta em outra língua, não para uma chave
-/// crua na tela.
+/// **There is no `en` table.** The key is already the English text, so English
+/// is the lookup-free path — and any phrase without a translation falls back to
+/// it. A missing translation degrades to a correct sentence in another language,
+/// not to a raw key on screen.
 ///
-/// ── Como adicionar um idioma ──────────────────────────────────────────────
+/// ── Adding a language ─────────────────────────────────────────────────────
 ///
-/// 1. Um `case` novo em `Language`, com o nome escrito no próprio idioma
-/// 2. Um dicionário novo aqui
-/// 3. Um `case` em `L(_:)` e, se a regra de plural for diferente das que já
-///    existem, um `case` em `Lp`
+/// 1. A new `case` in `Language`, named in its own language
+/// 2. A new dictionary here
+/// 3. A `case` in `L(_:)` and, if the plural rule differs from the ones that
+///    already exist, a `case` in `Lp`
 ///
-/// Não é preciso traduzir tudo de uma vez. O que faltar aparece em inglês.
+/// You don't have to translate everything at once. Whatever is missing shows in
+/// English.
 ///
-/// ── Convenções ───────────────────────────────────────────────────────────
+/// ── Conventions ──────────────────────────────────────────────────────────
 ///
-/// - `%@` texto, `%d` inteiro. A ordem pode mudar entre idiomas, e é por isso
-///   que existem marcadores em vez de concatenação.
-/// - Reticências de menu são o caractere `…`, não três pontos.
-/// - Unidades (GB, MB, °C, %) são formatadas pelo `Fmt`, que respeita o
-///   `Locale` do sistema. Não entram nas tabelas.
+/// - `%@` for text, `%d` for integers. The order can change between languages,
+///   which is why there are placeholders instead of concatenation.
+/// - Menu ellipses are the `…` character, not three dots.
+/// - Units (GB, MB, °C, %) are formatted by `Fmt`, which respects the system
+///   `Locale`. They don't belong in the tables.
 enum Strings {
 
     // MARK: - Português
@@ -37,8 +38,9 @@ enum Strings {
         "Apps": "Aplicativos",
         "Large files": "Grandes arquivos",
         "Duplicates": "Duplicados",
-        // "Offload" não entra: é a mesma palavra em português, e entrada que
-        // traduz para si mesma só ocupa espaço — a busca já cai na chave.
+        // "Offload" is absent: it's the same word in Portuguese, and an entry
+        // that translates to itself is dead weight — the lookup already falls
+        // back to the key.
         "Navigation": "Navegação",
 
         // Faixa do topo
@@ -55,8 +57,8 @@ enum Strings {
         "Offloaded": "Descarregado",
         "Level %d": "Nível %d",
         "No active week yet": "Nenhuma semana ativa ainda",
-        "%d-week streak": "Streak de %d semana",
-        "%d-week streak (plural)": "Streak de %d semanas",
+        "Streak: %d week": "Streak de %d semana",
+        "Streak: %d weeks": "Streak de %d semanas",
 
         // Painel da barra de menus
         "Health": "Saúde",
@@ -579,6 +581,101 @@ enum Strings {
         "Steam has \"Library Folders\" in its preferences — more robust than a link.": "A Steam tem \"Pastas da biblioteca\" nas preferências — mais robusto que um link.",
         "Preferences → Media Cache → change the folder.": "Preferências → Media Cache → mudar a pasta.",
 
+        // ── Último lote ──
+        "Achievements": "Conquistas",
+        "Battery": "Bateria",
+        "Fan": "Ventoinha",
+        "Fans": "Ventoinhas",
+        "Storage": "Armazenamento",
+        "By CPU": "Por CPU",
+        "%d sensors": "%d sensores",
+        "%@ sitting in the Trash": "%@ parados na Lixeira",
+        "%d processes": "%d processos",
+        "%@ in total": "%@ no total",
+        "Change": "Trocar",
+        "%d found": "%d encontrados",
+        "%@ offloaded": "%@ descarregados",
+        "%@ used": "%@ usado",
+        "Quarantine": "Quarentena",
+        "%d files · moved %@": "%d arquivos · movido %@",
+        "Undo": "Reverter",
+        "Release": "Liberar",
+        "Scan": "Analisar",
+        "KEEPS": "PRESERVA",
+        "REMOVES": "REMOVE",
+        "%@ to free": "%@ a liberar",
+        "%d shown": "%d exibidos",
+        "+%@ outside the app": "+%@ fora do app",
+        "Uninstall": "Desinstalar",
+        "Close": "Fechar",
+        "%d files walked": "%d arquivos percorridos",
+        "PERMANENT": "PERMANENTE",
+        "%d items": "%d itens",
+        "%d category · %d items": "%d categoria · %d itens",
+        "%d categories · %d items": "%d categorias · %d itens",
+        "Trash emptied": "Lixeira esvaziada",
+        "Duplicates removed": "Duplicados removidos",
+        "Cache cleared": "Cache limpo",
+        "%@ removed": "%@ removido",
+        "Destination set: %@": "Destino definido: %@",
+        "Choose the destination folder first.": "Escolha primeiro a pasta de destino.",
+        "Scan files and duplicates": "Analisar arquivos e duplicados",
+        "Scan applications": "Analisar aplicativos",
+        "Check offload links": "Verificar links de offload",
+        "Nice": "Boa",
+        "RISK %d/10": "RISCO %d/10",
+        "Failed to disable: %@": "Falha ao desativar: %@",
+        "SaveMyMac will open together with the Mac.": "O SaveMyMac vai abrir junto com o Mac.",
+        "Enabled through a LaunchAgent. Modern registration failed (%@) — expected in an ad-hoc signed app.": "Ativado por LaunchAgent. O registro moderno falhou (%@) — esperado num app assinado ad-hoc.",
+        "the app has to be in a .app bundle (run ./build.sh --install)": "o app precisa estar num bundle .app (rode ./build.sh --install)",
+        "Open SaveMyMac to see what can go.": "Abra o SaveMyMac para ver o que pode sair.",
+        "Outside your home folder": "Fora da sua pasta pessoal",
+        "Name conflict inside the Trash.": "Conflito de nome dentro da Lixeira.",
+        "Application caches": "Caches de aplicativos",
+        "Package manager caches": "Caches de gerenciadores de pacotes",
+        "Simulator runtime cache": "Cache de runtimes de simulador",
+        "Usually the biggest hidden files on the Mac": "Costumam ser os maiores arquivos ocultos do Mac",
+        "No installed app matches this identifier (%@)": "Nenhum app instalado corresponde a este identificador (%@)",
+        "Support data with no matching application": "Dados de suporte sem aplicativo correspondente",
+        "Developer tools": "Ferramentas de desenvolvedor",
+        "npm, pip, Homebrew, Gradle and similar": "npm, pip, Homebrew, Gradle e afins",
+        "abandoned node_modules": "node_modules abandonados",
+        "Local iPhone/iPad backups": "Backups locais de iPhone/iPad",
+        "Old downloads": "Downloads antigos",
+        "Installers (.dmg, .pkg, .iso)": "Instaladores (.dmg, .pkg, .iso)",
+        "Leftovers from uninstalled apps": "Sobras de apps desinstalados",
+        ".DS_Store files": "Arquivos .DS_Store",
+        "iOS simulators": "Simuladores de iOS",
+        "iPhone/iPad backups": "Backups de iPhone/iPad",
+        "Android emulators (AVD)": "Emuladores Android (AVD)",
+        "Large virtual disks, used on demand.": "Discos virtuais grandes, usados sob demanda.",
+        "Steam library": "Biblioteca da Steam",
+        "Heavy VM images.": "Imagens de VM pesadas.",
+        "Ollama models": "Modelos do Ollama",
+        "Hugging Face cache": "Cache do Hugging Face",
+        "npm cache": "Cache do npm",
+        "Homebrew cache": "Cache do Homebrew",
+        "pip cache": "Cache do pip",
+        "Downloaded Python wheels, rebuilt on demand.": "Rodas Python baixadas, refeitas sob demanda.",
+        "Docker virtual disk": "Disco virtual do Docker",
+        "Adobe cache": "Cache do Adobe",
+        "Photos library": "Biblioteca do Fotos",
+        "Every simulator you create stays on disk. Lukewarm access, high volume.": "Cada simulador criado fica em disco. Acesso morno, volume alto.",
+        "Virtual disks of tens of GB.": "Discos virtuais de dezenas de GB.",
+        "Downloaded model weights, rarely all in use.": "Pesos de modelos baixados, raramente todos em uso.",
+        "Grows without stopping, but Docker actively manages this file.": "Cresce sem parar, mas o Docker gerencia esse arquivo ativamente.",
+        "The iCloud daemon manages this folder and fights with links.": "O daemon do iCloud gerencia esta pasta e briga com links.",
+        "Move the library and open Photos holding Option to point at it.": "Mova a biblioteca e abra o Fotos com Option pressionado para apontar para ela.",
+        "the system keychain": "as chaves do sistema",
+        "Moving the original into quarantine…": "Guardando o original na quarentena…",
+        "Failed to publish to the destination, original restored: %@": "Falha ao publicar no destino, original devolvido: %@",
+        "Failed to create the link, the original was restored: %@": "Falha ao criar o link, o original foi devolvido: %@",
+        "Failed to restore the original: %@": "Falha ao devolver o original: %@",
+        "Failed to release the quarantine: %@": "Falha ao liberar a quarentena: %@",
+        "%@ freed on the Mac's disk.": "%@ liberados no disco do Mac.",
+        "%@ off the Mac's disk": "%@ fora do disco do Mac",
+        "%@ still taking up the Mac's disk": "%@ ainda ocupando o disco do Mac",
+
     ]
 
     // MARK: - Español
@@ -606,8 +703,8 @@ enum Strings {
         "Offloaded": "Descargado",
         "Level %d": "Nivel %d",
         "No active week yet": "Aún no hay semana activa",
-        "%d-week streak": "Racha de %d semana",
-        "%d-week streak (plural)": "Racha de %d semanas",
+        "Streak: %d week": "Racha de %d semana",
+        "Streak: %d weeks": "Racha de %d semanas",
 
         "Health": "Salud",
         "Memory": "Memoria",
@@ -1116,6 +1213,104 @@ enum Strings {
         "Steam has \"Library Folders\" in its preferences — more robust than a link.": "Steam tiene \"Carpetas de la biblioteca\" en sus preferencias — más robusto que un enlace.",
         "Preferences → Media Cache → change the folder.": "Preferencias → Media Cache → cambiar la carpeta.",
 
+        // ── Último lote ──
+        "Achievements": "Logros",
+        "Battery": "Batería",
+        "Fan": "Ventilador",
+        "Fans": "Ventiladores",
+        "Storage": "Almacenamiento",
+        "By CPU": "Por CPU",
+        "%d sensors": "%d sensores",
+        "%d volume": "%d volumen",
+        "%d volumes": "%d volúmenes",
+        "%@ sitting in the Trash": "%@ parados en la Papelera",
+        "%d processes": "%d procesos",
+        "%@ in total": "%@ en total",
+        "Change": "Cambiar",
+        "%d found": "%d encontrados",
+        "%@ offloaded": "%@ descargados",
+        "%@ used": "%@ usado",
+        "Quarantine": "Cuarentena",
+        "%d files · moved %@": "%d archivos · movido %@",
+        "Undo": "Revertir",
+        "Release": "Liberar",
+        "Scan": "Analizar",
+        "KEEPS": "CONSERVA",
+        "REMOVES": "ELIMINA",
+        "%@ to free": "%@ a liberar",
+        "%d shown": "%d mostrados",
+        "+%@ outside the app": "+%@ fuera de la app",
+        "Uninstall": "Desinstalar",
+        "Close": "Cerrar",
+        "%d files walked": "%d archivos recorridos",
+        "PERMANENT": "PERMANENTE",
+        "%d item": "%d ítem",
+        "%d items": "%d ítems",
+        "%d category · %d items": "%d categoría · %d ítems",
+        "%d categories · %d items": "%d categorías · %d ítems",
+        "Trash emptied": "Papelera vaciada",
+        "Duplicates removed": "Duplicados eliminados",
+        "Cache cleared": "Caché limpiada",
+        "%@ removed": "%@ eliminado",
+        "Destination set: %@": "Destino definido: %@",
+        "Choose the destination folder first.": "Elige primero la carpeta de destino.",
+        "Scan files and duplicates": "Analizar archivos y duplicados",
+        "Scan applications": "Analizar aplicaciones",
+        "Check offload links": "Verificar enlaces de descarga",
+        "Nice": "Bien",
+        "RISK %d/10": "RIESGO %d/10",
+        "Failed to disable: %@": "Fallo al desactivar: %@",
+        "SaveMyMac will open together with the Mac.": "SaveMyMac se abrirá junto con el Mac.",
+        "Enabled through a LaunchAgent. Modern registration failed (%@) — expected in an ad-hoc signed app.": "Activado mediante LaunchAgent. El registro moderno falló (%@) — esperado en una app firmada ad-hoc.",
+        "the app has to be in a .app bundle (run ./build.sh --install)": "la app debe estar en un paquete .app (ejecuta ./build.sh --install)",
+        "Open SaveMyMac to see what can go.": "Abre SaveMyMac para ver qué puede salir.",
+        "Outside your home folder": "Fuera de tu carpeta personal",
+        "Name conflict inside the Trash.": "Conflicto de nombre dentro de la Papelera.",
+        "Application caches": "Cachés de aplicaciones",
+        "Package manager caches": "Cachés de gestores de paquetes",
+        "Simulator runtime cache": "Caché de runtimes de simulador",
+        "Usually the biggest hidden files on the Mac": "Suelen ser los archivos ocultos más grandes del Mac",
+        "No installed app matches this identifier (%@)": "Ninguna app instalada corresponde a este identificador (%@)",
+        "Support data with no matching application": "Datos de apoyo sin aplicación correspondiente",
+        "Developer tools": "Herramientas de desarrollo",
+        "npm, pip, Homebrew, Gradle and similar": "npm, pip, Homebrew, Gradle y similares",
+        "abandoned node_modules": "node_modules abandonados",
+        "Local iPhone/iPad backups": "Copias locales de iPhone/iPad",
+        "Old downloads": "Descargas antiguas",
+        "Installers (.dmg, .pkg, .iso)": "Instaladores (.dmg, .pkg, .iso)",
+        "Leftovers from uninstalled apps": "Restos de apps desinstaladas",
+        ".DS_Store files": "Archivos .DS_Store",
+        "iOS simulators": "Simuladores de iOS",
+        "iPhone/iPad backups": "Copias de iPhone/iPad",
+        "Android emulators (AVD)": "Emuladores de Android (AVD)",
+        "Large virtual disks, used on demand.": "Discos virtuales grandes, usados a demanda.",
+        "Steam library": "Biblioteca de Steam",
+        "Heavy VM images.": "Imágenes de VM pesadas.",
+        "Ollama models": "Modelos de Ollama",
+        "Hugging Face cache": "Caché de Hugging Face",
+        "npm cache": "Caché de npm",
+        "Homebrew cache": "Caché de Homebrew",
+        "pip cache": "Caché de pip",
+        "Downloaded Python wheels, rebuilt on demand.": "Ruedas de Python descargadas, rehechas a demanda.",
+        "Docker virtual disk": "Disco virtual de Docker",
+        "Adobe cache": "Caché de Adobe",
+        "Photos library": "Biblioteca de Fotos",
+        "Every simulator you create stays on disk. Lukewarm access, high volume.": "Cada simulador creado queda en disco. Acceso tibio, volumen alto.",
+        "Virtual disks of tens of GB.": "Discos virtuales de decenas de GB.",
+        "Downloaded model weights, rarely all in use.": "Pesos de modelos descargados, rara vez todos en uso.",
+        "Grows without stopping, but Docker actively manages this file.": "Crece sin parar, pero Docker gestiona este archivo activamente.",
+        "The iCloud daemon manages this folder and fights with links.": "El daemon de iCloud gestiona esta carpeta y pelea con los enlaces.",
+        "Move the library and open Photos holding Option to point at it.": "Mueve la biblioteca y abre Fotos con Opción pulsada para apuntar a ella.",
+        "the system keychain": "el llavero del sistema",
+        "Moving the original into quarantine…": "Guardando el original en cuarentena…",
+        "Failed to publish to the destination, original restored: %@": "Fallo al publicar en el destino, original devuelto: %@",
+        "Failed to create the link, the original was restored: %@": "Fallo al crear el enlace, el original fue devuelto: %@",
+        "Failed to restore the original: %@": "Fallo al devolver el original: %@",
+        "Failed to release the quarantine: %@": "Fallo al liberar la cuarentena: %@",
+        "%@ freed on the Mac's disk.": "%@ liberados en el disco del Mac.",
+        "%@ off the Mac's disk": "%@ fuera del disco del Mac",
+        "%@ still taking up the Mac's disk": "%@ todavía ocupando el disco del Mac",
+
     ]
 
     // MARK: - Français
@@ -1142,8 +1337,8 @@ enum Strings {
         "Offloaded": "Déchargé",
         "Level %d": "Niveau %d",
         "No active week yet": "Aucune semaine active",
-        "%d-week streak": "Série de %d semaine",
-        "%d-week streak (plural)": "Série de %d semaines",
+        "Streak: %d week": "Série de %d semaine",
+        "Streak: %d weeks": "Série de %d semaines",
 
         "Health": "Santé",
         "Memory": "Mémoire",
@@ -1650,6 +1845,102 @@ enum Strings {
         "The copy does not match: %d of %d files, %@ of %@. Nothing was moved.": "La copie ne correspond pas : %d fichiers sur %d, %@ sur %@. Rien n'a été déplacé.",
         "Steam has \"Library Folders\" in its preferences — more robust than a link.": "Steam a \"Dossiers de bibliothèque\" dans ses préférences — plus robuste qu\'un lien.",
         "Preferences → Media Cache → change the folder.": "Préférences → Media Cache → changer le dossier.",
+
+        // ── Último lote ──
+        "Achievements": "Succès",
+        "Battery": "Batterie",
+        "Fan": "Ventilateur",
+        "Fans": "Ventilateurs",
+        "Storage": "Stockage",
+        "By CPU": "Par processeur",
+        "%d sensors": "%d capteurs",
+        "%@ sitting in the Trash": "%@ en attente dans la Corbeille",
+        "%d processes": "%d processus",
+        "%@ in total": "%@ au total",
+        "Change": "Changer",
+        "%d found": "%d trouvés",
+        "%@ offloaded": "%@ déchargés",
+        "%@ used": "%@ utilisés",
+        "Quarantine": "Quarantaine",
+        "%d files · moved %@": "%d fichiers · déplacé %@",
+        "Undo": "Annuler",
+        "Release": "Libérer",
+        "Scan": "Analyser",
+        "KEEPS": "CONSERVE",
+        "REMOVES": "SUPPRIME",
+        "%@ to free": "%@ à libérer",
+        "%d shown": "%d affichés",
+        "+%@ outside the app": "+%@ hors de l'app",
+        "Uninstall": "Désinstaller",
+        "Close": "Fermer",
+        "%d files walked": "%d fichiers parcourus",
+        "PERMANENT": "DÉFINITIF",
+        "%d item": "%d élément",
+        "%d items": "%d éléments",
+        "%d category · %d items": "%d catégorie · %d éléments",
+        "%d categories · %d items": "%d catégories · %d éléments",
+        "Trash emptied": "Corbeille vidée",
+        "Duplicates removed": "Doublons supprimés",
+        "Cache cleared": "Cache vidé",
+        "%@ removed": "%@ supprimé",
+        "Destination set: %@": "Destination définie : %@",
+        "Choose the destination folder first.": "Choisissez d'abord le dossier de destination.",
+        "Scan files and duplicates": "Analyser fichiers et doublons",
+        "Scan applications": "Analyser les applications",
+        "Check offload links": "Vérifier les liens de déchargement",
+        "Nice": "Bravo",
+        "RISK %d/10": "RISQUE %d/10",
+        "Failed to disable: %@": "Échec de la désactivation : %@",
+        "SaveMyMac will open together with the Mac.": "SaveMyMac s'ouvrira avec le Mac.",
+        "Enabled through a LaunchAgent. Modern registration failed (%@) — expected in an ad-hoc signed app.": "Activé via un LaunchAgent. L'enregistrement moderne a échoué (%@) — attendu dans une app signée ad-hoc.",
+        "the app has to be in a .app bundle (run ./build.sh --install)": "l'app doit être dans un paquet .app (lancez ./build.sh --install)",
+        "Open SaveMyMac to see what can go.": "Ouvrez SaveMyMac pour voir ce qui peut partir.",
+        "Outside your home folder": "Hors de votre dossier personnel",
+        "Name conflict inside the Trash.": "Conflit de nom dans la Corbeille.",
+        "Application caches": "Caches d'applications",
+        "Package manager caches": "Caches de gestionnaires de paquets",
+        "Simulator runtime cache": "Cache des runtimes de simulateur",
+        "Usually the biggest hidden files on the Mac": "Souvent les plus gros fichiers cachés du Mac",
+        "No installed app matches this identifier (%@)": "Aucune app installée ne correspond à cet identifiant (%@)",
+        "Support data with no matching application": "Données de support sans application correspondante",
+        "Developer tools": "Outils de développement",
+        "npm, pip, Homebrew, Gradle and similar": "npm, pip, Homebrew, Gradle et similaires",
+        "abandoned node_modules": "node_modules abandonnés",
+        "Local iPhone/iPad backups": "Sauvegardes locales d'iPhone/iPad",
+        "Old downloads": "Anciens téléchargements",
+        "Installers (.dmg, .pkg, .iso)": "Installeurs (.dmg, .pkg, .iso)",
+        "Leftovers from uninstalled apps": "Restes d'apps désinstallées",
+        ".DS_Store files": "Fichiers .DS_Store",
+        "iOS simulators": "Simulateurs iOS",
+        "iPhone/iPad backups": "Sauvegardes iPhone/iPad",
+        "Android emulators (AVD)": "Émulateurs Android (AVD)",
+        "Large virtual disks, used on demand.": "Grands disques virtuels, utilisés à la demande.",
+        "Steam library": "Bibliothèque Steam",
+        "Heavy VM images.": "Images de VM volumineuses.",
+        "Ollama models": "Modèles Ollama",
+        "Hugging Face cache": "Cache Hugging Face",
+        "npm cache": "Cache npm",
+        "Homebrew cache": "Cache Homebrew",
+        "pip cache": "Cache pip",
+        "Downloaded Python wheels, rebuilt on demand.": "Wheels Python téléchargés, reconstruits à la demande.",
+        "Docker virtual disk": "Disque virtuel Docker",
+        "Adobe cache": "Cache Adobe",
+        "Photos library": "Bibliothèque Photos",
+        "Every simulator you create stays on disk. Lukewarm access, high volume.": "Chaque simulateur créé reste sur le disque. Accès tiède, volume élevé.",
+        "Virtual disks of tens of GB.": "Disques virtuels de dizaines de GB.",
+        "Downloaded model weights, rarely all in use.": "Poids de modèles téléchargés, rarement tous utilisés.",
+        "Grows without stopping, but Docker actively manages this file.": "Grossit sans arrêt, mais Docker gère activement ce fichier.",
+        "The iCloud daemon manages this folder and fights with links.": "Le démon iCloud gère ce dossier et se bat avec les liens.",
+        "Move the library and open Photos holding Option to point at it.": "Déplacez la bibliothèque et ouvrez Photos en maintenant Option pour la désigner.",
+        "the system keychain": "le trousseau système",
+        "Moving the original into quarantine…": "Mise en quarantaine de l'original…",
+        "Failed to publish to the destination, original restored: %@": "Échec de la publication vers la destination, original restauré : %@",
+        "Failed to create the link, the original was restored: %@": "Échec de la création du lien, l'original a été restauré : %@",
+        "Failed to restore the original: %@": "Échec de la restauration de l'original : %@",
+        "Failed to release the quarantine: %@": "Échec de la libération de la quarantaine : %@",
+        "%@ freed on the Mac's disk.": "%@ libérés sur le disque du Mac.",
+        "%@ off the Mac's disk": "%@ hors du disque du Mac",
+        "%@ still taking up the Mac's disk": "%@ occupant encore le disque du Mac",
 
     ]
 }

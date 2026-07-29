@@ -1,68 +1,71 @@
 import Foundation
 
-/// Modo de bisecção para isolar travamento de interface.
+/// Bisection switch for isolating an interface hang.
 ///
-/// Ligar com:
+/// Turn on with:
 ///     defaults write br.com.pentagrama.savemymac safeMode -bool true
-/// Desligar com:
+/// Turn off with:
 ///     defaults write br.com.pentagrama.savemymac safeMode -bool false
 ///
-/// Com ele ligado o app desativa, de uma vez, tudo que é enfeite ou
-/// infraestrutura recente:
+/// With this on, the app disables everything that is decoration or recent
+/// infrastructure, all at once:
 ///
-///   - o fundo atmosférico (grade + gradientes radiais)
-///   - o item na barra de menus
-///   - o `FlowLayout`, que é um `Layout` customizado escrito à mão — a peça com
-///     maior chance de entrar em negociação infinita de layout
-///   - as animações de entrada
+///   - the atmospheric background (grid + radial gradients)
+///   - the menu bar item
+///   - `FlowLayout`, a hand-written custom `Layout` — the piece most likely to
+///     get into an endless layout negotiation
+///   - the entrance animations
 ///
-/// Se o app funcionar em modo seguro, o problema está numa dessas quatro. Se
-/// travar mesmo assim, está no núcleo e o enfeite é inocente. Isso vale mais do
-/// que qualquer palpite meu.
+/// If the app works in safe mode, the problem is in one of those four. If it
+/// hangs anyway, it's in the core and the decoration is innocent. That's worth
+/// more than any guess of mine.
 enum SafeMode {
 
-    /// Lido uma vez. Trocar exige reabrir o app, o que é proposital: alternar em
-    /// tempo real reconstruiria a árvore de views e confundiria o diagnóstico.
+    /// Read once. Changing it requires reopening the app, which is deliberate:
+    /// toggling live would rebuild the view tree and muddle the diagnosis.
     static let isOn: Bool = {
         let on = UserDefaults.standard.bool(forKey: "safeMode")
         if on {
-            NSLog("[SaveMyMac] MODO SEGURO ativo: fundo, barra de menus, FlowLayout e animações desligados.")
+            NSLog("[SaveMyMac] SAFE MODE on: background, menu bar, FlowLayout and animations disabled.")
         }
         return on
     }()
 }
 
-/// A cena da barra de menus — **ligada por padrão**.
+/// The menu bar scene — **on by default**.
 ///
-/// Ela ficou desativada por um tempo, e vale registrar por quê, porque a
-/// conclusão foi errada: quando este recurso entrou, o app passou a travar na
-/// abertura e o item nunca apareceu ao lado do relógio. Parecia culpa dele.
+/// It was disabled for a while, and it's worth recording why, because the
+/// conclusion was wrong: when this feature landed, the app started hanging at
+/// launch and the item never appeared next to the clock. It looked like its
+/// fault.
 ///
-/// Não era. A causa estava no `Preferences`, que usava `@Published`. O
-/// `MenuBarExtra(isInserted:)` escreve no binding a cada passagem de
-/// atualização, e `@Published` publica em toda atribuição — inclusive quando o
-/// valor não muda. Isso fechava um ciclo que consumia 100 % de um núcleo e
-/// impedia o grafo de convergir. **O item nunca apareceu porque o app nunca
-/// terminava a primeira atualização.** O recurso era vítima, não culpado.
+/// It wasn't. The cause was in `Preferences`, which used `@Published`.
+/// `MenuBarExtra(isInserted:)` writes to its binding on every update pass, and
+/// `@Published` publishes on every assignment — including assignments that
+/// don't change the value. That closed a cycle which burned 100% of a core and
+/// kept the graph from converging. **The item never appeared because the app
+/// never finished its first update.** The feature was the victim, not the
+/// culprit.
 ///
-/// Corrigido o setter, ele funciona. A chave continua existindo como interruptor
-/// de emergência — é barato manter e evita ter que recompilar para isolar algo:
+/// With the setter fixed, it works. The key stays around as an emergency
+/// switch — cheap to keep, and it avoids having to recompile to isolate
+/// something:
 ///
 ///     defaults write br.com.pentagrama.savemymac enableMenuBar -bool false
 ///
-/// A decisão é lida **uma vez, no lançamento**: alternar em tempo real
-/// reconstruiria a árvore de cenas, que é justamente o que não se quer testar
-/// enquanto se investiga instabilidade.
+/// The decision is read **once, at launch**: toggling live would rebuild the
+/// scene tree, which is exactly what you don't want to be testing while
+/// investigating instability.
 enum MenuBarFeature {
 
     static let isEnabled: Bool = {
         guard !SafeMode.isOn else { return false }
         let defaults = UserDefaults.standard
-        // Registrado aqui e não no `Preferences`: isto é lido no lançamento,
-        // possivelmente antes de `Preferences.init` existir.
+        // Registered here rather than in `Preferences`: this is read at launch,
+        // possibly before `Preferences.init` exists.
         defaults.register(defaults: ["enableMenuBar": true])
         let on = defaults.bool(forKey: "enableMenuBar")
-        NSLog("[SaveMyMac] Barra de menus: \(on ? "ligada" : "desligada")")
+        NSLog("[SaveMyMac] Menu bar: \(on ? "on" : "off")")
         return on
     }()
 }

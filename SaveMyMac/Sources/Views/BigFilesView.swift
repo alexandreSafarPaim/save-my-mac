@@ -53,7 +53,7 @@ struct BigFilesView: View {
 
     private var header: some View {
         ScreenHeader(
-            eyebrow: "Grandes arquivos",
+            eyebrow: L("Large files"),
             title: state.files.largeFiles.isEmpty
                 ? L("Files over 500 MB")
                 : L("%@ across %d huge files", Fmt.bytes(state.files.largeTotal), state.files.largeFiles.count),
@@ -141,7 +141,7 @@ struct BigFilesView: View {
                         .foregroundStyle(palette.t3)
                 }
                 Spacer()
-                Text("\(state.files.scannedFiles) arquivos percorridos")
+                Text(L("%d files walked", state.files.scannedFiles))
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
             }
@@ -231,8 +231,8 @@ struct BigFilesView: View {
                         .frame(width: 84, alignment: .trailing)
 
                     Menu {
-                        Button("Mostrar no Finder") { state.reveal(file.path) }
-                        Button("Copiar caminho") { state.copyToClipboard(file.path) }
+                        Button(L("Show in Finder")) { state.reveal(file.path) }
+                        Button(L("Copy path")) { state.copyToClipboard(file.path) }
                         Divider()
                         Button(L("Offload to another disk…")) {
                             selection = .offload
@@ -254,8 +254,8 @@ struct BigFilesView: View {
                         .strokeBorder(palette.stroke, lineWidth: 1)
                 )
                 .contextMenu {
-                    Button("Mostrar no Finder") { state.reveal(file.path) }
-                    Button("Copiar caminho") { state.copyToClipboard(file.path) }
+                    Button(L("Show in Finder")) { state.reveal(file.path) }
+                    Button(L("Copy path")) { state.copyToClipboard(file.path) }
                 }
             }
         }

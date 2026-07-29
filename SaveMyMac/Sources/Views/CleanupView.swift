@@ -112,10 +112,10 @@ struct CleanupView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 8) {
-                    Text("Lixeira")
+                    Text(L("Trash"))
                         .font(Typo.rowTitle)
                         .foregroundStyle(palette.t1)
-                    Chip(text: "PERMANENTE", palette: palette, color: palette.danger)
+                    Chip(text: L("PERMANENT"), palette: palette, color: palette.danger)
                 }
                 Text(trashSubtitle)
                     .font(Typo.bodySmall)
@@ -233,7 +233,7 @@ struct CleanupView: View {
                             .font(Typo.rowTitle)
                             .foregroundStyle(palette.t1)
                         RiskPill(text: category.risk.label, score: category.riskScore, palette: palette)
-                        Text("\(category.items.count) item\(category.items.count == 1 ? "" : "s")")
+                        Text(Lp("%d item", "%d items", count: category.items.count))
                             .font(Typo.monoTiny)
                             .foregroundStyle(palette.t3)
                     }
@@ -354,10 +354,12 @@ struct CleanupView: View {
         StickyActionBar(palette: palette) {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(state.selectedCategoryCount) categoria\(state.selectedCategoryCount == 1 ? "" : "s") · \(state.selectedItems.count) itens")
+                    Text(Lp("%d category · %d items", "%d categories · %d items",
+                          count: state.selectedCategoryCount,
+                          state.selectedCategoryCount, state.selectedItems.count))
                         .font(Typo.caption)
                         .foregroundStyle(palette.t2)
-                    Text("\(Fmt.bytes(state.selectedSize)) a liberar")
+                    Text(L("%@ to free", Fmt.bytes(state.selectedSize)))
                         .font(Typo.statValue)
                         .foregroundStyle(state.selectedSize > 0 ? palette.ok : palette.t3)
                 }

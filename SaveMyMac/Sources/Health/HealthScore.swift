@@ -93,7 +93,7 @@ enum HealthScore {
         @unknown default: thermalQuality = 0.8
         }
         factors.append(HealthFactor(
-            name: "Temperatura",
+            name: L("Temperature"),
             detail: thermal.displayTemperature.map { "\(thermal.thermalStateLabel) · \(Fmt.celsius($0))" }
                 ?? thermal.thermalStateLabel,
             quality: thermalQuality,

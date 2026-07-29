@@ -185,8 +185,22 @@ struct SaveMyMacApp: App {
 
     // MARK: - Janela principal
 
+    /// `Window`, **não** `WindowGroup`.
+    ///
+    /// Um `WindowGroup` é um molde: `openWindow(id:)` cria uma janela nova a
+    /// cada chamada. Como o painel da barra de menus chama isso em toda ação,
+    /// clicar em "Abrir o SaveMyMac" cinco vezes abria cinco janelas — cada uma
+    /// com sua própria árvore de views, todas observando o mesmo `AppState` e
+    /// todas re-renderizando a cada tique de métricas.
+    ///
+    /// `Window` é instância única. `openWindow(id:)` passa a trazer a que já
+    /// existe para a frente, que é o comportamento certo para um app de painel:
+    /// não há documento nenhum para ter em duplicata.
+    ///
+    /// De bônus, `Window` remove sozinho o "Nova janela" do menu Arquivo — o
+    /// `CommandGroup(replacing: .newItem)` continua ali como cinto e suspensório.
     private var mainWindow: some Scene {
-        WindowGroup("SaveMyMac", id: AppScene.main) {
+        Window("SaveMyMac", id: AppScene.main) {
             RootView()
                 .environmentObject(state)
                 .environmentObject(prefs)
@@ -278,13 +292,13 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .newItem) {}
 
         CommandMenu(L("Actions")) {
-            Button("Analisar o Mac") { state.startScan() }
+            Button(L("Analyze my Mac")) { state.startScan() }
                 .keyboardShortcut("r", modifiers: .command)
-            Button("Analisar arquivos e duplicados") { state.startFilesScan() }
+            Button(L("Scan files and duplicates")) { state.startFilesScan() }
                 .keyboardShortcut("f", modifiers: [.command, .shift])
-            Button("Analisar aplicativos") { state.startAppsScan() }
+            Button(L("Scan applications")) { state.startAppsScan() }
                 .keyboardShortcut("a", modifiers: [.command, .shift])
-            Button("Verificar links de offload") { state.startOffloadScan() }
+            Button(L("Check offload links")) { state.startOffloadScan() }
                 .keyboardShortcut("l", modifiers: .command)
 
             Divider()
@@ -421,7 +435,11 @@ struct TitleStrip: View {
 
             Spacer()
 
-            Text("SaveMyMac — \(sectionTitle)")
+            // Passa pela tabela mesmo sendo idêntico em todos os idiomas hoje: o
+            // separador pode mudar (o francês usa espaço antes do travessão), e
+            // uma exceção na verificação é um buraco permanente, enquanto uma
+            // chave é um ponto de extensão.
+            Text(L("SaveMyMac — %@", sectionTitle))
                 .font(Typo.mono(12.5))
                 .tracking(Track.crumb)
                 .textCase(.uppercase)
@@ -696,7 +714,7 @@ struct LevelCard: View {
                     .foregroundStyle(palette.warn)
                 Text(game.state.streak == 0
                      ? L("No active week yet")
-                     : Lp("%d-week streak", "%d-week streak (plural)",
+                     : Lp("Streak: %d week", "Streak: %d weeks",
                           count: game.state.streak))
                     .font(Typo.caption)
                     .foregroundStyle(palette.t2)

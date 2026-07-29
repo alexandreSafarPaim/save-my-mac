@@ -134,7 +134,7 @@ struct OffloadView: View {
         ScreenHeader(
             eyebrow: L("Symlink offload"),
             title: state.offload.savedBytes > 0
-                ? "\(Fmt.bytes(state.offload.savedBytes)) fora do disco do Mac"
+                ? L("%@ off the Mac's disk", Fmt.bytes(state.offload.savedBytes))
                 : L("Offload heavy folders"),
             palette: palette
         ) {
@@ -213,7 +213,7 @@ struct OffloadView: View {
             Spacer()
 
             PrimaryButton(
-                title: state.destinationRoot.isEmpty ? L("Set destination") : "Trocar",
+                title: state.destinationRoot.isEmpty ? L("Set destination") : L("Change"),
                 palette: palette
             ) {
                 state.chooseDestination()
@@ -272,7 +272,7 @@ struct OffloadView: View {
                     .font(Typo.cardTitle)
                     .foregroundStyle(palette.t1)
                 Spacer()
-                Text("\(state.candidates.count) encontrados")
+                Text(L("%d found", state.candidates.count))
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
             }
@@ -369,8 +369,8 @@ struct OffloadView: View {
                 .strokeBorder(palette.stroke, lineWidth: 1)
         )
         .contextMenu {
-            Button("Mostrar no Finder") { state.reveal(candidate.path) }
-            Button("Copiar caminho") { state.copyToClipboard(candidate.path) }
+            Button(L("Show in Finder")) { state.reveal(candidate.path) }
+            Button(L("Copy path")) { state.copyToClipboard(candidate.path) }
         }
     }
 
@@ -419,7 +419,7 @@ struct OffloadView: View {
                     }
                     Spacer()
                     if group.isMounted {
-                        Text("\(Fmt.bytes(group.offloadedSize)) descarregados")
+                        Text(L("%@ offloaded", Fmt.bytes(group.offloadedSize)))
                             .font(Typo.monoCaption)
                             .foregroundStyle(palette.t1)
                     } else {
@@ -439,7 +439,7 @@ struct OffloadView: View {
                             )
                         )
                         HStack {
-                            Text("\(Fmt.percent(group.usedFraction)) usado")
+                            Text(L("%@ used", Fmt.percent(group.usedFraction)))
                             Spacer()
                             Text(L("%@ free of %@", Fmt.bytes(group.capacityAvailable), Fmt.bytes(group.capacityTotal)))
                         }
@@ -538,10 +538,10 @@ struct OffloadView: View {
                 HStack {
                     IconTile(symbol: "archivebox", palette: palette, size: 32, tint: palette.warn)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("Quarentena")
+                        Text(L("Quarantine"))
                             .font(Typo.cardTitle)
                             .foregroundStyle(palette.t1)
-                        Text("\(Fmt.bytes(state.journal.quarantineBytes)) ainda ocupando o disco do Mac")
+                        Text(L("%@ still taking up the Mac's disk", Fmt.bytes(state.journal.quarantineBytes)))
                             .font(Typo.caption)
                             .foregroundStyle(palette.warn)
                     }
@@ -565,7 +565,7 @@ struct OffloadView: View {
                             Text(entry.name)
                                 .font(Typo.bodySmall)
                                 .foregroundStyle(palette.t1)
-                            Text("\(entry.fileCount) arquivos · movido \(Fmt.relativeDate(entry.startedAt))")
+                            Text(L("%d files · moved %@", entry.fileCount, Fmt.relativeDate(entry.startedAt)))
                                 .font(Typo.monoTiny)
                                 .foregroundStyle(palette.t3)
                         }
@@ -576,7 +576,7 @@ struct OffloadView: View {
                         Button {
                             state.restore(entry)
                         } label: {
-                            Text("Reverter")
+                            Text(L("Undo"))
                                 .font(Typo.monoTiny)
                                 .foregroundStyle(palette.t2)
                         }
@@ -585,7 +585,7 @@ struct OffloadView: View {
                         Button {
                             pendingRelease = entry
                         } label: {
-                            Text("Liberar")
+                            Text(L("Release"))
                                 .font(Typo.monoTiny)
                                 .foregroundStyle(palette.warn)
                         }
@@ -678,8 +678,8 @@ struct OffloadView: View {
                     }
                     .padding(.vertical, 5)
                     .contextMenu {
-                        Button("Mostrar no Finder") { state.reveal(orphan.path) }
-                        Button("Copiar caminho") { state.copyToClipboard(orphan.path) }
+                        Button(L("Show in Finder")) { state.reveal(orphan.path) }
+                        Button(L("Copy path")) { state.copyToClipboard(orphan.path) }
                     }
                 }
             }

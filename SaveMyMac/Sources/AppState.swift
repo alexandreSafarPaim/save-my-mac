@@ -755,7 +755,7 @@ final class AppState: ObservableObject {
 
                 // Sem isto, uma Lixeira já vazia ou itens travados renderiam
                 // 20 XP de piso, marcariam a semana no streak e mostrariam
-                // "Lixeira esvaziada" sem nada ter saído.
+                // L("Trash emptied") sem nada ter saído.
                 guard result.removedCount > 0 else {
                     self.banner = Banner(
                         text: result.failures.isEmpty
@@ -774,7 +774,7 @@ final class AppState: ObservableObject {
                 )
                 // Aqui o espaço volta de verdade: não é "movido para a Lixeira".
                 self.celebrate(
-                    title: "Lixeira esvaziada",
+                    title: L("Trash emptied"),
                     bytes: result.freedBytes,
                     xp: xp,
                     failures: result.failures,
@@ -884,7 +884,7 @@ final class AppState: ObservableObject {
                     currentScore: self.health.score
                 )
                 self.celebrate(
-                    title: "Duplicados removidos",
+                    title: L("Duplicates removed"),
                     bytes: freed,
                     xp: xp,
                     failures: result.failures
@@ -918,7 +918,7 @@ final class AppState: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isRemoving = false
-                self.applyAppResult(result, app: app, kind: "cache", title: "Cache limpo")
+                self.applyAppResult(result, app: app, kind: "cache", title: L("Cache cleared"))
             }
         }
     }
@@ -940,7 +940,7 @@ final class AppState: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isRemoving = false
-                self.applyAppResult(result, app: app, kind: L("uninstall"), title: "\(app.name) removido")
+                self.applyAppResult(result, app: app, kind: L("uninstall"), title: L("%@ removed", app.name))
             }
         }
     }
@@ -1002,13 +1002,13 @@ final class AppState: ObservableObject {
 
         destinationRoot = url.path
         UserDefaults.standard.set(url.path, forKey: AppState.destinationKey)
-        banner = Banner(text: "Destino definido: \(url.path)", isError: false)
+        banner = Banner(text: L("Destination set: %@", url.path), isError: false)
     }
 
     func migrate(candidate: OffloadCandidate) {
         guard !isMigrating else { return }
         guard let destination = destinationURL else {
-            banner = Banner(text: "Escolha primeiro a pasta de destino.", isError: true)
+            banner = Banner(text: L("Choose the destination folder first."), isError: true)
             return
         }
 

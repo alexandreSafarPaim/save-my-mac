@@ -1,20 +1,20 @@
 import Foundation
 import ServiceManagement
 
-/// Abrir no login.
+/// Open at login.
 ///
-/// Duas mecânicas, e a razão de existirem as duas importa:
+/// Two mechanisms, and the reason both exist matters:
 ///
-/// - `SMAppService.mainApp` é a API correta no macOS 13+. Aparece em Ajustes do
-///   Sistema › Geral › Itens de Início e o usuário pode desativar por lá. Mas
-///   ela **exige assinatura de código válida** e o app estar em `/Applications`.
-///   Este projeto assina ad-hoc, então o registro pode falhar.
+/// - `SMAppService.mainApp` is the correct API on macOS 13+. It shows up in
+///   System Settings › General › Login Items and the user can disable it there.
+///   But it **requires a valid code signature** and the app to be in
+///   `/Applications`. This project signs ad-hoc, so registration can fail.
 ///
-/// - `LaunchAgent` (um plist em `~/Library/LaunchAgents`) é o mecanismo antigo,
-///   funciona sem assinatura e é o que salva o caso ad-hoc.
+/// - `LaunchAgent` (a plist in `~/Library/LaunchAgents`) is the old mechanism,
+///   works without a signature, and is what rescues the ad-hoc case.
 ///
-/// A ordem é: tenta a moderna, cai para a antiga, e a interface **diz qual está
-/// em uso** em vez de fingir que é tudo igual.
+/// The order is: try the modern one, fall back to the old one, and have the
+/// interface **say which is in use** instead of pretending they're the same.
 enum LaunchAtLogin {
 
     enum Mechanism: String {
@@ -38,66 +38,65 @@ enum LaunchAtLogin {
             .appendingPathComponent("Library/LaunchAgents/\(agentLabel).plist")
     }
 
-    // MARK: - Estado
+    // MARK: - State
     //
     // ┌─────────────────────────────────────────────────────────────────────┐
-    // │ NADA AQUI PODE SER LIDO DE DENTRO DE UM `init` DE VIEW.             │
+    // │ NOTHING HERE MAY BE READ FROM INSIDE A VIEW `init`.                 │
     // └─────────────────────────────────────────────────────────────────────┘
     //
-    // `SMAppService.status` parece um getter de propriedade e não é: cada
-    // leitura faz uma ida e volta **síncrona** por XPC até o `smd`, o daemon de
-    // Service Management. Numa thread principal isso é I/O bloqueante disfarçado
-    // de acesso a campo.
+    // `SMAppService.status` looks like a property getter and isn't: every read
+    // makes a **synchronous** XPC round trip to `smd`, the Service Management
+    // daemon. On the main thread that is blocking I/O disguised as field access.
     //
-    // Foi exatamente assim que o app travou. O `SettingsView` inicializava
-    // `@State` com `LaunchAtLogin.isEnabled` e `.statusDescription`. Como o
-    // SwiftUI constrói o conteúdo da cena `Settings` a cada avaliação do corpo
-    // do App — mesmo com a janela de Ajustes fechada, mesmo sem ela nunca ter
-    // sido aberta —, e como o corpo do App é invalidado a cada `@Published` do
-    // `AppState`, o app disparava duas chamadas XPC síncronas por atualização,
-    // dezenas por segundo. O `smd` entupiu, parou de responder, e a thread
-    // principal ficou presa em `mach_msg`. O spindump mostrou o caminho inteiro:
+    // That is exactly how the app hung. `SettingsView` initialised `@State` with
+    // `LaunchAtLogin.isEnabled` and `.statusDescription`. Because SwiftUI builds
+    // the `Settings` scene content on every App body evaluation — even with the
+    // Settings window closed, even if it was never opened — and because the App
+    // body was invalidated by every `@Published` of `AppState`, the app fired
+    // two synchronous XPC calls per update, dozens per second. `smd` clogged up,
+    // stopped answering, and the main thread parked in `mach_msg`. The spindump
+    // showed the whole path:
     //
     //     SaveMyMacApp.body.getter → Settings.init(content:) → SettingsView.init()
     //       → LaunchAtLogin.isEnabled → SMAppService.status → mach_msg
     //       (blocked by turnstile waiting for smd)
     //
-    // A correção é a leitura virar **cache mais atualização assíncrona**: a
-    // interface lê um valor em memória, de graça, e o XPC acontece fora da
-    // thread principal, só quando alguém pede.
+    // The fix is for the read to become **cache plus async refresh**: the
+    // interface reads an in-memory value for free, and the XPC happens off the
+    // main thread, only when someone asks.
 
     struct Snapshot {
         var enabled = false
         var mechanism = Mechanism.none
         var description = L("Checking…")
-        /// Falso até a primeira consulta terminar, para a interface poder
-        /// mostrar que ainda não sabe em vez de mentir "desativado".
+        /// False until the first query finishes, so the interface can show that
+        /// it doesn't know yet instead of lying "disabled".
         var isKnown = false
     }
 
     private static let cacheLock = NSLock()
     private static var cache = Snapshot()
 
-    /// Leitura instantânea, sem XPC. É o que a interface deve usar.
+    /// Instant read, no XPC. This is what the interface should use.
     static var snapshot: Snapshot {
         cacheLock.lock(); defer { cacheLock.unlock() }
         return cache
     }
 
-    /// O cadeado fica confinado nesta função **síncrona** de propósito.
+    /// The lock is deliberately confined to this **synchronous** function.
     ///
-    /// Chamar `lock()` direto dentro de uma função `async` é erro no Swift 6 e
-    /// o motivo é real: entre o `lock` e o `unlock` pode haver uma suspensão, e
-    /// a retomada pode acontecer em outra thread — que então tenta destravar um
-    /// cadeado que ela nunca travou. Uma função síncrona não tem como suspender,
-    /// então o par `lock`/`unlock` roda inteiro na mesma thread.
+    /// Calling `lock()` directly inside an `async` function is an error in Swift
+    /// 6, and the reason is real: between the `lock` and the `unlock` there may
+    /// be a suspension, and the resumption may happen on another thread — which
+    /// then tries to unlock a lock it never took. A synchronous function cannot
+    /// suspend, so the `lock`/`unlock` pair runs entirely on one thread.
     private static func store(_ fresh: Snapshot) {
         cacheLock.lock(); defer { cacheLock.unlock() }
         cache = fresh
     }
 
-    /// Consulta o estado real fora da thread principal e devolve o resultado
-    /// nela. Chame de `.task`/`.onAppear`, nunca de um inicializador.
+    /// Queries the real state off the main thread and returns the result on it.
+    /// Call from `.task`/`.onAppear`, never from an initialiser.
     @MainActor
     static func refresh() async -> Snapshot {
         let fresh = await Task.detached(priority: .userInitiated) {
@@ -107,10 +106,10 @@ enum LaunchAtLogin {
         return fresh
     }
 
-    /// A consulta cara de verdade. Privada de propósito: se ninguém de fora
-    /// consegue chamar, ninguém de fora consegue bloquear a interface com ela.
+    /// The genuinely expensive query. Private on purpose: if nobody outside can
+    /// call it, nobody outside can block the interface with it.
     private static func read() -> Snapshot {
-        Trace.mark("→ SMAppService.status (XPC para o smd)")
+        Trace.mark("→ SMAppService.status (XPC to smd)")
         let status = SMAppService.mainApp.status
         Trace.mark("← SMAppService.status")
 
@@ -149,7 +148,7 @@ enum LaunchAtLogin {
         }
     }
 
-    // MARK: - Ligar e desligar
+    // MARK: - Enable and disable
 
     struct Result {
         var enabled: Bool
@@ -158,8 +157,8 @@ enum LaunchAtLogin {
         var isError: Bool
     }
 
-    /// Registrar e cancelar registro também são XPC síncrono para o `smd`, e
-    /// `launchctl` é um subprocesso. Fora da thread principal, os dois.
+    /// Registering and unregistering are also synchronous XPC to `smd`, and
+    /// `launchctl` is a subprocess. Both go off the main thread.
     @MainActor
     static func setEnabled(_ enabled: Bool) async -> Result {
         let result = await Task.detached(priority: .userInitiated) {
@@ -170,7 +169,7 @@ enum LaunchAtLogin {
     }
 
     private static func enable() -> Result {
-        // 1) Caminho moderno.
+        // 1) Modern path.
         do {
             try SMAppService.mainApp.register()
             let status = SMAppService.mainApp.status
@@ -185,11 +184,11 @@ enum LaunchAtLogin {
             return Result(
                 enabled: true,
                 mechanism: .serviceManagement,
-                message: "O SaveMyMac vai abrir junto com o Mac.",
+                message: L("SaveMyMac will open together with the Mac."),
                 isError: false
             )
         } catch {
-            // 2) Fallback: LaunchAgent. É o caso esperado com assinatura ad-hoc.
+            // 2) Fallback: LaunchAgent. The expected case with an ad-hoc signature.
             if let failure = writeLaunchAgent() {
                 return Result(
                     enabled: false,
@@ -201,7 +200,7 @@ enum LaunchAtLogin {
             return Result(
                 enabled: true,
                 mechanism: .launchAgent,
-                message: "Ativado por LaunchAgent. O registro moderno falhou (\(error.localizedDescription)) — esperado num app assinado ad-hoc.",
+                message: L("Enabled through a LaunchAgent. Modern registration failed (%@) — expected in an ad-hoc signed app.", error.localizedDescription),
                 isError: false
             )
         }
@@ -219,8 +218,8 @@ enum LaunchAtLogin {
         }
 
         if FileManager.default.fileExists(atPath: agentURL.path) {
-            // Descarrega antes de apagar, senão o agente segue ativo até o
-            // próximo login.
+            // Unload before deleting, otherwise the agent stays active until the
+            // next login.
             _ = ProcessMonitor.run("/bin/launchctl", ["bootout", "gui/\(getuid())/\(agentLabel)"])
             do {
                 try FileManager.default.removeItem(at: agentURL)
@@ -241,25 +240,25 @@ enum LaunchAtLogin {
         return Result(
             enabled: after.enabled,
             mechanism: after.mechanism,
-            message: "Falha ao desativar: \(problems.joined(separator: "; "))",
+            message: L("Failed to disable: %@", problems.joined(separator: "; ")),
             isError: true
         )
     }
 
     // MARK: - LaunchAgent
 
-    /// Escreve o plist e carrega. Devolve a mensagem de erro, ou `nil` se deu certo.
+    /// Writes the plist and loads it. Returns the error message, or `nil` on success.
     private static func writeLaunchAgent() -> String? {
         let appPath = Bundle.main.bundlePath
         guard appPath.hasSuffix(".app") else {
-            return "o app precisa estar num bundle .app (rode ./build.sh --install)"
+            return L("the app has to be in a .app bundle (run ./build.sh --install)")
         }
 
         let plist: [String: Any] = [
             "Label": agentLabel,
             "ProgramArguments": ["/usr/bin/open", "-a", appPath],
             "RunAtLoad": true,
-            // Sem isto o launchd relançaria o `open` em loop.
+            // Without this, launchd would relaunch `open` in a loop.
             "KeepAlive": false
         ]
 
@@ -280,7 +279,7 @@ enum LaunchAtLogin {
             "/bin/launchctl",
             ["bootstrap", "gui/\(getuid())", agentURL.path]
         )
-        // `bootstrap` devolve erro se já estiver carregado; isso não é falha real.
+        // `bootstrap` errors if it is already loaded; that is not a real failure.
         if load.status != 0 && !load.error.contains("already") {
             return "launchctl falhou (\(load.status)): \(load.error.trimmingCharacters(in: .whitespacesAndNewlines))"
         }

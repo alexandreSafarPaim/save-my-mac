@@ -84,7 +84,7 @@ enum CleanupRemover {
         let path = url.standardizedFileURL.path
 
         guard path.hasPrefix(home + "/") else {
-            return "Fora da sua pasta pessoal"
+            return L("Outside your home folder")
         }
 
         let relative = String(path.dropFirst(home.count + 1))

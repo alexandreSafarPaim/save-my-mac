@@ -20,16 +20,16 @@ final class CleanupScanner: @unchecked Sendable {
         var categories: [CleanupCategory] = []
 
         let steps: [(String, () -> CleanupCategory?)] = [
-            ("Caches de aplicativos", { self.userCaches(isCancelled) }),
+            (L("Application caches"), { self.userCaches(isCancelled) }),
             ("Logs", { self.logs(isCancelled) }),
-            ("Ferramentas de desenvolvedor", { self.developerJunk(isCancelled) }),
-            ("Caches de gerenciadores de pacotes", { self.packageManagerCaches(isCancelled) }),
+            (L("Developer tools"), { self.developerJunk(isCancelled) }),
+            (L("Package manager caches"), { self.packageManagerCaches(isCancelled) }),
             ("Pastas node_modules antigas", { self.staleNodeModules(isCancelled) }),
             ("Backups de iPhone/iPad", { self.deviceBackups(isCancelled) }),
-            ("Downloads antigos", { self.oldDownloads(isCancelled) }),
+            (L("Old downloads"), { self.oldDownloads(isCancelled) }),
             ("Instaladores", { self.installers(isCancelled) }),
             ("Sobras de apps removidos", { self.appLeftovers(isCancelled) }),
-            ("Arquivos .DS_Store", { self.dsStoreFiles(isCancelled) })
+            (L(".DS_Store files"), { self.dsStoreFiles(isCancelled) })
         ]
 
         let stepWeight = 1.0 / Double(steps.count)
@@ -85,7 +85,7 @@ final class CleanupScanner: @unchecked Sendable {
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "Caches de aplicativos",
+            name: L("Application caches"),
             subtitle: L("Temporary data the apps recreate on their own"),
             symbol: "shippingbox",
             risk: .safe,
@@ -150,7 +150,7 @@ final class CleanupScanner: @unchecked Sendable {
             ("Library/Developer/Xcode/UserData/IB Support", "Xcode — IB Support",
              "Cache do Interface Builder"),
             ("Library/Developer/CoreSimulator/Caches", "Simuladores — Caches",
-             "Cache de runtimes de simulador"),
+             L("Simulator runtime cache")),
             ("Library/Developer/CoreSimulator/Devices", "Simuladores — Dispositivos",
              L("Every simulator you create takes space; Xcode can recreate them")),
             ("Library/Caches/com.apple.dt.Xcode", "Xcode — Cache geral",
@@ -187,7 +187,7 @@ final class CleanupScanner: @unchecked Sendable {
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "Ferramentas de desenvolvedor",
+            name: L("Developer tools"),
             subtitle: L("Builds, symbols and simulators — usually the biggest win on a dev Mac"),
             symbol: "hammer",
             risk: .caution,
@@ -244,8 +244,8 @@ final class CleanupScanner: @unchecked Sendable {
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "Caches de gerenciadores de pacotes",
-            subtitle: "npm, pip, Homebrew, Gradle e afins",
+            name: L("Package manager caches"),
+            subtitle: L("npm, pip, Homebrew, Gradle and similar"),
             symbol: "arrow.down.circle",
             risk: .caution,
             riskScore: 4,
@@ -298,7 +298,7 @@ final class CleanupScanner: @unchecked Sendable {
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "node_modules abandonados",
+            name: L("abandoned node_modules"),
             subtitle: L("Projects with no activity for over 90 days"),
             symbol: "folder.badge.minus",
             risk: .caution,
@@ -320,8 +320,8 @@ final class CleanupScanner: @unchecked Sendable {
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "Backups locais de iPhone/iPad",
-            subtitle: "Costumam ser os maiores arquivos ocultos do Mac",
+            name: L("Local iPhone/iPad backups"),
+            subtitle: L("Usually the biggest hidden files on the Mac"),
             symbol: "iphone.gen3",
             risk: .review,
             riskScore: 8,
@@ -357,7 +357,7 @@ final class CleanupScanner: @unchecked Sendable {
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "Downloads antigos",
+            name: L("Old downloads"),
             subtitle: L("Unused for over 90 days"),
             symbol: "arrow.down.doc",
             risk: .review,
@@ -399,7 +399,7 @@ final class CleanupScanner: @unchecked Sendable {
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "Instaladores (.dmg, .pkg, .iso)",
+            name: L("Installers (.dmg, .pkg, .iso)"),
             subtitle: L("Installer images that already did their job"),
             symbol: "externaldrive.badge.xmark",
             risk: .caution,
@@ -459,15 +459,15 @@ final class CleanupScanner: @unchecked Sendable {
                     size: size,
                     modified: modificationDate(url),
                     isDirectory: true,
-                    note: "Nenhum app instalado corresponde a este identificador (\(relative.tildeShortened))"
+                    note: L("No installed app matches this identifier (%@)", relative.tildeShortened)
                 ))
             }
         }
 
         guard !items.isEmpty else { return nil }
         return CleanupCategory(
-            name: "Sobras de apps desinstalados",
-            subtitle: "Dados de suporte sem aplicativo correspondente",
+            name: L("Leftovers from uninstalled apps"),
+            subtitle: L("Support data with no matching application"),
             symbol: "app.badge.checkmark",
             risk: .review,
             riskScore: 7,
@@ -542,7 +542,7 @@ final class CleanupScanner: @unchecked Sendable {
             extraPaths: Array(paths.dropFirst())
         )
         return CleanupCategory(
-            name: "Arquivos .DS_Store",
+            name: L(".DS_Store files"),
             subtitle: L("Finder clutter scattered across folders"),
             symbol: "eye.slash",
             risk: .safe,

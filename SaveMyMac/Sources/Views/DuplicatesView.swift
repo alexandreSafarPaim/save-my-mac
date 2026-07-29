@@ -71,7 +71,7 @@ struct DuplicatesView: View {
 
     private var header: some View {
         ScreenHeader(
-            eyebrow: "Duplicados",
+            eyebrow: L("Duplicates"),
             title: state.files.duplicates.isEmpty
                 ? L("Duplicate files")
                 : L("%@ in identical copies", Fmt.bytes(state.files.duplicateTotal)),
@@ -82,12 +82,12 @@ struct DuplicatesView: View {
                 if state.isScanningFiles {
                     GhostButton(title: L("Cancel"), palette: palette) { state.cancelFilesScan() }
                 } else {
-                    GhostButton(title: "Analisar", systemImage: "magnifyingglass", palette: palette) {
+                    GhostButton(title: L("Scan"), systemImage: "magnifyingglass", palette: palette) {
                         state.startFilesScan()
                     }
                 }
                 if !state.files.duplicates.isEmpty {
-                    GhostButton(title: "Marcar tudo", palette: palette) {
+                    GhostButton(title: L("Check everything"), palette: palette) {
                         state.selectAllDuplicates()
                     }
                 }
@@ -135,9 +135,9 @@ struct DuplicatesView: View {
                 ForEach(group.copies) { copy in
                     HStack(spacing: 8) {
                         if copy.isOriginal {
-                            Chip(text: "PRESERVA", palette: palette, color: palette.ok)
+                            Chip(text: L("KEEPS"), palette: palette, color: palette.ok)
                         } else {
-                            Chip(text: "REMOVE", palette: palette, color: palette.danger)
+                            Chip(text: L("REMOVES"), palette: palette, color: palette.danger)
                         }
                         PathChip(text: copy.directory, palette: palette)
                         Text(Fmt.shortDate(copy.modified))
@@ -155,8 +155,8 @@ struct DuplicatesView: View {
                         .help("Mostrar no Finder")
                     }
                     .contextMenu {
-                        Button("Mostrar no Finder") { state.reveal(copy.path) }
-                        Button("Copiar caminho") { state.copyToClipboard(copy.path) }
+                        Button(L("Show in Finder")) { state.reveal(copy.path) }
+                        Button(L("Copy path")) { state.copyToClipboard(copy.path) }
                     }
                 }
             }
@@ -182,7 +182,7 @@ struct DuplicatesView: View {
                     Text(L("%d groups · %d copies", state.selectedDuplicateIDs.count, state.selectedDuplicates.count))
                         .font(Typo.caption)
                         .foregroundStyle(palette.t2)
-                    Text("\(Fmt.bytes(state.selectedDuplicateSize)) a liberar")
+                    Text(L("%@ to free", Fmt.bytes(state.selectedDuplicateSize)))
                         .font(Typo.statValue)
                         .foregroundStyle(state.selectedDuplicateSize > 0 ? palette.ok : palette.t3)
                 }

@@ -98,7 +98,7 @@ final class SpaceAlert: ObservableObject {
         content.title = L("Low space on %@", volume.name)
         content.body = "Restam \(Fmt.bytes(volume.available)) "
             + "(\(String(format: "%.0f", freePercent)) %). "
-            + "Abra o SaveMyMac para ver o que pode sair."
+            + L("Open SaveMyMac to see what can go.")
         content.sound = .default
 
         let request = UNNotificationRequest(

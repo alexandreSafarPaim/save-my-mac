@@ -193,7 +193,7 @@ enum TrashManager {
         case NSFileWriteNoPermissionError, NSFileReadNoPermissionError:
             return L("No permission. It may belong to another user or be in use.")
         case NSFileWriteFileExistsError:
-            return "Conflito de nome dentro da Lixeira."
+            return L("Name conflict inside the Trash.")
         default:
             return ns.localizedDescription
         }

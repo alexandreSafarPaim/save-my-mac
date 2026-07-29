@@ -1,9 +1,9 @@
 import Foundation
 import Combine
 
-// MARK: - Idiomas
+// MARK: - Languages
 
-/// Idiomas da interface. `system` segue o Mac.
+/// Interface languages. `system` follows the Mac.
 enum Language: String, CaseIterable, Identifiable {
     case system
     case en
@@ -13,11 +13,12 @@ enum Language: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Cada idioma se nomeia **no próprio idioma**.
+    /// Each language names itself **in its own language**.
     ///
-    /// Traduzir os nomes para o idioma atual seria pior: alguém que abriu o app
-    /// numa língua que não entende precisa reconhecer a sua na lista, e
-    /// "Portoghese" não ajuda quem procura "Português".
+    /// Translating the names into the current language would be worse: someone
+    /// who opened the app in a language they don't read needs to recognise
+    /// theirs in the list, and "Portoghese" doesn't help anyone looking for
+    /// "Português".
     var label: String {
         switch self {
         case .system: return L("Same as macOS")
@@ -39,20 +40,20 @@ enum Language: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Estado
+// MARK: - State
 
-/// Idioma da interface.
+/// The interface language.
 ///
-/// Sem projeto Xcode não há String Catalog nem pastas `.lproj` compiladas, então
-/// a tabela é Swift puro. Isso não é só contorno: `NSLocalizedString` resolve
-/// contra o bundle, e trocar de idioma em tempo de execução exigiria substituir
-/// o bundle por baixo do sistema. Com tabela própria, trocar é reler um
-/// dicionário.
+/// Without an Xcode project there is no String Catalog and no compiled `.lproj`
+/// folders, so the table is plain Swift. That isn't only a workaround:
+/// `NSLocalizedString` resolves against the bundle, and switching language at
+/// runtime would mean swapping the bundle out from under the system. With our
+/// own table, switching is re-reading a dictionary.
 ///
-/// **Não usa `@Published`** — o setter compara antes de publicar. A regra vale
-/// para todo o projeto desde que um `@Published` disparando em atribuição de
-/// valor igual fechou um ciclo de atualização que consumia um núcleo inteiro.
-/// Ver `Preferences`.
+/// **Does not use `@Published`** — the setter compares before publishing. That
+/// rule holds across the whole project ever since a `@Published` firing on an
+/// equal-value assignment closed an update cycle that burned an entire core.
+/// See `Preferences`.
 @MainActor
 final class Localization: ObservableObject {
 
@@ -70,7 +71,7 @@ final class Localization: ObservableObject {
             _language = newValue
             UserDefaults.standard.set(newValue.rawValue, forKey: Localization.key)
             Localization.active = newValue.resolved
-            Trace.mark("idioma da interface: \(newValue.rawValue) → \(newValue.resolved.rawValue)")
+            Trace.mark("interface language: \(newValue.rawValue) → \(newValue.resolved.rawValue)")
         }
     }
 
@@ -78,30 +79,32 @@ final class Localization: ObservableObject {
         let saved = UserDefaults.standard.string(forKey: Localization.key)
         _language = Language(rawValue: saved ?? "") ?? .system
         Localization.active = _language.resolved
-        Trace.mark("idioma inicial: \(_language.rawValue) → \(_language.resolved.rawValue)")
+        Trace.mark("initial language: \(_language.rawValue) → \(_language.resolved.rawValue)")
     }
 
-    /// Lido pela função `L`, que é global e síncrona.
+    /// Read by the `L` function, which is global and synchronous.
     ///
-    /// Precisa ser `nonisolated(unsafe)`: `L` é chamada de dentro de corpos de
-    /// view milhares de vezes por segundo e não pode pagar salto de ator. A
-    /// escrita acontece só na troca de idioma, sempre na thread principal, e o
-    /// valor é um enum de um byte — não há estado intermediário para alguém ler.
+    /// It has to be `nonisolated(unsafe)`: `L` is called from inside view bodies
+    /// thousands of times per second and can't afford an actor hop. The write
+    /// happens only on a language switch, always on the main thread, and the
+    /// value is a one-byte enum — there is no intermediate state for anyone to
+    /// read.
     nonisolated(unsafe) fileprivate static var active: Language = .en
 }
 
 extension Language {
-    /// Traduz `system` para um idioma concreto usando a preferência do macOS.
+    /// Resolves `system` into a concrete language using the macOS preference.
     ///
-    /// Percorre `preferredLanguages` na ordem em que o usuário as ordenou, em
-    /// vez de olhar só a primeira: quem tem "es, pt, en" e não tem espanhol
-    /// suportado deve receber português, não inglês.
+    /// Walks `preferredLanguages` in the order the user arranged them, instead
+    /// of looking only at the first: someone with "es, pt, en" whose Spanish
+    /// isn't supported should get Portuguese, not English.
     var resolved: Language {
         guard self == .system else { return self }
 
         for tag in Locale.preferredLanguages {
-            // "pt-BR" → "pt", "es-419" → "es". O app não distingue variantes
-            // regionais; fingir que distingue daria falsa expectativa.
+            // "pt-BR" → "pt", "es-419" → "es". The app doesn't distinguish
+            // regional variants; pretending it does would set a false
+            // expectation.
             let base = tag.split(separator: "-").first.map(String.init) ?? tag
             if let match = Language(rawValue: base.lowercased()), match != .system {
                 return match
@@ -111,22 +114,23 @@ extension Language {
     }
 }
 
-// MARK: - Busca
+// MARK: - Lookup
 
-/// Texto traduzido.
+/// Translated text.
 ///
-/// A **chave é o texto em inglês**, e não um identificador inventado
-/// (`dashboard.title`). Duas razões práticas:
+/// The **key is the English text**, not an invented identifier
+/// (`dashboard.title`). Two practical reasons:
 ///
-/// 1. Idioma sem tradução para aquela frase cai no inglês, que é uma frase de
-///    verdade. Com chave simbólica, faltar tradução mostra `dashboard.title` na
-///    tela — defeito visível para o usuário em vez de degradação silenciosa.
-/// 2. O código continua legível: `Text(L("Analyze my Mac"))` diz o que aparece
-///    na tela sem precisar consultar tabela nenhuma.
+/// 1. A language with no translation for that phrase falls back to English,
+///    which is a real sentence. With a symbolic key, a missing translation puts
+///    `dashboard.title` on screen — a defect visible to the user instead of
+///    graceful degradation.
+/// 2. The code stays readable: `Text(L("Analyze my Mac"))` says what appears on
+///    screen without consulting any table.
 ///
-/// O custo é que mudar o texto em inglês invalida as traduções daquela frase.
-/// Aceitável: mudar o texto original é justamente quando se quer revisar as
-/// traduções.
+/// The cost is that changing the English text invalidates the translations for
+/// that phrase. Acceptable: changing the original is exactly when you want the
+/// translations reviewed.
 func L(_ key: String) -> String {
     switch Localization.active {
     case .en, .system: return key
@@ -136,30 +140,30 @@ func L(_ key: String) -> String {
     }
 }
 
-/// Versão com valores interpolados. Use `%@` para texto e `%d` para inteiro.
+/// Version with interpolated values. Use `%@` for text and `%d` for integers.
 ///
-/// Os marcadores existem para a **ordem** poder mudar entre idiomas — em
-/// algumas línguas o número vem depois do substantivo. Concatenar com `+`
-/// tornaria isso impossível.
+/// The placeholders exist so the **order** can change between languages — in
+/// some languages the number comes after the noun. Concatenating with `+` would
+/// make that impossible.
 func L(_ key: String, _ arguments: CVarArg...) -> String {
     String(format: L(key), arguments: arguments)
 }
 
-/// Singular ou plural conforme a contagem.
+/// Singular or plural according to the count.
 ///
-/// As quatro línguas daqui se resolvem com duas formas, mas não pela mesma
-/// regra: inglês, português e espanhol pluralizam a partir de 2; **o francês
-/// usa o singular também para zero** ("0 semaine", não "0 semaines"). Tratar
-/// tudo como `count == 1` produziria erro de gramática em francês.
+/// The four languages here resolve with two forms, but not by the same rule:
+/// English, Portuguese and Spanish pluralise from 2 up; **French uses the
+/// singular for zero as well** ("0 semaine", not "0 semaines"). Treating
+/// everything as `count == 1` would produce a grammar error in French.
 ///
-/// O `count` é rotulado porque ele tem **dois papéis distintos**, e a primeira
-/// versão desta função confundia os dois: ele escolhe a forma gramatical, e às
-/// vezes também é um dos valores interpolados. Quando a frase tem só o número
-/// ("Série de %d semanas"), basta o `count`. Quando tem mais
-/// ("Encontramos %@ em %d categorias"), os valores vêm depois, na ordem em que
-/// aparecem na frase — e aí o `count` aparece duas vezes na chamada, uma para
-/// decidir a forma e outra como argumento. É repetitivo e é explícito, o que
-/// vale mais aqui do que economizar um parâmetro.
+/// `count` is labelled because it has **two distinct jobs**, and the first
+/// version of this function conflated them: it picks the grammatical form, and
+/// sometimes it is also one of the interpolated values. When the phrase has only
+/// the number ("%d-week streak"), `count` is enough. When it has more ("We found
+/// %@ in %d categories"), the values come afterwards, in the order they appear
+/// in the phrase — and then `count` appears twice in the call, once to decide
+/// the form and once as an argument. It's repetitive and it's explicit, which is
+/// worth more here than saving a parameter.
 func Lp(
     _ singular: String,
     _ plural: String,

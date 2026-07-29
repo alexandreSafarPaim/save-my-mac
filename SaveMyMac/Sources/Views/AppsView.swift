@@ -75,7 +75,7 @@ struct AppsView: View {
 
     private var header: some View {
         ScreenHeader(
-            eyebrow: "Aplicativos",
+            eyebrow: L("Apps"),
             title: state.appInventory.isEmpty
                 ? L("Installed apps")
                 : L("%d apps · %d unused for 90 days", state.appInventory.apps.count, state.appInventory.staleCount),
@@ -125,7 +125,7 @@ struct AppsView: View {
 
             Spacer()
 
-            Text("\(state.filteredApps.count) exibidos")
+            Text(L("%d shown", state.filteredApps.count))
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.t3)
         }
@@ -205,7 +205,7 @@ struct AppsView: View {
                             .font(Typo.mono(14, .bold))
                             .foregroundStyle(palette.t1)
                         if app.residueSize > 0 {
-                            Text("+\(Fmt.bytes(app.residueSize)) fora do app")
+                            Text(L("+%@ outside the app", Fmt.bytes(app.residueSize)))
                                 .font(Typo.monoTiny)
                                 .foregroundStyle(palette.t3)
                         }
@@ -256,7 +256,7 @@ struct AppsView: View {
                     Button {
                         pendingUninstall = app
                     } label: {
-                        Text("Desinstalar")
+                        Text(L("Uninstall"))
                             .font(Typo.caption)
                             .foregroundStyle(app.canUninstall ? palette.danger : palette.t3)
                             .frame(maxWidth: .infinity)
@@ -361,8 +361,8 @@ struct AppDetailSheet: View {
                             }
                             .padding(.vertical, 6)
                             .contextMenu {
-                                Button("Mostrar no Finder") { state.reveal(residue.path) }
-                                Button("Copiar caminho") { state.copyToClipboard(residue.path) }
+                                Button(L("Show in Finder")) { state.reveal(residue.path) }
+                                Button(L("Copy path")) { state.copyToClipboard(residue.path) }
                             }
                         }
                     }
@@ -375,7 +375,7 @@ struct AppDetailSheet: View {
                     .font(Typo.monoTiny)
                     .foregroundStyle(palette.t3)
                 Spacer()
-                GhostButton(title: "Fechar", palette: palette) { dismiss() }
+                GhostButton(title: L("Close"), palette: palette) { dismiss() }
             }
         }
         .padding(24)

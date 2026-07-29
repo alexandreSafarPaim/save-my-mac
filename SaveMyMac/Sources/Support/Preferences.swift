@@ -2,37 +2,39 @@ import Foundation
 import Combine
 import AppKit
 
-/// Preferências do app, persistidas em `UserDefaults`.
+/// App preferences, persisted in `UserDefaults`.
 ///
-/// Separado do `GameStore` de propósito: aquilo é progresso, isto é
-/// configuração — e configuração precisa estar disponível antes de qualquer
-/// varredura, inclusive na inicialização em segundo plano.
+/// Deliberately separate from `GameStore`: that is progress, this is
+/// configuration — and configuration has to be available before any scan,
+/// including on a background launch.
 ///
 /// ─────────────────────────────────────────────────────────────────────────
-/// POR QUE NENHUMA PROPRIEDADE AQUI USA `@Published`
+/// WHY NO PROPERTY HERE USES `@Published`
 /// ─────────────────────────────────────────────────────────────────────────
 ///
-/// `@Published` dispara `objectWillChange` em **toda atribuição**, inclusive
-/// quando o valor novo é igual ao antigo. Isso parece detalhe e não é.
+/// `@Published` fires `objectWillChange` on **every assignment**, including
+/// assignments where the new value equals the old one. That sounds like a
+/// detail and it isn't.
 ///
-/// O `MenuBarExtra(isInserted:)` escreve no binding a cada passagem de
-/// atualização, para refletir o estado real de inserção do item. Com
-/// `@Published` por trás, a sequência virava:
+/// `MenuBarExtra(isInserted:)` writes to its binding on every update pass, to
+/// reflect the item's real insertion state. With `@Published` behind it, the
+/// sequence became:
 ///
-///     escreve false → publica → corpo do App invalidado → cena da barra de
-///     menus reconstruída → escreve false → publica → …
+///     write false → publish → App body invalidated → menu bar scene rebuilt
+///     → write false → publish → …
 ///
-/// Um ciclo que se realimenta na velocidade do processador. Medido: **6.600
-/// reconstruções em 9,6 segundos, 100 % de CPU, +86 MB em 13 s**. O spindump
-/// mostrava a atualização do menu chamando `invalidateProperties` em si mesma.
+/// A cycle feeding itself at processor speed. Measured: **6,600 rebuilds in
+/// 9.6 seconds, 100% of a core, +86 MB in 13 s**. The spindump showed the menu
+/// update calling `invalidateProperties` on itself.
 ///
-/// Nenhuma das minhas correções anteriores pegou isso porque todas terminavam
-/// escrevendo no mesmo `@Published`: primeiro via `Binding(get:set:)`, depois
-/// via `$prefs.showMenuBar`. O caminho mudava; o gatilho não.
+/// None of my earlier fixes caught this, because every one of them ended up
+/// writing to the same `@Published`: first through `Binding(get:set:)`, then
+/// through `$prefs.showMenuBar`. The path changed; the trigger didn't.
 ///
-/// Agora cada setter compara antes de publicar. Escrever o mesmo valor é um
-/// no-op, e o ciclo não fecha. Vale para todas as propriedades, não só a que
-/// deu problema: publicar mudança que não houve nunca está certo.
+/// Now every setter compares before publishing. Writing the same value is a
+/// no-op, and the cycle doesn't close. This applies to all the properties, not
+/// just the one that broke: publishing a change that didn't happen is never
+/// right.
 @MainActor
 final class Preferences: ObservableObject {
 
@@ -44,7 +46,7 @@ final class Preferences: ObservableObject {
         static let menuBarMetric = "menuBarMetric"
     }
 
-    /// O que aparece ao lado do relógio quando o espaço é curto.
+    /// What shows next to the clock when space runs short.
     enum MenuBarMetric: String, CaseIterable, Identifiable {
         case disk
         case memory
@@ -65,7 +67,7 @@ final class Preferences: ObservableObject {
         }
     }
 
-    // MARK: - Armazenamento
+    // MARK: - Storage
 
     private var _showMenuBar: Bool
     private var _hideDockIcon: Bool
@@ -73,24 +75,24 @@ final class Preferences: ObservableObject {
     private var _lowSpaceThreshold: Double
     private var _menuBarMetric: MenuBarMetric
 
-    // MARK: - Propriedades
+    // MARK: - Properties
 
-    /// Escrito pelo `MenuBarExtra` a cada atualização — é exatamente aqui que a
-    /// comparação impede o ciclo. O contador registra a frequência, para a
-    /// próxima suspeita ter número em vez de palpite.
+    /// Written by `MenuBarExtra` on every update — this is exactly where the
+    /// comparison stops the cycle. The counter records the frequency, so the
+    /// next suspicion has a number instead of a hunch.
     var showMenuBar: Bool {
         get { _showMenuBar }
         set {
-            Trace.count("Preferences.showMenuBar escrito", every: 500)
+            Trace.count("Preferences.showMenuBar written", every: 500)
             guard newValue != _showMenuBar else { return }
-            Trace.mark("showMenuBar mudou de fato: \(_showMenuBar) → \(newValue)")
+            Trace.mark("showMenuBar actually changed: \(_showMenuBar) → \(newValue)")
             objectWillChange.send()
             _showMenuBar = newValue
             UserDefaults.standard.set(newValue, forKey: Key.showMenuBar)
         }
     }
 
-    /// Esconder do Dock transforma o app num utilitário de barra de menus.
+    /// Hiding from the Dock turns the app into a menu bar utility.
     var hideDockIcon: Bool {
         get { _hideDockIcon }
         set {
@@ -112,7 +114,7 @@ final class Preferences: ObservableObject {
         }
     }
 
-    /// Percentual de espaço livre abaixo do qual o app avisa.
+    /// Free-space percentage below which the app warns.
     var lowSpaceThreshold: Double {
         get { _lowSpaceThreshold }
         set {
@@ -142,30 +144,30 @@ final class Preferences: ObservableObject {
             Key.lowSpaceThreshold: 10.0
         ])
 
-        // Reparo pontual de um valor escrito por defeito, não pelo usuário.
+        // One-off repair of a value written by a defect, not by the user.
         //
-        // Durante o ciclo de atualização infinito, o `MenuBarExtra` escrevia
-        // `false` no binding milhares de vezes, e o `didSet` de então persistia
-        // cada uma em `UserDefaults`. Resultado: a preferência ficou gravada
-        // como falsa sem que ninguém tivesse desligado nada — e `register`
-        // não sobrepõe valor explicitamente gravado. O ícone então nunca
-        // aparecia, mesmo com o recurso ligado e o bug corrigido.
+        // During the infinite update cycle, `MenuBarExtra` wrote `false` to the
+        // binding thousands of times, and the `didSet` of the day persisted
+        // every one of them to `UserDefaults`. Result: the preference ended up
+        // stored as false without anyone having turned anything off — and
+        // `register` does not override an explicitly stored value. The icon then
+        // never appeared, even with the feature on and the bug fixed.
         //
-        // Isto roda uma única vez, marcado por chave própria. Não é o app
-        // ignorando a escolha do usuário: é o app desfazendo a escolha que ele
-        // nunca fez. Depois desta vez, a preferência é respeitada sempre.
+        // This runs exactly once, marked by its own key. It isn't the app
+        // ignoring the user's choice: it's the app undoing a choice the user
+        // never made. After this once, the preference is always respected.
         let repairKey = "menuBarPreferenceRepaired.v1"
         if !defaults.bool(forKey: repairKey) {
             defaults.set(true, forKey: repairKey)
             if MenuBarFeature.isEnabled {
                 defaults.set(true, forKey: Key.showMenuBar)
-                NSLog("[SaveMyMac] Preferência da barra de menus restaurada para ligada.")
+                NSLog("[SaveMyMac] Menu bar preference restored to on.")
             }
         }
 
-        // A trava do recurso é aplicada aqui, uma vez. A cena recebe o binding
-        // projetado direto; envolvê-lo para aplicar a trava criaria um objeto
-        // novo a cada avaliação, que é outro jeito de nunca convergir.
+        // The feature gate is applied here, once. The scene gets the projected
+        // binding directly; wrapping it to apply the gate would create a new
+        // object on every evaluation, which is another way to never converge.
         _showMenuBar = MenuBarFeature.isEnabled && defaults.bool(forKey: Key.showMenuBar)
         _hideDockIcon = defaults.bool(forKey: Key.hideDockIcon)
         _lowSpaceAlerts = defaults.bool(forKey: Key.lowSpaceAlerts)
@@ -175,8 +177,8 @@ final class Preferences: ObservableObject {
         ) ?? .disk
     }
 
-    /// Aplica a política de ativação sem precisar reiniciar o app — é o que
-    /// permite esconder e mostrar o ícone do Dock na hora.
+    /// Applies the activation policy without restarting the app — that's what
+    /// lets the Dock icon be hidden and shown immediately.
     func applyActivationPolicy() {
         NSApp.setActivationPolicy(hideDockIcon ? .accessory : .regular)
         if !hideDockIcon {

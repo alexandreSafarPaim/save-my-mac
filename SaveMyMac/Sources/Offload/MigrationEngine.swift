@@ -121,7 +121,7 @@ final class MigrationEngine: @unchecked Sendable {
         let never: [(String, String)] = [
             ("Library/Mobile Documents", "iCloud Drive"),
             ("Library/CloudStorage", "provedores de nuvem"),
-            ("Library/Keychains", "as chaves do sistema"),
+            ("Library/Keychains", L("the system keychain")),
             ("Library/Mail", "o Mail"),
             ("Library/Messages", "o Mensagens"),
             ("Library/Group Containers", "containers de grupo"),
@@ -245,7 +245,7 @@ final class MigrationEngine: @unchecked Sendable {
         // --- 4. Quarentena do original ---
         entry.phase = .quarantining
         write(entry)
-        progress(.quarantining, "Guardando o original na quarentena…", 0.72)
+        progress(.quarantining, L("Moving the original into quarantine…"), 0.72)
 
         do {
             try fm.createDirectory(at: quarantine, withIntermediateDirectories: true)
@@ -269,7 +269,7 @@ final class MigrationEngine: @unchecked Sendable {
             cleanup(staging)
             entry.phase = .rolledBack
             write(entry)
-            return fail("Falha ao publicar no destino, original devolvido: \(error.localizedDescription)")
+            return fail(L("Failed to publish to the destination, original restored: %@", error.localizedDescription))
         }
         cleanup(staging)
 
@@ -290,7 +290,7 @@ final class MigrationEngine: @unchecked Sendable {
             cleanup(quarantine)
             entry.phase = .rolledBack
             write(entry)
-            return fail("Falha ao criar o link, o original foi devolvido: \(error.localizedDescription)")
+            return fail(L("Failed to create the link, the original was restored: %@", error.localizedDescription))
         }
 
         // --- 7. Validação através do link ---
@@ -347,7 +347,7 @@ final class MigrationEngine: @unchecked Sendable {
             try fm.moveItem(at: quarantine, to: source)
         } catch {
             return MigrationOutcome(entry: entry, succeeded: false,
-                                    message: "Falha ao devolver o original: \(error.localizedDescription)")
+                                    message: L("Failed to restore the original: %@", error.localizedDescription))
         }
 
         // A cópia no destino vira lixo — para a Lixeira, não apagada.
@@ -384,13 +384,13 @@ final class MigrationEngine: @unchecked Sendable {
             try fm.trashItem(at: quarantine, resultingItemURL: nil)
         } catch {
             return MigrationOutcome(entry: entry, succeeded: false,
-                                    message: "Falha ao liberar a quarentena: \(error.localizedDescription)")
+                                    message: L("Failed to release the quarantine: %@", error.localizedDescription))
         }
 
         updated.quarantinePath = ""
         write(updated)
         return MigrationOutcome(entry: updated, succeeded: true,
-                                message: "\(Fmt.bytes(entry.bytes)) liberados no disco do Mac.")
+                                message: L("%@ freed on the Mac's disk.", Fmt.bytes(entry.bytes)))
     }
 
     // MARK: - Auxiliares

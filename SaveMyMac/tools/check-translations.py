@@ -46,18 +46,26 @@ TABLE = SOURCES / "Support" / "Strings.swift"
 # If that is wrong, the app shows English and nobody finds out from the tool.
 INTENTIONALLY_IDENTICAL = {
     "pt": {
-        "Normal",    # same word
-        "Offload",   # kept as the English term in Brazilian tech usage
+        "Normal",       # same word
+        "Offload",      # kept as the English term in Brazilian tech usage
+        "%d volume",     # identical in Portuguese
+        "%d volumes",
+        "%d item",
+        "SaveMyMac — %@",   # brand + already-localized section name
     },
     "es": {
         "Normal",
         "Audio",
+        "SaveMyMac — %@",
     },
     "fr": {
         "Normal",
         "Audio",
         "Navigation",
         "Actions",
+        "%d volume",    # identical in French
+        "%d volumes",
+        "SaveMyMac — %@",
     },
 }
 

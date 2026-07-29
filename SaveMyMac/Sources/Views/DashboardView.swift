@@ -175,7 +175,7 @@ struct DashboardView: View {
         Panel(palette: palette) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Text("Conquistas")
+                    Text(L("Achievements"))
                         .font(Typo.cardTitle)
                         .foregroundStyle(palette.t1)
                     Spacer()
@@ -286,7 +286,7 @@ struct DashboardView: View {
 
     private var cpuCard: some View {
         MetricCard(
-            label: "Processador",
+            label: L("Processor"),
             tag: shortChip,
             value: String(format: "%.0f", state.cpu.busy * 100),
             unit: "%",
@@ -319,9 +319,9 @@ struct DashboardView: View {
         Panel(palette: palette, cornerRadius: 18, padding: 18) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    MicroLabel(text: "Temperatura", palette: palette)
+                    MicroLabel(text: L("Temperature"), palette: palette)
                     Spacer()
-                    Text(state.thermal.sensors.isEmpty ? state.thermal.thermalStateLabel : "\(state.thermal.sensors.count) sensores")
+                    Text(state.thermal.sensors.isEmpty ? state.thermal.thermalStateLabel : L("%d sensors", state.thermal.sensors.count))
                         .font(Typo.monoCaption)
                         .foregroundStyle(palette.t2)
                 }
@@ -357,11 +357,11 @@ struct DashboardView: View {
                         StatRow(key: "CPU / SoC", value: Fmt.celsius(cpu), palette: palette)
                     }
                     if let battery = state.thermal.batteryTemperature {
-                        StatRow(key: "Bateria", value: Fmt.celsius(battery), palette: palette)
+                        StatRow(key: L("Battery"), value: Fmt.celsius(battery), palette: palette)
                     }
                     if !state.thermal.fans.isEmpty {
                         StatRow(
-                            key: state.thermal.fans.count > 1 ? "Ventoinhas" : "Ventoinha",
+                            key: Lp("Fan", "Fans", count: state.thermal.fans.count),
                             value: state.thermal.fans.map { "\($0) rpm" }.joined(separator: " / "),
                             palette: palette
                         )
@@ -391,9 +391,9 @@ struct DashboardView: View {
         Panel(palette: palette, cornerRadius: 18, padding: 18) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    MicroLabel(text: "Armazenamento", palette: palette)
+                    MicroLabel(text: L("Storage"), palette: palette)
                     Spacer()
-                    Text("\(state.volumes.count) volume\(state.volumes.count == 1 ? "" : "s")")
+                    Text(Lp("%d volume", "%d volumes", count: state.volumes.count))
                         .font(Typo.monoCaption)
                         .foregroundStyle(palette.t2)
                 }
@@ -426,7 +426,7 @@ struct DashboardView: View {
                     HStack(spacing: 5) {
                         Image(systemName: "link")
                             .font(.system(size: 9))
-                        Text("\(Fmt.bytes(state.offload.savedBytes)) fora do disco do Mac")
+                        Text(L("%@ off the Mac's disk", Fmt.bytes(state.offload.savedBytes)))
                             .font(Typo.monoTiny)
                     }
                     .foregroundStyle(palette.cyan)
@@ -436,7 +436,7 @@ struct DashboardView: View {
                     HStack(spacing: 5) {
                         Image(systemName: "trash")
                             .font(.system(size: 9))
-                        Text("\(Fmt.bytes(state.trash.totalBytes)) parados na Lixeira")
+                        Text(L("%@ sitting in the Trash", Fmt.bytes(state.trash.totalBytes)))
                             .font(Typo.monoTiny)
                     }
                     .foregroundStyle(palette.warn)
@@ -456,7 +456,7 @@ struct DashboardView: View {
                         .foregroundStyle(palette.t1)
                     Spacer()
                     if !state.topByCPU.isEmpty {
-                        Text("\(state.cpu.processCount) processos")
+                        Text(L("%d processes", state.cpu.processCount))
                             .font(Typo.monoTiny)
                             .foregroundStyle(palette.t3)
                     }
@@ -484,7 +484,7 @@ struct DashboardView: View {
                 }
 
                 if !state.topByCPU.isEmpty {
-                    MicroLabel(text: "Por CPU", palette: palette)
+                    MicroLabel(text: L("By CPU"), palette: palette)
                         .padding(.top, 4)
                     VStack(spacing: 0) {
                         ForEach(state.topByCPU.prefix(6)) { row in
@@ -566,7 +566,7 @@ struct DashboardView: View {
                         .font(Typo.cardTitle)
                         .foregroundStyle(palette.t1)
                     Spacer()
-                    Text("\(Fmt.bytes(state.game.state.totalFreedBytes)) no total")
+                    Text(L("%@ in total", Fmt.bytes(state.game.state.totalFreedBytes)))
                         .font(Typo.monoCaption)
                         .foregroundStyle(palette.ok)
                 }

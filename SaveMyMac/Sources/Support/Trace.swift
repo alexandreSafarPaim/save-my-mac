@@ -1,19 +1,23 @@
 import Foundation
 
-/// Rastro de execução em arquivo, para diagnosticar o travamento.
+/// Execution trace written to a file, for diagnosing hangs.
 ///
-/// Por que não `NSLog`/`os_log`: quando o app trava e é morto à força, o
-/// subsistema de log unificado pode simplesmente não ter escrito nada — foi
-/// exatamente o que aconteceu (`log show` voltou zero linhas). Aqui a escrita é
-/// um `write(2)` cru, sem buffer de biblioteca, direto no descritor. O que foi
-/// marcado está no disco no instante seguinte, mesmo que o processo morra em
-/// seguida.
+/// Why not `NSLog`/`os_log`: when the app hangs and gets force-killed, the
+/// unified logging subsystem may simply not have written anything — which is
+/// exactly what happened (`log show` returned zero lines). Here the write is a
+/// raw `write(2)`, with no library buffering, straight to the descriptor.
+/// Whatever was marked is on disk the instant after, even if the process dies
+/// immediately afterwards.
 ///
-/// A ideia é simples e não depende de `sample` nem de palpite: cada ponto
-/// suspeito marca a entrada e a saída. Quando o app congela, **a última linha
-/// do arquivo é o lugar onde ele parou**.
+/// The idea is simple and depends on neither `sample` nor guesswork: every
+/// suspicious call site marks entry and exit. When the app freezes, **the last
+/// line of the file is where it stopped**.
 ///
-/// Arquivo: ~/Library/Logs/SaveMyMac-trace.log
+/// File: ~/Library/Logs/SaveMyMac-trace.log
+///
+/// Note that these messages are deliberately **not** localized. They are
+/// developer diagnostics, read by whoever is debugging a report — translating
+/// them would make a hang report unreadable to the person receiving the issue.
 enum Trace {
 
     static let path = NSHomeDirectory() + "/Library/Logs/SaveMyMac-trace.log"
@@ -21,8 +25,8 @@ enum Trace {
     private static let lock = NSLock()
     private static let start = Date()
 
-    /// `O_TRUNC`: cada execução começa do zero. Um rastro que acumula sessões
-    /// obriga a adivinhar onde uma termina e a outra começa.
+    /// `O_TRUNC`: every run starts from scratch. A trace that accumulates
+    /// sessions forces you to guess where one ends and the next begins.
     private static let fd: Int32 = {
         let dir = NSHomeDirectory() + "/Library/Logs"
         try? FileManager.default.createDirectory(
@@ -41,8 +45,8 @@ enum Trace {
         lock.unlock()
     }
 
-    /// Marca entrada e saída de um trecho, com a duração.
-    /// Se a saída não aparecer no arquivo, foi ali que travou.
+    /// Marks entry and exit of a section, with its duration.
+    /// If the exit never shows up in the file, that's where it hung.
     @discardableResult
     static func span<T>(_ name: String, _ work: () throws -> T) rethrows -> T {
         mark("→ \(name)")
@@ -51,8 +55,8 @@ enum Trace {
         return try work()
     }
 
-    /// Conta algo que acontece muito e só registra de tempos em tempos.
-    /// Serve para medir frequência sem inundar o arquivo.
+    /// Counts something that happens a lot and only records it periodically.
+    /// Useful for measuring frequency without flooding the file.
     private static var counters: [String: Int] = [:]
 
     static func count(_ name: String, every: Int = 100) {
@@ -60,15 +64,15 @@ enum Trace {
         let n = (counters[name] ?? 0) + 1
         counters[name] = n
         lock.unlock()
-        // Fora do cadeado: `mark` também o usa e o NSLock não é reentrante.
+        // Outside the lock: `mark` takes it too, and NSLock isn't reentrant.
         if n % every == 0 { mark("\(name): \(n)×") }
     }
 
-    // MARK: - Cabeçalho
+    // MARK: - Header
 
-    /// Identifica **qual binário** está rodando. Já perdemos tempo depurando uma
-    /// versão antiga instalada por engano; a data de modificação do executável
-    /// resolve isso em uma linha.
+    /// Identifies **which binary** is running. We already lost time debugging an
+    /// old version installed by mistake; the executable's modification date
+    /// settles that in one line.
     static func begin() {
         let exe = Bundle.main.executablePath ?? "?"
         let stamp = (try? FileManager.default.attributesOfItem(atPath: exe)[.modificationDate])
@@ -76,23 +80,24 @@ enum Trace {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
-        mark("SaveMyMac iniciando — pid \(getpid())")
-        mark("executável: \(exe)")
-        mark("compilado em: \(stamp.map(fmt.string(from:)) ?? "desconhecido")")
-        mark("modo seguro: \(SafeMode.isOn) · barra de menus: \(MenuBarFeature.isEnabled)")
+        mark("SaveMyMac starting — pid \(getpid())")
+        mark("executable: \(exe)")
+        mark("built at: \(stamp.map(fmt.string(from:)) ?? "unknown")")
+        mark("safe mode: \(SafeMode.isOn) · menu bar: \(MenuBarFeature.isEnabled)")
     }
 
-    // MARK: - Vigia da thread principal
+    // MARK: - Main thread watchdog
 
     private static var lastPing = Date()
     private static var stalled = false
 
-    /// Detecta quando a thread principal para de responder.
+    /// Detects when the main thread stops responding.
     ///
-    /// A principal bate um ponto a cada 0,25 s pelo run loop. Uma thread comum,
-    /// que não depende do run loop, confere. Se o ponto envelhece, a interface
-    /// está congelada — e o rastro registra o instante exato, que cruzado com a
-    /// última marca diz o que estava em curso.
+    /// The main thread checks in every 0.25 s through the run loop. A plain
+    /// thread, which doesn't depend on the run loop, verifies it. If the
+    /// check-in goes stale, the interface is frozen — and the trace records the
+    /// exact moment, which cross-referenced with the last mark says what was in
+    /// flight.
     static func startWatchdog() {
         Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { _ in
             lock.lock(); lastPing = Date(); lock.unlock()
@@ -108,10 +113,10 @@ enum Trace {
 
                 if age > 3, !stalled {
                     stalled = true
-                    mark(String(format: "⚠️  THREAD PRINCIPAL TRAVADA há %.1f s", age))
+                    mark(String(format: "⚠️  MAIN THREAD STALLED for %.1f s", age))
                 } else if age < 1, stalled {
                     stalled = false
-                    mark("✅ thread principal respondeu de novo")
+                    mark("✅ main thread responded again")
                 }
             }
         }

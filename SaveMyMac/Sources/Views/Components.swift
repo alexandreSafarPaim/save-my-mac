@@ -488,7 +488,7 @@ struct RiskMeter: View {
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 5) {
-            Text("RISCO \(score)/10")
+            Text(L("RISK %d/10", score))
                 .font(Typo.monoTiny)
                 .foregroundStyle(palette.t3)
             GradientBar(
@@ -830,21 +830,57 @@ struct AppIconView: View {
 /// um `Button` com ação. Por isso este tipo recebe apenas o rótulo, e quem usa
 /// aplica o `.buttonStyle` por fora — é o que mantém a linha do painel da barra
 /// de menus idêntica às vizinhas.
+/// Ação, não `SettingsLink`.
+///
+/// `SettingsLink` funciona numa janela e **não funciona a partir de um
+/// `MenuBarExtra`**: o popover da barra de menus não deixa o app ativo, e abrir
+/// Ajustes sem o app ativo não traz janela para a frente. Do lado do usuário
+/// parecia que o clique não fazia nada — era preciso abrir a janela principal
+/// primeiro para Ajustes funcionar.
+///
+/// `openSettings` é a mesma capacidade em forma de ação, e por ser ação dá para
+/// **ativar o app antes de chamar**, que era o passo que faltava.
 struct SettingsOpener<Label: View>: View {
     @ViewBuilder var label: () -> Label
 
     var body: some View {
+        // `@Environment(\.openSettings)` só existe no macOS 14. Declarar a
+        // propriedade aqui quebraria a compilação para o alvo 13, mesmo dentro
+        // de um `if #available` — disponibilidade de propriedade é checada na
+        // declaração, não no uso. Por isso ela mora num tipo `@available`, que só
+        // é mencionado dentro do teste.
         if #available(macOS 14.0, *) {
-            SettingsLink(label: label)
+            ModernSettingsOpener(label: label)
         } else {
             Button(action: openLegacy, label: label)
         }
     }
 
+    /// macOS 13: tenta os dois seletores, **sem** checar `responds(to:)`.
+    /// O `sendAction` já percorre a cadeia de resposta e informa se alguém
+    /// tratou; a checagem só servia para descartar o caminho certo, porque o
+    /// seletor pertence ao delegate interno do SwiftUI e não ao nosso.
     private func openLegacy() {
         NSApp.activate(ignoringOtherApps: true)
         if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
             _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        }
+    }
+}
+
+@available(macOS 14.0, *)
+private struct ModernSettingsOpener<Label: View>: View {
+    @Environment(\.openSettings) private var openSettings
+    @ViewBuilder var label: () -> Label
+
+    var body: some View {
+        Button {
+            // A ordem importa: ativar depois de abrir deixa a janela atrás das
+            // outras em algumas situações.
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
+        } label: {
+            label()
         }
     }
 }

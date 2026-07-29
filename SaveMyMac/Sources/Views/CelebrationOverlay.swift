@@ -76,7 +76,7 @@ struct CelebrationOverlay: View {
                     }
                 }
 
-                PrimaryButton(title: "Boa", palette: palette) { dismiss() }
+                PrimaryButton(title: L("Nice"), palette: palette) { dismiss() }
                     .padding(.top, 6)
             }
             .padding(.horizontal, 46)
